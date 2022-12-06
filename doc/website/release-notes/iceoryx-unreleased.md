@@ -51,6 +51,7 @@
 - iceoryx_posh_testing cannot find iceoryx_hoofs_testing in CMake [\#1602](https://github.com/eclipse-iceoryx/iceoryx/issues/1602)
 - locking_policy.cpp calls error handler without log message [\#1609](https://github.com/eclipse-iceoryx/iceoryx/issues/1609)
 - Implement destructor, copy and move operations in `cxx::stack` [\#1469](https://github.com/eclipse-iceoryx/iceoryx/issues/1469)
+- `gw::GatewayGeneric` sometimes terminates discovery and forward threads immediately [\#1666](https://github.com/eclipse-iceoryx/iceoryx/issues/1666)
 
 **Refactoring:**
 
@@ -89,6 +90,8 @@
 - Use builder pattern in mutex [\#1036](https://github.com/eclipse-iceoryx/iceoryx/issues/1036)
 - Change return type of `cxx::vector::erase` to bool [\#1662](https://github.com/eclipse-iceoryx/iceoryx/issues/1662)
 - `ReleativePointer::registerPtr` returns `cxx::optional` [\#605](https://github.com/eclipse-iceoryx/iceoryx/issues/605)
+- `cxx::function` is no longer nullable [\#1104](https://github.com/eclipse-iceoryx/iceoryx/issues/1104)
+- Renamed `BaseRelativePointer` to `UntypedRelativePointer` [\#605](https://github.com/eclipse-iceoryx/iceoryx/issues/605)
 
 **Workflow:**
 
@@ -399,6 +402,18 @@
     }
     ```
 
+20. Renamed `BaseRelativePointer` to `UntypedRelativePointer`
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/internal/relocatable_pointer/base_relative_pointer.hpp"
+    iox::rp::BaseRelativePointer myUntypedRelativePointer;
+
+    // after
+    #include "iceoryx_hoofs/memory/relative_pointer.hpp" /// @todo #605 adapt namespace and directory
+    iox::memory::UntypedRelativePointer myUntypedRelativePointer;
+    ```
+
 20. The `CMakeLists.txt` of apps using iceoryx need to add `iceoryx_platform`
 
     ```cmake
@@ -492,3 +507,26 @@
     // after
     bool success = myCxxVector.erase(myCxxVector.begin());
     ```
+
+25. `cxx::function` is no longer nullable.
+
+    ```cxx
+    // before
+    cxx::function<void()> helloFunc = []{ std::cout << "hello world\n"; };
+    cxx::function<void()> emptyFunction;
+
+    if (helloFunc) { // required since the object could always be null
+        helloFunc();
+    }
+
+    // after
+    cxx::function<void()> helloFunc = []{ std::cout << "hello world\n"; };
+    cxx::optional<cxx::function<void()>> emptyPtr(cxx::nullopt); // if function shall be nullable use cxx::optional
+
+    // no more null check required since it is no longer nullable
+    helloFunc();
+    ```
+
+    Compilers like ``gcc-12>`` and `clang>14` as well as static code analysis tools like `clang-tidy`
+    will warn the user with a used after move warning when one accesses a moved object. Accessing
+    a moved `function` is well defined and behaves like dereferencing a `nullptr`.
