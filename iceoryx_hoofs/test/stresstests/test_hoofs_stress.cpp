@@ -1,4 +1,5 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
+// Copyright (c) 2021 by Apex.AI inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +15,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "iceoryx_posh/internal/log/posh_logging.hpp"
+#include "iceoryx_hoofs/testing/test.hpp"
 
-namespace iox
+using namespace ::testing;
+
+/// @todo iox-#1345 init testing logger
+int main(int argc, char* argv[])
 {
-constexpr char LoggingComponentPosh::Ctx[];
-constexpr char LoggingComponentPosh::Description[];
-
-} // namespace iox
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
