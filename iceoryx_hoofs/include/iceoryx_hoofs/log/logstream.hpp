@@ -47,7 +47,23 @@ constexpr LogHex<T> hex(const T value) noexcept;
 
 LogHex<uint64_t> hex(const void* const ptr) noexcept;
 
-/// @todo iox-#1345 implement LogBin, LogOct and LogRawBuffer
+template <typename T>
+class LogOct
+{
+  public:
+    friend class LogStream;
+
+    template <typename = std::enable_if_t<std::is_integral<T>::value>>
+    inline explicit constexpr LogOct(const T value) noexcept;
+
+  private:
+    T m_value;
+};
+
+template <typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
+inline constexpr LogOct<T> oct(const T value) noexcept;
+
+/// @todo iox-#1345 implement LogBin and LogRawBuffer
 
 class LogStream
 {
@@ -78,7 +94,10 @@ class LogStream
     LogStream& operator<<(const T val) noexcept;
 
     template <typename T, typename std::enable_if_t<std::is_integral<T>::value, int> = 0>
-    LogStream& operator<<(const LogHex<T>&& val) noexcept;
+    LogStream& operator<<(const LogHex<T> val) noexcept;
+
+    template <typename T, typename std::enable_if_t<std::is_integral<T>::value, int> = 0>
+    LogStream& operator<<(const LogOct<T> val) noexcept;
 
     /// @code
     /// IOX_LOG(INFO) << "#### Hello " << [] (auto& stream) -> auto& { stream << "World"; return stream; };
@@ -95,7 +114,7 @@ class LogStream
     // JUSTIFICATION it is fine to use a reference since the LogStream object is intentionally not movable
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members)
     Logger& m_logger;
-    bool m_flushed{false};
+    bool m_isFlushed{false};
 };
 
 } // namespace log
