@@ -18,8 +18,8 @@
 #ifndef IOX_HOOFS_CONCURRENT_LOCKFREE_QUEUE_HPP
 #define IOX_HOOFS_CONCURRENT_LOCKFREE_QUEUE_HPP
 
+#include "iceoryx_hoofs/containers/uninitialized_array.hpp"
 #include "iceoryx_hoofs/cxx/optional.hpp"
-#include "iceoryx_hoofs/internal/concurrent/lockfree_queue/buffer.hpp"
 #include "iceoryx_hoofs/internal/concurrent/lockfree_queue/index_queue.hpp"
 
 #include <atomic>
@@ -111,7 +111,7 @@ class LockFreeQueue
     // required to be a queue for LockFreeQueue to exhibit FIFO behaviour
     Queue m_usedIndices;
 
-    Buffer<ElementType, Capacity, BufferIndex> m_buffer;
+    containers::UnitializedArray<ElementType, Capacity, BufferIndex> m_buffer;
 
     std::atomic<uint64_t> m_size{0U};
 
