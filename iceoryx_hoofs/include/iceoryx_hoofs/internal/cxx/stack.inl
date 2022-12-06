@@ -1,4 +1,4 @@
-// Copyright (c) 2021 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,119 @@ namespace iox
 {
 namespace cxx
 {
+// AXIVION Next Construct AutosarC++19_03-A12.6.1 : the remaining m_data fields are explicitly initialized when a new
+// element is pushed
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init, hicpp-member-init)
+template <typename T, uint64_t Capacity>
+inline stack<T, Capacity>::stack(const stack& rhs) noexcept
+{
+    *this = rhs;
+}
+
+// AXIVION Next Construct AutosarC++19_03-A12.6.1 : the remaining m_data fields are explicitly initialized when a new
+// element is pushed
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init, hicpp-member-init)
+template <typename T, uint64_t Capacity>
+inline stack<T, Capacity>::stack(stack&& rhs) noexcept
+{
+    *this = std::move(rhs);
+}
+
+template <typename T, uint64_t Capacity>
+inline stack<T, Capacity>& stack<T, Capacity>::operator=(const stack& rhs) noexcept
+{
+    if (this != &rhs)
+    {
+        uint64_t i{0};
+        const uint64_t rhsSize{rhs.size()};
+        const uint64_t minSize{algorithm::minVal(m_size, rhsSize)};
+
+        // copy assignment
+        for (; i < minSize; i++)
+        {
+            getUnchecked(i) = rhs.getUnchecked(i);
+        }
+        // copy c'tor
+        for (; i < rhsSize; i++)
+        {
+            // AXIVION Next Line AutosarC++19_03-A18.5.2 : false positive, it is a placement new
+            new (&m_data[i]) T(rhs.getUnchecked(i));
+        }
+        // delete remaining elements
+        for (; i < m_size; i++)
+        {
+            getUnchecked(i).~T();
+        }
+
+        m_size = rhsSize;
+    }
+    return *this;
+}
+
+template <typename T, uint64_t Capacity>
+inline stack<T, Capacity>& stack<T, Capacity>::operator=(stack&& rhs) noexcept
+{
+    if (this != &rhs)
+    {
+        uint64_t i{0};
+        const uint64_t rhsSize{rhs.size()};
+        const uint64_t minSize{algorithm::minVal(m_size, rhsSize)};
+
+        // move assignment
+        for (; i < minSize; i++)
+        {
+            getUnchecked(i) = std::move(rhs.getUnchecked(i));
+        }
+        // move c'tor
+        for (; i < rhsSize; i++)
+        {
+            // AXIVION Next Line AutosarC++19_03-A18.5.2 : false positive, it is a placement new
+            new (&m_data[i]) T(std::move(rhs.getUnchecked(i)));
+        }
+        // delete remaining elements
+        for (; i < m_size; i++)
+        {
+            getUnchecked(i).~T();
+        }
+
+        m_size = rhsSize;
+
+        // clear rhs
+        for (uint64_t j{0}; j < rhsSize; j++)
+        {
+            getUnchecked(j).~T();
+        }
+        rhs.m_size = 0;
+    }
+    return *this;
+}
+
+template <typename T, uint64_t Capacity>
+inline stack<T, Capacity>::~stack() noexcept
+{
+    for (uint64_t i{0}; i < m_size; i++)
+    {
+        getUnchecked(i).~T();
+    }
+}
+
+template <typename T, uint64_t Capacity>
+inline T& stack<T, Capacity>::getUnchecked(const uint64_t index) noexcept
+{
+    // AXIVION Next Construct AutosarC++19_03-A5.2.3 : const cast to avoid code duplication
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    return const_cast<T&>(const_cast<const stack<T, Capacity>*>(this)->getUnchecked(index));
+}
+
+template <typename T, uint64_t Capacity>
+inline const T& stack<T, Capacity>::getUnchecked(const uint64_t index) const noexcept
+{
+    // AXIVION Next Construct AutosarC++19_03-A5.2.4 : reinterpret_cast is safe since the size and the alignment of each
+    // array element is guaranteed
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return *reinterpret_cast<const T*>(&m_data[index]);
+}
+
 template <typename T, uint64_t Capacity>
 inline cxx::optional<T> stack<T, Capacity>::pop() noexcept
 {
@@ -30,10 +143,10 @@ inline cxx::optional<T> stack<T, Capacity>::pop() noexcept
         return cxx::nullopt;
     }
 
-    // low level memory management with access to the topmost element on the untyped buffer;
-    // type safety is ensured by the template parameter
+    // AXIVION Next Construct AutosarC++19_03-A5.2.4 : low level memory management with access to the topmost element on
+    // the untyped buffer; reinterpret_cast is safe since the size and the alignment of each array element is guaranteed
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    return *reinterpret_cast<T*>(m_data[--m_size]);
+    return *reinterpret_cast<T*>(&m_data[--m_size]);
 }
 
 template <typename T, uint64_t Capacity>
@@ -45,10 +158,7 @@ inline bool stack<T, Capacity>::push(Targs&&... args) noexcept
         return false;
     }
 
-    // low level memory management with access to the topmost element on the untyped buffer;
-    // type safety is ensured by the template parameter
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    new (reinterpret_cast<T*>(m_data[m_size++])) T(std::forward<Targs>(args)...);
+    new (&m_data[m_size++]) T(std::forward<Targs>(args)...);
     return true;
 }
 
