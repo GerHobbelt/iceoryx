@@ -87,6 +87,8 @@
 - Extract `iceoryx_hoofs/platform` into separate package `iceoryx_platform` [\#1615](https://github.com/eclipse-iceoryx/iceoryx/issues/1615)
 - `cxx::unique_ptr` is no longer nullable [\#1104](https://github.com/eclipse-iceoryx/iceoryx/issues/1104)
 - Use builder pattern in mutex [\#1036](https://github.com/eclipse-iceoryx/iceoryx/issues/1036)
+- Change return type of `cxx::vector::erase` to bool [\#1662](https://github.com/eclipse-iceoryx/iceoryx/issues/1662)
+- `ReleativePointer::registerPtr` returns `cxx::optional` [\#605](https://github.com/eclipse-iceoryx/iceoryx/issues/605)
 
 **Workflow:**
 
@@ -376,6 +378,25 @@
     #include "iceoryx_hoofs/cxx/algorithm.hpp"
     constexpr uint32_t MAX_VAL = algorithm::maxVal(3, 1890, 57);
     constexpr uint32_t MIN_VAL = algorithm::minVal(3, 1890, 57);
+
+20. `ReleativePointer::registerPtr` returns `cxx::optional`
+
+    ```cpp
+    // before
+    uint64_t id = RelativePointer::register(startAddress, numBytes);
+
+    if(id == INVALID_ID)
+    {
+        // Early exit
+    }
+
+    // after
+    auto maybeId = RelativePointer::register(startAddress, numBytes);
+
+    if(!id.has_value())
+    {
+        // Early exit
+    }
     ```
 
 20. The `CMakeLists.txt` of apps using iceoryx need to add `iceoryx_platform`
@@ -460,4 +481,14 @@
         .mutexType(iox::posix::MutexType::RECURSIVE)
         .create(myMutex);
     myMutex->lock();
+    ```
+
+24. Change return type of `cxx::vector::erase` from iterator to bool
+
+    ```cpp
+    // before
+    auto* iter = myCxxVector.erase(myCxxVector.begin());
+
+    // after
+    bool success = myCxxVector.erase(myCxxVector.begin());
     ```
