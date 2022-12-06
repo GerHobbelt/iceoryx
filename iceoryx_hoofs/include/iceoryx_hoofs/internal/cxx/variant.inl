@@ -64,12 +64,7 @@ inline constexpr variant<Types...>::variant(T&& arg) noexcept
 {
 }
 
-// AXIVION Next Construct AutosarC++19_03-A13.3.1 : False positive. Overloading excluded via std::enable_if in
-// template <typename T,
-// typename = std::enable_if_t<!std::is_same<std::decay_t<T>, variant>::value>,
-// typename std::enable_if_t<!internal::is_in_place_index<std::decay_t<T>>::value, bool> = false,
-// typename std::enable_if_t<!internal::is_in_place_type<std::decay_t<T>>::value, bool> = false>
-// constexpr explicit variant(T&& arg) noexcept;
+// AXIVION Next Construct AutosarC++19_03-A13.3.1 : False positive. Overload excluded via std::enable_if in operator=(T&& rhs)
 template <typename... Types>
 inline constexpr variant<Types...>& variant<Types...>::operator=(const variant& rhs) noexcept
 {
@@ -106,12 +101,7 @@ inline constexpr variant<Types...>::variant(variant&& rhs) noexcept
     }
 }
 
-// AXIVION Next Construct AutosarC++19_03-A13.3.1 : False positive. Overloading excluded via std::enable_if in
-// template <typename T,
-// typename = std::enable_if_t<!std::is_same<std::decay_t<T>, variant>::value>,
-// typename std::enable_if_t<!internal::is_in_place_index<std::decay_t<T>>::value, bool> = false,
-// typename std::enable_if_t<!internal::is_in_place_type<std::decay_t<T>>::value, bool> = false>
-// constexpr explicit variant(T&& arg) noexcept;
+// AXIVION Next Construct AutosarC++19_03-A13.3.1 : False positive. Overload excluded via std::enable_if in operator=(T&& rhs)
 template <typename... Types>
 inline constexpr variant<Types...>& variant<Types...>::operator=(variant&& rhs) noexcept
 {
@@ -201,10 +191,7 @@ inline void variant<Types...>::emplace(CTorArguments&&... args) noexcept
 {
     static_assert(internal::does_contain_type<T, Types...>::value, "variant does not contain given type");
 
-    if (m_type_index != INVALID_VARIANT_INDEX)
-    {
-        call_element_destructor();
-    }
+    call_element_destructor();
 
     new (&m_storage) T(std::forward<CTorArguments>(args)...);
     m_type_index = internal::get_index_of_type<0, T, Types...>::index;
@@ -221,7 +208,7 @@ inline typename internal::get_type_at_index<0, TypeIndex, Types...>::type* varia
 
     using T = typename internal::get_type_at_index<0, TypeIndex, Types...>::type;
 
-    // AXIVION Next Construct AutosarC++19_03-M5.2.8: conversion to typed pointer is intentional, it is correctly aligned and points to sufficient memory for a T by design
+    // AXIVION Next Construct AutosarC++19_03-M5.2.8 : conversion to typed pointer is intentional, it is correctly aligned and points to sufficient memory for a T by design
     return static_cast<T*>(static_cast<void*>(&m_storage));
 }
 
@@ -244,9 +231,7 @@ inline const T* variant<Types...>::get() const noexcept
     {
         return nullptr;
     }
-    // AXIVION Next Construct AutosarC++19_03-M5.2.8: conversion to typed pointer is intentional, it is correctly aligned and points to sufficient memory for a T by design
-    // AXIVION Next Construct AutosarC++19_03-A5.2.3 : avoid code duplication
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    // AXIVION Next Construct AutosarC++19_03-M5.2.8 : conversion to typed pointer is intentional, it is correctly aligned and points to sufficient memory for a T by design
     return static_cast<const T*>(static_cast<const void*>(&m_storage));
 }
 
@@ -295,6 +280,7 @@ inline bool variant<Types...>::has_bad_variant_element_access() const noexcept
 }
 
 template <typename... Types>
+// AXIVION Next Construct AutosarC++19_03-A3.9.1 : see at declaration in header
 inline void variant<Types...>::error_message(const char* source, const char* msg) noexcept
 {
     IOX_LOG(ERROR) << source << " ::: " << msg;
@@ -307,7 +293,7 @@ inline constexpr bool holds_alternative(const variant<Types...>& variant) noexce
 }
 
 template <typename... Types>
-inline constexpr bool operator==(const variant<Types...>& lhs, const variant<Types...>& rhs)
+inline constexpr bool operator==(const variant<Types...>& lhs, const variant<Types...>& rhs) noexcept
 {
     if ((lhs.index() == INVALID_VARIANT_INDEX) && (rhs.index() == INVALID_VARIANT_INDEX))
     {
@@ -321,7 +307,7 @@ inline constexpr bool operator==(const variant<Types...>& lhs, const variant<Typ
 }
 
 template <typename... Types>
-inline constexpr bool operator!=(const variant<Types...>& lhs, const variant<Types...>& rhs)
+inline constexpr bool operator!=(const variant<Types...>& lhs, const variant<Types...>& rhs) noexcept
 {
     return !(lhs == rhs);
 }
