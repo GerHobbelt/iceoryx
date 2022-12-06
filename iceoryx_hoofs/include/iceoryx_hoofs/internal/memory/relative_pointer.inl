@@ -18,11 +18,11 @@
 #ifndef IOX_HOOFS_RELOCATABLE_POINTER_RELATIVE_POINTER_INL
 #define IOX_HOOFS_RELOCATABLE_POINTER_RELATIVE_POINTER_INL
 
-#include "iceoryx_hoofs/internal/relocatable_pointer/relative_pointer.hpp"
+#include "iceoryx_hoofs/internal/memory/relative_pointer.hpp"
 
 namespace iox
 {
-namespace rp
+namespace memory
 {
 template <typename T>
 // NOLINTJUSTIFICATION NewType size is comparable to an integer, hence pass by value is preferred
@@ -241,7 +241,7 @@ inline PointerRepository<segment_id_underlying_t, UntypedRelativePointer::ptr_t>
     static PointerRepository<segment_id_underlying_t, UntypedRelativePointer::ptr_t> repository;
     return repository;
 }
-} // namespace rp
+} // namespace memory
 } // namespace iox
 
 #endif // IOX_HOOFS_RELOCATABLE_POINTER_RELATIVE_POINTER_INL
