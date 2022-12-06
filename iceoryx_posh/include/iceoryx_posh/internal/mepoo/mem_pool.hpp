@@ -19,8 +19,8 @@
 
 #include "iceoryx_hoofs/cxx/helplets.hpp"
 #include "iceoryx_hoofs/internal/concurrent/loffli.hpp"
-#include "iceoryx_hoofs/internal/posix_wrapper/shared_memory_object/allocator.hpp"
 #include "iceoryx_hoofs/internal/memory/relative_pointer.hpp"
+#include "iceoryx_hoofs/internal/posix_wrapper/shared_memory_object/allocator.hpp"
 #include "iceoryx_posh/mepoo/chunk_header.hpp"
 
 #include <atomic>
@@ -80,10 +80,8 @@ class MemPool
     /// (cas is only 64 bit and we need the other 32 bit for the aba counter)
     uint32_t m_numberOfChunks{0U};
 
-    /// @todo: put this into one struct and in a separate class in concurrent.
     std::atomic<uint32_t> m_usedChunks{0U};
     std::atomic<uint32_t> m_minFree{0U};
-    /// @todo: end
 
     freeList_t m_freeIndices;
 };

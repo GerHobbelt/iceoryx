@@ -15,8 +15,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_RELOCATABLE_POINTER_POINTER_REPOSITORY_HPP
-#define IOX_HOOFS_RELOCATABLE_POINTER_POINTER_REPOSITORY_HPP
+#ifndef IOX_HOOFS_MEMORY_POINTER_REPOSITORY_HPP
+#define IOX_HOOFS_MEMORY_POINTER_REPOSITORY_HPP
 
 #include "iceoryx_hoofs/cxx/optional.hpp"
 #include "iceoryx_hoofs/cxx/vector.hpp"
@@ -101,7 +101,7 @@ class PointerRepository
     id_t searchId(ptr_t ptr) const noexcept;
 
   private:
-    /// @todo: if required protect vector against concurrent modification
+    /// @todo iox-#1701 if required protect vector against concurrent modification
     /// whether this is required depends on the use case, we currently do not need it
     /// we control the ids, so if they are consecutive we only need a vector/array to get the address
     /// this variable exists once per application using relative pointers,
@@ -117,4 +117,4 @@ class PointerRepository
 
 #include "iceoryx_hoofs/internal/memory/pointer_repository.inl"
 
-#endif // IOX_HOOFS_RELOCATABLE_POINTER_POINTER_REPOSITORY_HPP
+#endif // IOX_HOOFS_MEMORY_POINTER_REPOSITORY_HPP
