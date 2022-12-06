@@ -27,7 +27,7 @@
 - Add posix thread wrapper [\#1365](https://github.com/eclipse-iceoryx/iceoryx/issues/1365)
 - Apps send only the heartbeat when monitoring is enabled in roudi [\#1436](https://github.com/eclipse-iceoryx/iceoryx/issues/1436)
 - Support [Bazel](https://bazel.build/) as optional build system [\#1542](https://github.com/eclipse-iceoryx/iceoryx/issues/1542)
-- Support user defined platforms with cmake switch `-DPLATFORM_PATH` [\#1619](https://github.com/eclipse-iceoryx/iceoryx/issues/1619)
+- Support user defined platforms with cmake switch `-DIOX_PLATFORM_PATH` [\#1619](https://github.com/eclipse-iceoryx/iceoryx/issues/1619)
 
 **Bugfixes:**
 
@@ -84,6 +84,7 @@
 - Monitoring feature of RouDi is now disabled by default [\#1580](https://github.com/eclipse-iceoryx/iceoryx/issues/1580)
 - Renamed `cxx::GenericRAII` to `cxx::ScopeGuard` [\#1450](https://github.com/eclipse-iceoryx/iceoryx/issues/1450)
 - Rename `algorithm::max` and `algorithm::min` to `algorithm::maxVal` and `algorithm::minVal` [\#1394](https://github.com/eclipse-iceoryx/iceoryx/issues/1394)
+- Extract `iceoryx_hoofs/platform` into separate package `iceoryx_platform` [\#1615](https://github.com/eclipse-iceoryx/iceoryx/issues/1615)
 
 **Workflow:**
 
@@ -375,8 +376,8 @@
 
     get_target_property(ICEORYX_CXX_STANDARD iceoryx_posh::iceoryx_posh CXX_STANDARD) // obsolete
 
-    include(IceoryxPlatform)
     include(IceoryxPackageHelper)
+    include(IceoryxPlatform)
 
     // after
     cmake_minimum_required(VERSION 3.16)
@@ -385,7 +386,18 @@
     find_package(iceoryx_posh CONFIG REQUIRED)
     find_package(iceoryx_hoofs CONFIG REQUIRED)
 
+    include(IceoryxPackageHelper)
     include(IceoryxPlatform)
     include(IceoryxPlatformSettings)                // new
-    include(IceoryxPackageHelper)
+    ```
+
+21. `iceoryx_hoofs/platform` was moved into separate package `iceoryx_platform`. All includes must
+    be adjusted.
+
+    ```cxx
+    // before
+    #include "iceoryx_hoofs/platform/some_header.hpp"
+
+    // after
+    #include "iceoryx_platform/some_header.hpp"
     ```
