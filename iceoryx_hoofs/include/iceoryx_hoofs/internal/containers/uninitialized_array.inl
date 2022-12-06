@@ -18,60 +18,67 @@
 #ifndef IOX_HOOFS_CONTAINERS_UNINITIALIZED_ARRAY_INL
 #define IOX_HOOFS_CONTAINERS_UNINITIALIZED_ARRAY_INL
 
-#include "iceoryx_hoofs/containers/uninitialized_array.hpp"
+#include "iceoryx_hoofs/internal/containers/uninitialized_array.hpp"
 
 namespace iox
 {
 namespace containers
 {
-// UninitializedArray shall behave like a c-array; we explicitly do not want to initialize m_buffer. The constexpr
-// default c'tor is needed to enable constexpr c'tors in classes that have an UnitializedArray member.
-// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init, hicpp-member-init)
-template <typename ElementType, uint64_t Capacity, typename index_t>
-inline constexpr UnitializedArray<ElementType, Capacity, index_t>::UnitializedArray() noexcept
+template <typename ElementType, uint64_t Capacity, template <typename, uint64_t> class Buffer>
+inline constexpr ElementType&
+UninitializedArray<ElementType, Capacity, Buffer>::operator[](const uint64_t index) noexcept
 {
+    // AXIVION Next Construct AutosarC++19_03-A5.2.3 : const_cast to avoid code duplication
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    return const_cast<ElementType&>(const_cast<const UninitializedArray*>(this)->operator[](index));
 }
 
-template <typename ElementType, uint64_t Capacity, typename index_t>
-inline constexpr ElementType& UnitializedArray<ElementType, Capacity, index_t>::operator[](const index_t index) noexcept
-{
-    return *toPtr(index);
-}
-
-template <typename ElementType, uint64_t Capacity, typename index_t>
+template <typename ElementType, uint64_t Capacity, template <typename, uint64_t> class Buffer>
 inline constexpr const ElementType&
-UnitializedArray<ElementType, Capacity, index_t>::operator[](const index_t index) const noexcept
+UninitializedArray<ElementType, Capacity, Buffer>::operator[](const uint64_t index) const noexcept
 {
-    return *toPtr(index);
+    // AXIVION Next Construct AutosarC++19_03-A5.2.4 : type safety ensured by template parameter
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return *reinterpret_cast<const ElementType*>(&m_buffer.value[index]);
 }
 
-template <typename ElementType, uint64_t Capacity, typename index_t>
-inline constexpr ElementType* UnitializedArray<ElementType, Capacity, index_t>::ptr(const index_t index) noexcept
-{
-    return toPtr(index);
-}
-
-template <typename ElementType, uint64_t Capacity, typename index_t>
-inline constexpr const ElementType*
-UnitializedArray<ElementType, Capacity, index_t>::ptr(const index_t index) const noexcept
-{
-    return toPtr(index);
-}
-
-template <typename ElementType, uint64_t Capacity, typename index_t>
-inline constexpr uint64_t UnitializedArray<ElementType, Capacity, index_t>::capacity() noexcept
+template <typename ElementType, uint64_t Capacity, template <typename, uint64_t> class Buffer>
+inline constexpr uint64_t UninitializedArray<ElementType, Capacity, Buffer>::capacity() noexcept
 {
     return Capacity;
 }
 
-template <typename ElementType, uint64_t Capacity, typename index_t>
-inline constexpr ElementType* UnitializedArray<ElementType, Capacity, index_t>::toPtr(index_t index) const noexcept
+template <typename ElementType, uint64_t Capacity, template <typename, uint64_t> class Buffer>
+inline typename UninitializedArray<ElementType, Capacity, Buffer>::iterator
+UninitializedArray<ElementType, Capacity, Buffer>::begin() noexcept
 {
-    auto ptr = &(m_buffer[index * sizeof(ElementType)]);
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast, cppcoreguidelines-pro-type-const-cast) type erasure
-    return reinterpret_cast<ElementType*>(const_cast<cxx::byte_t*>(ptr));
+    // AXIVION Next Construct AutosarC++19_03-A5.2.3 : const_cast to avoid code duplication
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    return const_cast<iterator>(const_cast<const UninitializedArray*>(this)->begin());
 }
 
+template <typename ElementType, uint64_t Capacity, template <typename, uint64_t> class Buffer>
+inline typename UninitializedArray<ElementType, Capacity, Buffer>::const_iterator
+UninitializedArray<ElementType, Capacity, Buffer>::begin() const noexcept
+{
+    return &operator[](0);
+}
+
+template <typename ElementType, uint64_t Capacity, template <typename, uint64_t> class Buffer>
+inline typename UninitializedArray<ElementType, Capacity, Buffer>::iterator
+UninitializedArray<ElementType, Capacity, Buffer>::end() noexcept
+{
+    // AXIVION Next Construct AutosarC++19_03-A5.2.3 : const_cast to avoid code duplication
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+    return const_cast<iterator>(const_cast<const UninitializedArray*>(this)->end());
+}
+
+template <typename ElementType, uint64_t Capacity, template <typename, uint64_t> class Buffer>
+inline typename UninitializedArray<ElementType, Capacity, Buffer>::const_iterator
+UninitializedArray<ElementType, Capacity, Buffer>::end() const noexcept
+{
+    return &operator[](0) + Capacity;
+}
 } // namespace containers
 } // namespace iox
 

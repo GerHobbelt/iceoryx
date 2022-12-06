@@ -17,40 +17,40 @@
 
 #include "test.hpp"
 
-#include "iceoryx_hoofs/containers/uninitialized_array.hpp"
+#include "iceoryx_hoofs/internal/containers/uninitialized_array.hpp"
 
 namespace
 {
 using namespace ::testing;
 
-using iox::containers::UnitializedArray;
-
-template <typename T>
-class UninitializedArrayTest : public ::testing::Test
-{
-  public:
-    using Buffer = T;
-    Buffer buffer{};
-
-    void fillBuffer(int startValue)
-    {
-        auto capacity = buffer.capacity();
-
-        int value = startValue;
-        for (uint64_t i = 0; i < capacity; ++i)
-        {
-            buffer[i] = value++;
-        }
-    }
-};
+using iox::containers::UninitializedArray;
 
 struct Integer
 {
-    // NOLINTNEXTLINE(hicpp-explicit-conversions) required for typed tests
-    Integer(int value = 0)
-        : value(value)
+    static uint32_t ctor;
+    static uint32_t dtor;
+
+    Integer()
+        : Integer(0)
     {
     }
+
+    // NOLINTNEXTLINE(hicpp-explicit-conversions) required for typed tests
+    Integer(int value)
+        : value(value)
+    {
+        ctor++;
+    }
+
+    ~Integer()
+    {
+        dtor++;
+    }
+
+    Integer(const Integer&) = delete;
+    Integer(Integer&&) = delete;
+    Integer& operator=(const Integer&) = delete;
+    Integer& operator=(Integer&&) = delete;
 
     int value{0};
 
@@ -62,16 +62,49 @@ struct Integer
     }
 };
 
+uint32_t Integer::ctor;
+uint32_t Integer::dtor;
+
+template <typename T>
+class UninitializedArrayTest : public ::testing::Test
+{
+  public:
+    using Buffer = T;
+    using Type = typename Buffer::value_type;
+    Buffer buffer{};
+
+    void fillBuffer(int startValue)
+    {
+        auto capacity = buffer.capacity();
+
+        int value = startValue;
+        for (uint64_t i = 0; i < capacity; ++i)
+        {
+            new (&buffer[i]) Type(value++);
+        }
+    }
+
+    void SetUp() override
+    {
+        Integer::ctor = 0;
+        Integer::dtor = 0;
+    }
+};
+
 TEST(UninitializedArrayTest, capacityIsCorrect)
 {
     ::testing::Test::RecordProperty("TEST_ID", "0ac31a08-77b2-4fd2-a214-81298cada00c");
     constexpr uint64_t capacity = 7;
     // NOLINTNEXTLINE(hicpp-member-init, cppcoreguidelines-pro-type-member-init) false positive
-    UnitializedArray<int, capacity> sut;
+    UninitializedArray<int, capacity> sut;
     EXPECT_EQ(sut.capacity(), capacity);
 }
 
-typedef ::testing::Types<UnitializedArray<int, 10>, UnitializedArray<Integer, 10>> TestArrays;
+typedef ::testing::Types<UninitializedArray<int, 10>,
+                         UninitializedArray<Integer, 10>,
+                         UninitializedArray<int, 10, iox::containers::ZeroedBuffer>,
+                         UninitializedArray<Integer, 10, iox::containers::ZeroedBuffer>>
+    TestArrays;
 
 TYPED_TEST_SUITE(UninitializedArrayTest, TestArrays, );
 
@@ -108,39 +141,180 @@ TYPED_TEST(UninitializedArrayTest, accessElementsOfConstUinitializedArray)
     }
 }
 
-TYPED_TEST(UninitializedArrayTest, accessElementsViaPtr)
+TEST(UninitializedArrayTest, AllElementsInitializedWithZeroWhenBufferSetToZeroedBuffer)
 {
-    ::testing::Test::RecordProperty("TEST_ID", "2c28ae80-be4e-46d4-b2bb-e475e1b1df69");
-    auto& buffer = this->buffer;
-    auto capacity = buffer.capacity();
-
-    int startValue = 21;
-    this->fillBuffer(startValue);
-
-    int expected = startValue;
-    for (uint64_t i = 0; i < capacity; ++i)
+    ::testing::Test::RecordProperty("TEST_ID", "bb213516-ab37-43e3-b2ec-098c98d777d1");
+    constexpr uint64_t CAPACITY{32};
+    UninitializedArray<uint32_t, CAPACITY, iox::containers::ZeroedBuffer> buffer;
+    for (auto& e : buffer)
     {
-        auto ptr = buffer.ptr(i);
-        EXPECT_EQ(*ptr, expected++);
+        new (&e) uint32_t(std::numeric_limits<uint32_t>::max());
+    }
+
+    new (&buffer) UninitializedArray<uint32_t, CAPACITY, iox::containers::ZeroedBuffer>();
+
+    for (auto& e : buffer)
+    {
+        EXPECT_EQ(e, 0);
     }
 }
 
-TYPED_TEST(UninitializedArrayTest, accessElementsOfConstUninitializedArrayViaPtr)
+TYPED_TEST(UninitializedArrayTest, BeginReturnsIteratorToBeginningOfUninitializedArray)
 {
-    ::testing::Test::RecordProperty("TEST_ID", "3efd2143-0798-457d-84f3-d8aa85d44665");
+    ::testing::Test::RecordProperty("TEST_ID", "6434e308-e24f-41e1-a1e1-949da01b2cbb");
     auto& buffer = this->buffer;
-    auto capacity = buffer.capacity();
-
-    int startValue = 12;
-    this->fillBuffer(startValue);
-
-    const auto& constBuffer = this->buffer;
-    int expected = startValue;
-    for (uint64_t i = 0; i < capacity; ++i)
-    {
-        auto ptr = constBuffer.ptr(i);
-        EXPECT_EQ(*ptr, expected++);
-    }
+    EXPECT_EQ(buffer.begin(), &buffer[0]);
 }
 
+TYPED_TEST(UninitializedArrayTest, ConstBeginReturnsIteratorToBeginningOfUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "7387b043-db44-47ac-a2da-c40040bb9baa");
+    auto& buffer = this->buffer;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast) reuse of buffer to test const method
+    EXPECT_EQ(const_cast<const decltype(buffer)>(buffer).begin(), &buffer[0]);
+}
+
+TYPED_TEST(UninitializedArrayTest, EndReturnsIteratorToEndOfUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "52447fba-0c7f-40df-8b7f-64d8b3ffcc49");
+    auto& buffer = this->buffer;
+    EXPECT_EQ(buffer.end(), &buffer[buffer.capacity()]);
+}
+
+TYPED_TEST(UninitializedArrayTest, ConstEndReturnsIteratorToEndOfUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "2946ad83-b782-4c54-966b-c94b482335cc");
+    auto& buffer = this->buffer;
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast) reuse of buffer to test const method
+    EXPECT_EQ(const_cast<const decltype(buffer)>(buffer).end(), &buffer[buffer.capacity()]);
+}
+
+TEST(UninitializedArrayTest, BeginAndEndIteratorNotEqualInNonEmptyUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "1a180d15-7e77-4234-ad88-04673cbf9fc9");
+    constexpr uint64_t CAPACITY = 3;
+    using Buffer = UninitializedArray<uint32_t, CAPACITY>;
+    Buffer buffer;
+
+    new (&buffer[0]) Buffer::value_type(1);
+
+    EXPECT_NE(buffer.begin(), buffer.end());
+}
+
+TEST(UninitializedArrayTest, BeginAndEndConstIteratorNotEqualInNonEmptyUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "33e3d5b4-4762-421a-829f-455fe44b8e3b");
+    constexpr uint64_t CAPACITY = 3;
+    using Buffer = UninitializedArray<int32_t, CAPACITY>;
+    Buffer buffer;
+
+    new (&buffer[0]) Buffer::value_type(2);
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast) reuse of buffer to test const methods
+    EXPECT_NE(const_cast<const Buffer&>(buffer).begin(), const_cast<const Buffer&>(buffer).end());
+}
+
+TYPED_TEST(UninitializedArrayTest, BeginAndEndIteratorNotEqualInFullUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "2ac41459-1055-47c0-8dc1-ea43c50827bf");
+    auto& buffer = this->buffer;
+    this->fillBuffer(0);
+    EXPECT_NE(buffer.begin(), buffer.end());
+}
+
+TYPED_TEST(UninitializedArrayTest, BeginAndEndConstIteratorNotEqualInFullUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "01a5d1cd-ba6d-422e-a807-1ffe5787f4af");
+    auto& buffer = this->buffer;
+    this->fillBuffer(2);
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast) reuse of buffer to test const methods
+    EXPECT_NE(const_cast<const decltype(buffer)>(buffer).begin(), const_cast<const decltype(buffer)>(buffer).end());
+}
+
+TEST(UninitializedArrayTest, IteratorIteratesThroughUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "b42d93c9-cbe8-481f-8a0b-5b3fb8e9020c");
+    constexpr uint64_t CAPACITY = 3;
+    constexpr uint32_t INITIAL_VALUE = 42U;
+
+    using Buffer = UninitializedArray<uint32_t, CAPACITY>;
+    using Type = Buffer::value_type;
+    Buffer buffer;
+
+    new (&buffer[0]) Type(INITIAL_VALUE);
+    new (&buffer[1]) Type(INITIAL_VALUE + 1);
+    new (&buffer[2]) Type(INITIAL_VALUE + 2);
+
+    uint32_t count{0};
+    for (auto& e : buffer)
+    {
+        EXPECT_EQ(e, INITIAL_VALUE + count);
+        ++count;
+    }
+    EXPECT_EQ(count, CAPACITY);
+}
+
+TEST(UninitializedArrayTest, ConstIteratorIteratesThroughUninitializedArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "e8d7ac7f-9ec7-4264-8b27-d0469b167375");
+    constexpr uint64_t CAPACITY = 3;
+    constexpr uint32_t INITIAL_VALUE = 13;
+
+    using Buffer = UninitializedArray<uint32_t, CAPACITY>;
+    using Type = Buffer::value_type;
+    Buffer buffer;
+
+    new (&buffer[0]) Type(INITIAL_VALUE);
+    new (&buffer[1]) Type(INITIAL_VALUE + 1);
+    new (&buffer[2]) Type(INITIAL_VALUE + 2);
+
+    uint32_t count{0};
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast) reuse of buffer to test const methods
+    for (const auto& e : *const_cast<const decltype(buffer)*>(&buffer))
+    {
+        EXPECT_EQ(e, INITIAL_VALUE + count);
+        ++count;
+    }
+    EXPECT_EQ(count, CAPACITY);
+}
+
+TEST(UninitializedArrayTest, UninitializedArrayDoesNotInitializeOrDestroyElements)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "60334385-60e8-49bc-b297-61f5a5a3b175");
+    constexpr uint64_t CAPACITY{15};
+    Integer::ctor = 0;
+    Integer::dtor = 0;
+
+    {
+        UninitializedArray<Integer, CAPACITY> buffer{};
+        EXPECT_EQ(Integer::ctor, 0);
+
+        for (uint64_t i{0}; i < CAPACITY; ++i)
+        {
+            new (&buffer[i]) Integer(51);
+        }
+        EXPECT_EQ(Integer::ctor, CAPACITY);
+        EXPECT_EQ(Integer::dtor, 0);
+    }
+    EXPECT_EQ(Integer::dtor, 0);
+}
+
+TYPED_TEST(UninitializedArrayTest, SizeOfUninitializedArrayEqualsCStyleArray)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "e1c7ddec-b883-4eee-a4a4-a8dfbcaaec6d");
+    using Buffer = typename TestFixture::Buffer;
+    if (std::is_same<Buffer, UninitializedArray<Integer, 10>>::value
+        || std::is_same<Buffer, UninitializedArray<Integer, 10, iox::containers::ZeroedBuffer>>::value)
+    {
+        // NOLINTNEXTLINE(hicpp-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays) : needed for test purpose
+        Integer testArray[10];
+        EXPECT_EQ(sizeof(this->buffer), sizeof(testArray));
+    }
+    else
+    {
+        // NOLINTNEXTLINE(hicpp-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays) : needed for test purpose
+        int testArray[10];
+        EXPECT_EQ(sizeof(this->buffer), sizeof(testArray));
+    }
+}
 } // namespace

@@ -17,7 +17,6 @@
 #ifndef IOX_HOOFS_CXX_OPTIONAL_HPP
 #define IOX_HOOFS_CXX_OPTIONAL_HPP
 
-#include "iceoryx_hoofs/containers/uninitialized_array.hpp"
 #include "iceoryx_hoofs/cxx/functional_interface.hpp"
 #include "iceoryx_hoofs/cxx/requires.hpp"
 
@@ -230,7 +229,7 @@ class optional final : public FunctionalInterface<optional<T>, T, void>
     //     initHandle(&handle);
     //   }
     bool m_hasValue{false};
-    containers::UnitializedArray<T, 1> m_data;
+    typename std::aligned_storage<sizeof(T), alignof(T)>::type m_data;
 
   private:
     template <typename... Targs>

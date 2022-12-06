@@ -17,10 +17,10 @@
 #ifndef IOX_HOOFS_CXX_VECTOR_HPP
 #define IOX_HOOFS_CXX_VECTOR_HPP
 
-#include "iceoryx_hoofs/containers/uninitialized_array.hpp"
 #include "iceoryx_hoofs/cxx/algorithm.hpp"
 #include "iceoryx_hoofs/cxx/attributes.hpp"
 #include "iceoryx_hoofs/cxx/requires.hpp"
+#include "iceoryx_hoofs/internal/containers/uninitialized_array.hpp"
 #include "iceoryx_hoofs/log/logging.hpp"
 
 #include <algorithm>
@@ -219,7 +219,7 @@ class vector final
 
     void clearFrom(const uint64_t startPosition) noexcept;
 
-    containers::UnitializedArray<T, Capacity> m_data;
+    containers::UninitializedArray<T, Capacity> m_data;
     uint64_t m_size{0U};
 };
 

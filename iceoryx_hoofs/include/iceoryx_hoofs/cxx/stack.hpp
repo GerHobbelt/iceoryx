@@ -16,9 +16,9 @@
 #ifndef IOX_HOOFS_CXX_STACK_HPP
 #define IOX_HOOFS_CXX_STACK_HPP
 
-#include "iceoryx_hoofs/containers/uninitialized_array.hpp"
 #include "iceoryx_hoofs/cxx/algorithm.hpp"
 #include "iceoryx_hoofs/cxx/optional.hpp"
+#include "iceoryx_hoofs/internal/containers/uninitialized_array.hpp"
 
 #include <cstdint>
 
@@ -72,7 +72,7 @@ class stack final // NOLINT(cppcoreguidelines-pro-type-member-init, hicpp-member
     stack& copy(const stack& rhs) noexcept;
     stack& move(stack&& rhs) noexcept;
 
-    containers::UnitializedArray<T, Capacity> m_data;
+    containers::UninitializedArray<T, Capacity> m_data;
     uint64_t m_size{0U};
 };
 } // namespace cxx

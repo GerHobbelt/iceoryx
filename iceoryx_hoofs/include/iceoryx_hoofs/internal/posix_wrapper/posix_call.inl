@@ -73,8 +73,9 @@ inline cxx::string<POSIX_CALL_ERROR_STRING_SIZE> errorLiteralToString(const char
 template <typename T>
 inline cxx::string<POSIX_CALL_ERROR_STRING_SIZE> PosixCallResult<T>::getHumanReadableErrnum() const noexcept
 {
-    containers::UnitializedArray<char, POSIX_CALL_ERROR_STRING_SIZE> buffer;
-    buffer[0] = '\0';
+    /// NOLINTJUSTIFICATION needed by POSIX function which is wrapped here
+    /// NOLINTNEXTLINE(hicpp-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays)
+    char buffer[POSIX_CALL_ERROR_STRING_SIZE];
     return internal::errorLiteralToString(strerror_r(errnum, &buffer[0], POSIX_CALL_ERROR_STRING_SIZE), &buffer[0]);
 }
 

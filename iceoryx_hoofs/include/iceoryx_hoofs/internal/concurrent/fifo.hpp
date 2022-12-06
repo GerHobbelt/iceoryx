@@ -17,8 +17,8 @@
 #ifndef IOX_HOOFS_CONCURRENT_FIFO_HPP
 #define IOX_HOOFS_CONCURRENT_FIFO_HPP
 
-#include "iceoryx_hoofs/containers/uninitialized_array.hpp"
 #include "iceoryx_hoofs/cxx/optional.hpp"
+#include "iceoryx_hoofs/internal/containers/uninitialized_array.hpp"
 
 #include <atomic>
 
@@ -54,7 +54,7 @@ class FiFo
     bool is_full() const noexcept;
 
   private:
-    containers::UnitializedArray<ValueType, Capacity> m_data;
+    containers::UninitializedArray<ValueType, Capacity> m_data;
     std::atomic<uint64_t> m_write_pos{0};
     std::atomic<uint64_t> m_read_pos{0};
 };
