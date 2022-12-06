@@ -155,7 +155,7 @@ inline cxx::optional<segment_id_underlying_t> RelativePointer<T>::registerPtr(co
 template <typename T>
 // NOLINTJUSTIFICATION NewType size is comparable to an integer, hence pass by value is preferred
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
-inline bool RelativePointer<T>::registerPtr(const segment_id_t id, const ptr_t ptr, const uint64_t size) noexcept
+inline bool RelativePointer<T>::registerPtrWithId(const segment_id_t id, const ptr_t ptr, const uint64_t size) noexcept
 {
     return getRepository().registerPtrWithId(static_cast<segment_id_underlying_t>(id), ptr, size);
 }
@@ -236,7 +236,7 @@ inline typename RelativePointer<T>::ptr_t RelativePointer<T>::computeRawPtr() co
     return getPtr(segment_id_t{m_id}, m_offset);
 }
 
-static inline PointerRepository<segment_id_underlying_t, UntypedRelativePointer::ptr_t>& getRepository() noexcept
+inline PointerRepository<segment_id_underlying_t, UntypedRelativePointer::ptr_t>& getRepository() noexcept
 {
     static PointerRepository<segment_id_underlying_t, UntypedRelativePointer::ptr_t> repository;
     return repository;
