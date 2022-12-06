@@ -15,10 +15,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_CONSOLE_LOGGER_HPP
-#define IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_CONSOLE_LOGGER_HPP
+#ifndef IOX_HOOFS_LOG_BUILDING_BLOCKS_CONSOLE_LOGGER_HPP
+#define IOX_HOOFS_LOG_BUILDING_BLOCKS_CONSOLE_LOGGER_HPP
 
-#include "iceoryx_hoofs/log/platform_building_blocks/logcommon.hpp"
+#include "iceoryx_hoofs/iceoryx_hoofs_types.hpp"
+#include "iceoryx_hoofs/log/building_blocks/logformat.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -27,7 +28,7 @@
 
 namespace iox
 {
-namespace pbb
+namespace log
 {
 /// @brief A minimal logger implementation which outputs the log messages to the console
 class ConsoleLogger
@@ -35,6 +36,9 @@ class ConsoleLogger
   public:
     /// @brief Obtain the current log level
     /// @return the current log level
+    /// @note In case this class is used as template for a custom logger implementation keep in mind that this method
+    /// must not have any side effects
+    /// @todo iox-#1345 update the design document with the requirement that this method must not have side effects
     static LogLevel getLogLevel() noexcept;
 
     /// @brief Sets a new log level
@@ -72,7 +76,7 @@ class ConsoleLogger
 
     template <typename T,
               typename std::enable_if_t<(std::is_integral<T>::value && std::is_unsigned<T>::value)
-                                            || std::is_floating_point<T>::value,
+                                            || std::is_floating_point<T>::value || std::is_pointer<T>::value,
                                         int> = 0>
     void logHex(const T val) noexcept;
 
@@ -118,12 +122,12 @@ class ConsoleLogger
   private:
     // NOLINTJUSTIFICATION needed for the functionality and a private member of the class
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    static std::atomic<LogLevel> m_activeLogLevel; // initialized in corresponding cpp file
+    static std::atomic<LogLevel> s_activeLogLevel; // initialized in corresponding cpp file
 };
 
-} // namespace pbb
+} // namespace log
 } // namespace iox
 
-#include "iceoryx_hoofs/internal/log/platform_building_blocks/console_logger.inl"
+#include "iceoryx_hoofs/internal/log/building_blocks/console_logger.inl"
 
-#endif // IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_CONSOLE_LOGGER_HPP
+#endif // IOX_HOOFS_LOG_BUILDING_BLOCKS_CONSOLE_LOGGER_HPP

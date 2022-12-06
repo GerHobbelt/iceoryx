@@ -15,14 +15,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_CONSOLE_LOGGER_INL
-#define IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_CONSOLE_LOGGER_INL
+#ifndef IOX_HOOFS_LOG_BUILDING_BLOCKS_CONSOLE_LOGGER_INL
+#define IOX_HOOFS_LOG_BUILDING_BLOCKS_CONSOLE_LOGGER_INL
 
-#include "iceoryx_hoofs/log/platform_building_blocks/console_logger.hpp"
+#include "iceoryx_hoofs/log/building_blocks/console_logger.hpp"
 
 namespace iox
 {
-namespace pbb
+namespace log
 {
 template <uint32_t N>
 // NOLINTJUSTIFICATION see at declaration in header
@@ -45,7 +45,7 @@ inline void ConsoleLogger::logDec(const T value) noexcept
 
 template <typename T,
           typename std::enable_if_t<(std::is_integral<T>::value && std::is_unsigned<T>::value)
-                                        || std::is_floating_point<T>::value,
+                                        || std::is_floating_point<T>::value || std::is_pointer<T>::value,
                                     int>>
 inline void ConsoleLogger::logHex(const T value) noexcept
 {
@@ -91,7 +91,7 @@ inline void ConsoleLogger::logArithmetic(const T value, const char* format) noex
     }
 }
 
-} // namespace pbb
+} // namespace log
 } // namespace iox
 
-#endif // IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_CONSOLE_LOGGER_INL
+#endif // IOX_HOOFS_LOG_BUILDING_BLOCKS_CONSOLE_LOGGER_INL

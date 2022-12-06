@@ -14,10 +14,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_LOGCOMMON_INL
-#define IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_LOGCOMMON_INL
+#ifndef IOX_HOOFS_LOG_BUILDING_BLOCKS_LOGFORMAT_INL
+#define IOX_HOOFS_LOG_BUILDING_BLOCKS_LOGFORMAT_INL
 
-#include "iceoryx_hoofs/log/platform_building_blocks/logcommon.hpp"
+#include "iceoryx_hoofs/log/building_blocks/logformat.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -26,7 +26,7 @@
 
 namespace iox
 {
-namespace pbb
+namespace log
 {
 inline constexpr const char* logLevelDisplayColor(const LogLevel value) noexcept
 {
@@ -197,6 +197,11 @@ constexpr const char* logFormatHex<long double>()
 {
     return "%La";
 }
+template <>
+constexpr const char* logFormatHex<const void*>()
+{
+    return "%p";
+}
 
 template <typename T>
 constexpr const char* logFormatOct()
@@ -231,7 +236,7 @@ constexpr const char* logFormatOct<unsigned long long>()
 }
 } // namespace internal
 
-} // namespace pbb
+} // namespace log
 } // namespace iox
 
-#endif // IOX_HOOFS_PLATFORM_BUILDING_BLOCKS_LOGCOMMON_INL
+#endif // IOX_HOOFS_LOG_BUILDING_BLOCKS_LOGFORMAT_INL
