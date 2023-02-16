@@ -32,6 +32,7 @@
 - Add equality and inequality operators for `iox::variant` and `iox::expected` [\#1751](https://github.com/eclipse-iceoryx/iceoryx/issues/1751)
 - Implement UninitializedArray [\#1614](https://github.com/eclipse-iceoryx/iceoryx/issues/1614)
 - Implement BumpAllocator [\#1732](https://github.com/eclipse-iceoryx/iceoryx/issues/1732)
+- Expand cmake configuration options to enable reducing shared memory consumption. [\#1803](https://github.com/eclipse-iceoryx/iceoryx/issues/1803)
 
 **Bugfixes:**
 
@@ -109,6 +110,7 @@
 - Move `IOX_NO_DISCARD`, `IOX_FALLTHROUGH` and `IOX_MAYBE_UNUSED` to `iceoryx_platform` [\#1726](https://github.com/eclipse-iceoryx/iceoryx/issues/1726)
 - Move `cxx::static_storage` from `iceoryx_hoofs` to `iceoryx_dust` [\#1732](https://github.com/eclipse-iceoryx/iceoryx/issues/1732)
 - Remove `algorithm::uniqueMergeSortedContainers` from `algorithm.hpp`
+- Move `std::string` conversion function to `iceoryx_dust` [\#1612](https://github.com/eclipse-iceoryx/iceoryx/issues/1612)
 
 **Workflow:**
 
@@ -813,7 +815,22 @@
 
     ```
 
-42. Move `static_storage` from `iceoryx_hoofs` to `iceoryx_dust`
+42. Move multiple classes from `iceoryx_hoofs` to `iceoryx_dust`
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/cxx/forward_list.hpp"
+
+    #include "iceoryx_dust/cxx/forward_list.hpp"
+    ```
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/design_pattern/creation.hpp"
+
+    // after
+    #include "iceoryx_dust/design/creation.hpp"
+    ```
 
     ```cpp
     // before
@@ -823,3 +840,69 @@
     #include "iceoryx_dust/internal/cxx/static_storage.hpp"
     ```
 
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/internal/file_reader/file_reader.hpp"
+
+    // after
+    #include "iceoryx_dust/cxx/file_reader.hpp"
+    ```
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/internal/objectpool/objectpool.hpp"
+
+    // after
+    #include "iceoryx_dust/cxx/objectpool.hpp"
+    ```
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/internal/relocatable_pointer/relocatable_ptr.hpp"
+
+    // after
+    #include "iceoryx_dust/relocatable_pointer/relocatable_ptr.hpp"
+    ```
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/posix_wrapper/internal/message_queue.hpp"
+
+    // after
+    #include "iceoryx_dust/posix_wrapper/message_queue.hpp"
+    ```
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/posix_wrapper/named_pipe.hpp"
+
+    // after
+    #include "iceoryx_dust/posix_wrapper/named_pipe.hpp"
+    ```
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/posix_wrapper/signal_watcher.hpp"
+
+    // after
+    #include "iceoryx_dust/posix_wrapper/signal_watcher.hpp"
+
+43. Move the conversions functions for `std::string` to `iceoryx_dust`:
+
+    ```cpp
+    // before
+    std::string myStdString("foo");
+    // std::string to iox::string
+    iox::string<3> myIoxString(TruncateToCapacity, myStdString);
+    // iox::string to std::string
+    std::string myConvertedIoxString = static_cast<std::string>(myIoxString);
+
+    // after
+    #include "iceoryx_dust/cxx/std_string_support.hpp"
+
+    std::string myStdString("foo");
+    // std::string to iox::string
+    iox::string<3> myIoxString = iox::cxx::into<iox::string<3>>(myStdString);
+    // iox::string to std::string
+    std::string myConvertedIoxString = iox::cxx::into<std::string>(myIoxString);
+    ```
