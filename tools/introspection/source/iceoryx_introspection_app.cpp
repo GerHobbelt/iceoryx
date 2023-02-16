@@ -22,7 +22,7 @@ namespace client
 {
 namespace introspection
 {
-IceOryxIntrospectionApp::IceOryxIntrospectionApp(int argc, char* argv[]) noexcept
+IceOryxIntrospectionApp::IceOryxIntrospectionApp(int argc, const char* argv[]) noexcept
     : IntrospectionApp(argc, argv)
 {
 }

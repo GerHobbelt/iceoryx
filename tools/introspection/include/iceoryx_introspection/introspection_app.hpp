@@ -69,7 +69,7 @@ class IntrospectionApp
     /// @brief constructor to create a introspection
     /// @param[in] argc forwarding of command line arguments
     /// @param[in] argv forwarding of command line arguments
-    IntrospectionApp(int argc, char* argv[]) noexcept;
+    IntrospectionApp(int argc, const char* argv[]) noexcept;
 
     virtual ~IntrospectionApp() noexcept {};
 
@@ -92,7 +92,7 @@ class IntrospectionApp
 
     void
     parseCmdLineArguments(int argc,
-                          char** argv,
+                          const char** argv,
                           CmdLineArgumentParsingMode cmdLineParsingMode = CmdLineArgumentParsingMode::ALL) noexcept;
 
     void runIntrospection(const iox::units::Duration updatePeriodMs,

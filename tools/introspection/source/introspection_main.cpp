@@ -16,7 +16,12 @@
 
 #include "iceoryx_introspection/iceoryx_introspection_app.hpp"
 
-int main(int argc, char** argv)
+
+#if defined(BUILD_MONOLITHIC)
+#define main      iceeoryx_introspection_tool_main
+#endif
+
+int main(int argc, const char** argv)
 {
     using iox::client::introspection::IceOryxIntrospectionApp;
     IceOryxIntrospectionApp introspection(argc, argv);

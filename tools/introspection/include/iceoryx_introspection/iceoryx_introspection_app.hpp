@@ -30,7 +30,7 @@ class IceOryxIntrospectionApp : public IntrospectionApp
     /// @brief constructor to create the introspection
     /// @param[in] argc forwarding of command line arguments
     /// @param[in] argv forwarding of command line arguments
-    IceOryxIntrospectionApp(int argc, char* argv[]) noexcept;
+    IceOryxIntrospectionApp(int argc, const char* argv[]) noexcept;
 
     /// @brief starts the execution of introspection
     void run() noexcept override;
