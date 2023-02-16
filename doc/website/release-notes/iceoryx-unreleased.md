@@ -33,6 +33,7 @@
 - Implement UninitializedArray [\#1614](https://github.com/eclipse-iceoryx/iceoryx/issues/1614)
 - Implement BumpAllocator [\#1732](https://github.com/eclipse-iceoryx/iceoryx/issues/1732)
 - Expand cmake configuration options to enable reducing shared memory consumption. [\#1803](https://github.com/eclipse-iceoryx/iceoryx/issues/1803)
+- Implement PolymorphicHandler [\#1640](https://github.com/eclipse-iceoryx/iceoryx/issues/1640)
 
 **Bugfixes:**
 
@@ -64,6 +65,8 @@
 - Fix double move in `vector::emplace` [\#1823](https://github.com/eclipse-iceoryx/iceoryx/issues/1823)
 - Default roudi_config.toml path is not used [\#1826](https://github.com/eclipse-iceoryx/iceoryx/issues/1826)
 - `WaitSet::wait` returns if data was send before `WaitSet::attachState(.., State::HAS_{DATA, REQUEST, RESPONSE})` [\#1855](https://github.com/eclipse-iceoryx/iceoryx/issues/1855)
+- Provide a better error message when attempting to create a shared memory in read-only mode
+  [\#1821](https://github.com/eclipse-iceoryx/iceoryx/issues/1821)
 
 **Refactoring:**
 
