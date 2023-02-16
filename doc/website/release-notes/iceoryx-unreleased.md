@@ -59,6 +59,8 @@
 - Remove `cxx::unique_ptr::reset` [\#1655](https://github.com/eclipse-iceoryx/iceoryx/issues/1655)
 - CI uses outdated clang-format [\#1736](https://github.com/eclipse-iceoryx/iceoryx/issues/1736)
 - Avoid UB when accessing `iox::expected` [\#1750](https://github.com/eclipse-iceoryx/iceoryx/issues/1750)
+- Fix double move in `vector::emplace` [\#1823](https://github.com/eclipse-iceoryx/iceoryx/issues/1823)
+- Default roudi_config.toml path is not used [\#1826](https://github.com/eclipse-iceoryx/iceoryx/issues/1826)
 
 **Refactoring:**
 
@@ -102,6 +104,7 @@
 - Prevent building GoogleTest when `GTest_DIR` is defined [\#1758](https://github.com/eclipse-iceoryx/iceoryx/issues/1758)
 - Refactor `iceoryx_posh_testing` library into own CMakeLists.txt [\#1516](https://github.com/eclipse-iceoryx/iceoryx/issues/1516)
 - Change return type of `cxx::variant::emplace_at_index` and `emplace` to void [\#1394](https://github.com/eclipse-iceoryx/iceoryx/issues/1394)
+- Replace uses of `std::cout`, `std::cerr` with the iceoryx logger [\#1756](https://github.com/eclipse-iceoryx/iceoryx/issues/1756)
 
 **Workflow:**
 
