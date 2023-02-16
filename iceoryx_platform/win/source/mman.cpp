@@ -102,7 +102,7 @@ int iox_shm_open(const char* name, int oflag, mode_t mode)
         DWORD MAXIMUM_SIZE_HIGH =
             static_cast<DWORD>((iox::platform::win32::IOX_MAXIMUM_SUPPORTED_SHM_SIZE >> 32) & 0xFFFFFFFF);
 
-        auto result = Win32Call(CreateFileMapping,
+        auto result = Win32Call(CreateFileMappingA,
                                 static_cast<HANDLE>(INVALID_HANDLE_VALUE),
                                 static_cast<LPSECURITY_ATTRIBUTES>(nullptr),
                                 static_cast<DWORD>(access),
@@ -130,7 +130,7 @@ int iox_shm_open(const char* name, int oflag, mode_t mode)
     }
     else
     {
-        auto result = Win32Call(OpenFileMapping,
+        auto result = Win32Call(OpenFileMappingA,
                                 static_cast<DWORD>(FILE_MAP_ALL_ACCESS),
                                 static_cast<BOOL>(false),
                                 static_cast<LPCSTR>(name));

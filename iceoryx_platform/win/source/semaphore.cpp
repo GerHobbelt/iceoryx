@@ -167,7 +167,7 @@ static HANDLE sem_create_win32_semaphore(LONG value, LPCSTR name)
         TEXT("(A;OICI;GA;;;BA)");                          // access to administrators
 
     Win32Call(ConvertStringSecurityDescriptorToSecurityDescriptor,
-              reinterpret_cast<LPCSTR>(permissions),
+              reinterpret_cast<LPCTSTR>(permissions),
               static_cast<DWORD>(SDDL_REVISION_1),
               static_cast<PSECURITY_DESCRIPTOR*>(&(securityAttribute.lpSecurityDescriptor)),
               static_cast<PULONG>(NULL));

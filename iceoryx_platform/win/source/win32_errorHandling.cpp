@@ -28,7 +28,7 @@ int __PrintLastErrorToConsole(const char* functionName, const char* file, const 
     if (lastError != 0)
     {
         char buffer[BUFFER_SIZE];
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                       NULL,
                       lastError,
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
