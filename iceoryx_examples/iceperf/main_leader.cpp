@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
         case 'n':
             if (!iox::cxx::convert::fromString(optarg, settings.numberOfSamples))
             {
-                std::cerr << "Could not parse 'number-of-samples' paramater!" << std::endl;
+                std::cerr << "Could not parse 'number-of-samples' parameter!" << std::endl;
                 return EXIT_FAILURE;
             }
             break;

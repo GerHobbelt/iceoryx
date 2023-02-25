@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
             uint64_t intensity{0U};
             if (!iox::cxx::convert::fromString(optarg, intensity))
             {
-                std::cerr << "Could not parse 'intensity' paramater!" << std::endl;
+                std::cerr << "Could not parse 'intensity' parameter!" << std::endl;
                 return EXIT_FAILURE;
             }
             if (intensity > 100)
