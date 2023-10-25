@@ -30,48 +30,75 @@ namespace iox
 namespace err
 {
 
-// The static reporting interface that must be defined to at least do nothing
-// This implementation redirects to the polymorphic handler interface.
-// This adds an additional indirection but is required for testing or switching handlers
-// during operation (this must be done very carefully and is not recommended).
+// The static reporting interface that must be defined to at least do nothing.
+// It should provide a noreturn specification for panic (but since it be assumed that the custom
+// code enforces this, it is enforced at the (non-custom) forwarding level.
 
-[[noreturn]] inline void panic(const SourceLocation& location)
+// Here, the implementation redirects to the polymorphic handler interface.
+// This adds an additional indirection but is required for switching handlers
+// during operation.
+// This is used for testing but must be done while no errors are reported concurrently,
+// otherwise error notifations could be lost.
+
+// The logging can be extended in the future.
+
+// Custom panic
+[[noreturn]] inline void panic()
 {
-    IOX_LOG_PANIC(location) << "Panic";
     auto& h = ErrorHandler::get();
-    h.panic();
+    h.onPanic();
     abort();
 }
 
+// Custom panic with location
+[[noreturn]] inline void panic(const SourceLocation& location)
+{
+    IOX_ERROR_INTERNAL_LOG_PANIC(location) << "Panic";
+    panic();
+}
+
+// Custom panic with location and message
 // note that Message is generic as the logger technically accepts more general loggable constructs
 // beyond const char*
 template <class Message>
 [[noreturn]] inline void panic(const SourceLocation& location, Message&& msg)
 {
-    IOX_LOG_PANIC(location) << "Panic " << msg;
-    auto& h = ErrorHandler::get();
-    h.panic();
-    abort();
+    IOX_ERROR_INTERNAL_LOG_PANIC(location) << "Panic " << msg;
+    panic();
 }
 
+// Report any error, general version.
 template <class Kind, class Error>
 inline void report(const SourceLocation& location, Kind, const Error& error)
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_ERROR(location) << " Error " << code.value << " in module " << module.value;
+    auto moduleName = toModuleName(error);
+    auto errorName = toErrorName(error);
+
+    IOX_ERROR_INTERNAL_LOG(location) << ": " << errorName << " (code " << code.value << ") in module " << moduleName
+                                     << " (id " << module.value << ")";
     auto& h = ErrorHandler::get();
-    h.reportError(ErrorDescriptor(location, code, module));
+    h.onReportError(ErrorDescriptor(location, code, module));
 }
+
+// Report any error, specialization for specific types overrides the general version.
+// Any behaviour for specific error types (and kinds) has to be defined like this.
+//
+// Here the logging is subtly different and does not easily allow to factor out common parts.
 
 template <class Error>
 inline void report(const SourceLocation& location, iox::err::FatalKind kind, const Error& error)
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_FATAL_ERROR(location) << kind.name << " " << code.value << " in module " << module.value;
+    auto moduleName = toModuleName(error);
+    auto errorName = toErrorName(error);
+
+    IOX_ERROR_INTERNAL_LOG_FATAL(location) << ": " << kind.name << " " << errorName << " (code " << code.value
+                                           << ") in module " << moduleName << " (id " << module.value << ")";
     auto& h = ErrorHandler::get();
-    h.reportError(ErrorDescriptor(location, code, module));
+    h.onReportError(ErrorDescriptor(location, code, module));
 }
 
 template <class Error>
@@ -79,9 +106,9 @@ inline void report(const SourceLocation& location, iox::err::PreconditionViolati
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_FATAL_ERROR(location) << kind.name;
+    IOX_ERROR_INTERNAL_LOG_FATAL(location) << kind.name;
     auto& h = ErrorHandler::get();
-    h.reportViolation(ErrorDescriptor(location, code, module));
+    h.onReportViolation(ErrorDescriptor(location, code, module));
 }
 
 template <class Error>
@@ -89,9 +116,9 @@ inline void report(const SourceLocation& location, iox::err::AssumptionViolation
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_FATAL_ERROR(location) << kind.name;
+    IOX_ERROR_INTERNAL_LOG_FATAL(location) << kind.name;
     auto& h = ErrorHandler::get();
-    h.reportViolation(ErrorDescriptor(location, code, module));
+    h.onReportViolation(ErrorDescriptor(location, code, module));
 }
 
 template <class Error, class Message>
@@ -100,9 +127,9 @@ report(const SourceLocation& location, iox::err::PreconditionViolationKind kind,
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_FATAL_ERROR(location) << kind.name << " " << std::forward<Message>(msg);
+    IOX_ERROR_INTERNAL_LOG_FATAL(location) << kind.name << " " << std::forward<Message>(msg);
     auto& h = ErrorHandler::get();
-    h.reportViolation(ErrorDescriptor(location, code, module));
+    h.onReportViolation(ErrorDescriptor(location, code, module));
 }
 
 template <class Error, class Message>
@@ -111,9 +138,9 @@ report(const SourceLocation& location, iox::err::AssumptionViolationKind kind, c
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_FATAL_ERROR(location) << kind.name << " " << std::forward<Message>(msg);
+    IOX_ERROR_INTERNAL_LOG_FATAL(location) << kind.name << " " << std::forward<Message>(msg);
     auto& h = ErrorHandler::get();
-    h.reportViolation(ErrorDescriptor(location, code, module));
+    h.onReportViolation(ErrorDescriptor(location, code, module));
 }
 
 } // namespace err

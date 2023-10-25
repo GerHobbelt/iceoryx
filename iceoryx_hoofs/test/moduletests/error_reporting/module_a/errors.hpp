@@ -1,9 +1,21 @@
+// Copyright (c) 2023 by Apex.AI Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 #ifndef IOX_HOOFS_MODULETESTS_ERROR_REPORTING_MODULE_A_ERRORS_HPP
 #define IOX_HOOFS_MODULETESTS_ERROR_REPORTING_MODULE_A_ERRORS_HPP
-
-// ***
-// *** TO BE IMPLEMENTED BY CLIENT - part of any module
-// ***
 
 #include "iceoryx_hoofs/error_reporting/errors.hpp"
 #include "iceoryx_hoofs/error_reporting/types.hpp"
@@ -25,11 +37,26 @@ enum class Code : ErrorCode::type
     OutOfBounds = 21
 };
 
+inline const char* asStringLiteral(Code code)
+{
+    switch (code)
+    {
+    case Code::Unknown:
+        return "Unknown";
+    case Code::OutOfMemory:
+        return "OutOfMemory";
+    case Code::OutOfBounds:
+        return "OutOfBounds";
+    }
+    // unreachable
+    return "unknown error";
+}
+
 class Error
 {
   public:
     constexpr explicit Error(Code code = Code::Unknown)
-        : m_code(static_cast<ErrorCode::type>(code))
+        : m_code(code)
     {
     }
 
@@ -38,13 +65,23 @@ class Error
         return MODULE_ID;
     }
 
+    static const char* moduleName()
+    {
+        return "Module A";
+    }
+
     ErrorCode code() const
     {
-        return static_cast<ErrorCode>(m_code);
+        return ErrorCode(static_cast<ErrorCode::type>(m_code));
+    }
+
+    const char* name() const
+    {
+        return asStringLiteral(m_code);
     }
 
   protected:
-    ErrorCode m_code;
+    Code m_code;
 };
 
 } // namespace errors
@@ -66,6 +103,20 @@ inline module_a::errors::Error toError(module_a::errors::Code code)
 inline ModuleId toModule(module_a::errors::Code)
 {
     return module_a::errors::MODULE_ID;
+}
+
+// Specialize to provide concrete error names
+template <>
+inline const char* toModuleName<module_a::errors::Error>(const module_a::errors::Error& error)
+{
+    return error.moduleName();
+}
+
+// Specialize to provide concrete module names
+template <>
+inline const char* toErrorName<module_a::errors::Error>(const module_a::errors::Error& error)
+{
+    return error.name();
 }
 
 } // namespace err

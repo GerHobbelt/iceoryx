@@ -23,7 +23,6 @@
 #include "iceoryx_hoofs/error_reporting/source_location.hpp"
 #include "iceoryx_hoofs/error_reporting/types.hpp"
 
-#include <algorithm>
 #include <atomic>
 #include <vector>
 
@@ -51,15 +50,15 @@ class TestErrorHandler : public iox::err::ErrorHandlerInterface
     TestErrorHandler operator=(TestErrorHandler&&) = delete;
 
     /// @brief Defines the reaction on panic.
-    void panic() override;
+    void onPanic() override;
 
     /// @brief Defines the reaction on error.
     /// @param desc error descriptor
-    void reportError(err::ErrorDescriptor desc) override;
+    void onReportError(err::ErrorDescriptor desc) override;
 
     /// @brief Defines the reaction on violation.
     /// @param desc error descriptor
-    void reportViolation(err::ErrorDescriptor desc) override;
+    void onReportViolation(err::ErrorDescriptor desc) override;
 
     /// @brief Indicates whether there was a panic call previously.
     /// @return true if there was a panic call, false otherwise
@@ -71,7 +70,7 @@ class TestErrorHandler : public iox::err::ErrorHandlerInterface
     /// @brief Indicates whether any error occurred previously.
     bool hasError() const;
 
-    /// @brief Indicates whether as specific error occurred previously.
+    /// @brief Indicates whether a specific error occurred previously.
     bool hasError(iox::err::ErrorCode code, iox::err::ModuleId module = iox::err::ModuleId()) const;
 
     /// @brief Indicates whether a assumption violation occurred previously.

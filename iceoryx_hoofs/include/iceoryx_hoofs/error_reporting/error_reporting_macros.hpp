@@ -21,7 +21,6 @@
 #include "iceoryx_hoofs/error_reporting/custom/error_kind.hpp"
 #include "iceoryx_hoofs/error_reporting/error_forwarding.hpp"
 
-#include "iceoryx_hoofs/error_reporting/auxiliary_macros.hpp"
 #include "iceoryx_hoofs/error_reporting/source_location.hpp"
 
 // ***
@@ -32,18 +31,19 @@
 
 // The following macros are statements (not expressions).
 // This is important, as it enforces correct use to some degree.
-// For example thye cannot be used as function arguments and must be terminated with a ';'.
+// For example they cannot be used as function arguments and must be terminated with a ';'.
 //
 // Note: once source location becomes available without macro usage this could (and arguably should)
 // be transformed into a function API.
 
+
 /// @brief calls panic handler and does not return
-/// @param msg optional message string literal
+/// @param message message to be forwarded
 /// @note could actually throw if desired without breaking control flow asssumptions
-#define IOX_PANIC(...)                                                                                                 \
+#define IOX_PANIC(message)                                                                                             \
     do                                                                                                                 \
     {                                                                                                                  \
-        iox::err::panic(CURRENT_SOURCE_LOCATION, ##__VA_ARGS__);                                                       \
+        iox::err::forwardPanic(CURRENT_SOURCE_LOCATION, message);                                                      \
     } while (false)
 
 /// @brief report error of some kind
@@ -52,13 +52,13 @@
 #define IOX_REPORT(error, kind)                                                                                        \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (isFatal(kind))                                                                                             \
+        if (iox::err::isFatal(kind))                                                                                   \
         {                                                                                                              \
-            forwardFatalError(iox::err::toError(error), kind, CURRENT_SOURCE_LOCATION);                                \
+            iox::err::forwardFatalError(iox::err::toError(error), kind, CURRENT_SOURCE_LOCATION);                      \
         }                                                                                                              \
         else                                                                                                           \
         {                                                                                                              \
-            forwardNonFatalError(iox::err::toError(error), kind, CURRENT_SOURCE_LOCATION);                             \
+            iox::err::forwardNonFatalError(iox::err::toError(error), kind, CURRENT_SOURCE_LOCATION);                   \
         }                                                                                                              \
     } while (false)
 
@@ -75,13 +75,13 @@
     {                                                                                                                  \
         if (expr)                                                                                                      \
         {                                                                                                              \
-            if (isFatal(kind))                                                                                         \
+            if (iox::err::isFatal(kind))                                                                               \
             {                                                                                                          \
-                forwardFatalError(iox::err::toError(error), kind, CURRENT_SOURCE_LOCATION);                            \
+                iox::err::forwardFatalError(iox::err::toError(error), kind, CURRENT_SOURCE_LOCATION);                  \
             }                                                                                                          \
             else                                                                                                       \
             {                                                                                                          \
-                forwardNonFatalError(iox::err::toError(error), kind, CURRENT_SOURCE_LOCATION);                         \
+                iox::err::forwardNonFatalError(iox::err::toError(error), kind, CURRENT_SOURCE_LOCATION);               \
             }                                                                                                          \
         }                                                                                                              \
     } while (false)
@@ -100,40 +100,40 @@
 //************************************************************************************************
 
 /// @brief if enabled: report fatal precondition violation if expr evaluates to false
-/// @param arg1 boolean expression that must hold upon entry of the function it appears in
-/// @param arg2 optional message to be logged in case of violation
-#define IOX_PRECONDITION(...)                                                                                          \
+/// @param expr boolean expression that must hold upon entry of the function it appears in
+/// @param message message to be forwarded in case of violation
+#define IOX_PRECONDITION(expr, message)                                                                                \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (iox::err::Configuration::CHECK_PRECONDITIONS && !(FIRST_ARG_(__VA_ARGS__)))                                \
+        if (iox::err::Configuration::CHECK_PRECONDITIONS && !(expr))                                                   \
         {                                                                                                              \
             iox::err::forwardFatalError(iox::err::Violation::createPreconditionViolation(),                            \
                                         iox::err::PRECONDITION_VIOLATION,                                              \
                                         CURRENT_SOURCE_LOCATION,                                                       \
-                                        SECOND_ARG_OR_EMPTY_(__VA_ARGS__));                                            \
+                                        message);                                                                      \
         }                                                                                                              \
     } while (false)
 
-/// @brief if enabled: report (fatal) assumption violation if expr evaluates to false
+/// @brief if enabled: report fatal assumption violation if expr evaluates to false
 /// @note for conditions that should not happen with correct use
-/// @param arg1 boolean expression that must hold
-/// @param arg2 optional message to be logged in case of violation
-#define IOX_ASSUME(...)                                                                                                \
+/// @param expr boolean expression that must hold
+/// @param message message to be forwarded in case of violation
+#define IOX_ASSUME(expr, message)                                                                                      \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (iox::err::Configuration::CHECK_ASSUMPTIONS && !(FIRST_ARG_(__VA_ARGS__)))                                  \
+        if (iox::err::Configuration::CHECK_ASSUMPTIONS && !(expr))                                                     \
         {                                                                                                              \
             iox::err::forwardFatalError(iox::err::Violation::createAssumptionViolation(),                              \
                                         iox::err::ASSUMPTION_VIOLATION,                                                \
                                         CURRENT_SOURCE_LOCATION,                                                       \
-                                        SECOND_ARG_OR_EMPTY_(__VA_ARGS__));                                            \
+                                        message);                                                                      \
         }                                                                                                              \
     } while (false)
 /// @brief panic if control flow reaches this code at runtime
 #define IOX_UNREACHABLE()                                                                                              \
     do                                                                                                                 \
     {                                                                                                                  \
-        iox::err::panic(CURRENT_SOURCE_LOCATION, "Reached code that was supposed to be unreachable.");                 \
+        iox::err::forwardPanic(CURRENT_SOURCE_LOCATION, "Reached code that was supposed to be unreachable.");          \
     } while (false)
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
