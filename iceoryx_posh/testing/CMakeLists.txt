@@ -31,13 +31,11 @@ if(ROUDI_ENVIRONMENT OR BUILD_TEST)
         EXPORT_INCLUDE_DIRS     include/
         PUBLIC_LIBS             GTest::gtest
                                 GTest::gmock
+                                iceoryx_posh::iceoryx_posh_roudi_env
         PRIVATE_LIBS            iceoryx_posh::iceoryx_posh
                                 iceoryx_hoofs::iceoryx_hoofs
-                                iceoryx_posh::iceoryx_posh_roudi
                                 iceoryx_hoofs_testing::iceoryx_hoofs_testing
         FILES
-            roudi_environment/minimal_roudi_config.cpp
-            roudi_environment/runtime_test_interface.cpp
-            roudi_environment/roudi_environment.cpp
+            source/roudi_gtest.cpp
     )
 endif()

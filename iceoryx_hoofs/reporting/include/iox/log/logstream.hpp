@@ -157,12 +157,17 @@ class LogStream
     /// and avoid the std::string dependency; alternatively this could be implemented as free function
     LogStream& operator<<(const std::string& str) noexcept;
 
-    // AXIVION DISABLE STYLE AutosarC++19_03-A3.9.1 : Basic numeric types are used in order to cover als basic numeric types, independent of the type alias
-
     /// @brief Logging support for 'boolean'
     /// @param[in] val is the 'boolean' to log
     /// @return a reference to the LogStream instance
     LogStream& operator<<(const bool val) noexcept;
+
+    // AXIVION DISABLE STYLE AutosarC++19_03-A3.9.1 : Basic numeric types are used in order to cover als basic numeric types, independent of the type alias
+
+    /// @brief Logging support for 'char'
+    /// @param[in] val is the 'char' to log
+    /// @return a reference to the LogStream instance
+    LogStream& operator<<(const char val) noexcept;
 
     /// @brief Logging support for 'signed char'
     /// @param[in] val is the 'signed char' to log
@@ -179,8 +184,8 @@ class LogStream
     /// @return a reference to the LogStream instance
     LogStream& operator<<(const short val) noexcept;
 
-    /// @brief Logging support for 'unsigned shor'
-    /// @param[in] val is the 'unsigned shor' to log
+    /// @brief Logging support for 'unsigned short'
+    /// @param[in] val is the 'unsigned short' to log
     /// @return a reference to the LogStream instance
     LogStream& operator<<(const unsigned short val) noexcept;
 

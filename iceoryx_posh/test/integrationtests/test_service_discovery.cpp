@@ -22,10 +22,10 @@
 #include "iceoryx_posh/popo/untyped_publisher.hpp"
 #include "iceoryx_posh/popo/untyped_server.hpp"
 #include "iceoryx_posh/popo/wait_set.hpp"
+#include "iceoryx_posh/roudi_env/minimal_roudi_config.hpp"
 #include "iceoryx_posh/runtime/posh_runtime.hpp"
 #include "iceoryx_posh/runtime/service_discovery.hpp"
 #include "iceoryx_posh/testing/mocks/posh_runtime_mock.hpp"
-#include "iceoryx_posh/testing/roudi_environment/minimal_roudi_config.hpp"
 #include "iceoryx_posh/testing/roudi_gtest.hpp"
 #include "test.hpp"
 
@@ -43,11 +43,10 @@ using namespace iox::runtime;
 using namespace iox::cxx;
 using namespace iox::popo;
 using namespace iox::capro;
-using namespace iox::testing;
+using namespace iox::roudi_env;
 using iox::capro::IdString_t;
 using iox::capro::ServiceDescription;
 using iox::popo::MessagingPattern;
-using iox::roudi::RouDiEnvironment;
 
 using ServiceContainer = std::vector<ServiceDescription>;
 
@@ -62,7 +61,7 @@ class ServiceDiscoveryBase_test : public RouDi_GTest
 {
   public:
     ServiceDiscoveryBase_test()
-        : RouDi_GTest(MinimalRouDiConfigBuilder().introspectionChunkCount(4).create())
+        : RouDi_GTest(MinimalRouDiConfigBuilder().create())
     {
     }
 
@@ -1037,13 +1036,9 @@ TYPED_TEST(ServiceDiscoveryFindService_test, FindInMaximumMixedServices)
         this->add(randomService("Ferdinand", "Spitz"));
     }
 
-    IOX_LOG(FATAL) << "#### start";
-
     auto s3 = randomService("Ferdinand", "Spitz");
     this->add(s3);
     ++created;
-
-    IOX_LOG(FATAL) << "#### end";
 
     EXPECT_EQ(created, MAX);
 

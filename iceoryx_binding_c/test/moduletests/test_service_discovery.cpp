@@ -16,12 +16,13 @@
 
 #include "iceoryx_hoofs/error_handling/error_handling.hpp"
 #include "iceoryx_hoofs/testing/fatal_failure.hpp"
+#include "iceoryx_posh/roudi_env/minimal_roudi_config.hpp"
 #include "iceoryx_posh/runtime/service_discovery.hpp"
-#include "iceoryx_posh/testing/roudi_environment/minimal_roudi_config.hpp"
 #include "iceoryx_posh/testing/roudi_gtest.hpp"
 
 using namespace iox;
 using namespace iox::runtime;
+using namespace iox::roudi_env;
 using namespace iox::testing;
 
 extern "C" {
@@ -41,7 +42,7 @@ class iox_service_discovery_test : public RouDi_GTest
 {
   public:
     iox_service_discovery_test()
-        : RouDi_GTest(MinimalRouDiConfigBuilder().introspectionChunkCount(4).create())
+        : RouDi_GTest(MinimalRouDiConfigBuilder().create())
     {
     }
     void SetUp() override
