@@ -38,6 +38,8 @@
 - Implement UserName as strong string type to represent posix user names. [\#1942](https://github.com/eclipse-iceoryx/iceoryx/issues/1942)
 - Implement FileName, GroupName, Path, FilePath as strong string types. [\#1942](https://github.com/eclipse-iceoryx/iceoryx/issues/1942)
 - Add string::unchecked_at to access character without bound checks. [\#1942](https://github.com/eclipse-iceoryx/iceoryx/issues/1942)
+- Add posix::FileManagementInterface to offer common operations like ownership/permission handling to all file descriptor based constructs. [\#1952](https://github.com/eclipse-iceoryx/iceoryx/issues/1952)
+- Implement dereference operator for smart_lock::Proxy [\#1966](https://github.com/eclipse-iceoryx/iceoryx/issues/1966)
 
 **Bugfixes:**
 
@@ -77,6 +79,7 @@
 - Make `MAX_USER_NAME_LENGTH` and `MAX_GROUP_NAME_LENGTH` platform-dependent [\#1919](https://github.com/eclipse-iceoryx/iceoryx/issues/1919)
 - Fix milliseconds in log timestamps [\#1932](https://github.com/eclipse-iceoryx/iceoryx/issues/1932)
 - Alias `invoke_result` to correct implementation based on C++ version [\#1934](https://github.com/eclipse-iceoryx/iceoryx/issues/1934)
+- Fix undefined behaviour in `publishCopyOf` and `publishResultOf` [\#1963](https://github.com/eclipse-iceoryx/iceoryx/issues/1963)
 
 **Refactoring:**
 
