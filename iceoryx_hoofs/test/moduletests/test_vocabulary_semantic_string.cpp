@@ -30,31 +30,69 @@ using namespace ::testing;
 using namespace iox;
 using namespace iox::testing;
 
-// NOLINTBEGIN(hicpp-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays, hicpp-explicit-conversions)
 template <typename T>
 struct TestValues
 {
-    static uint64_t CAPACITY;
-    static std::vector<std::string> VALID_VALUES;
-    static std::vector<std::string> INVALID_CHARACTER_VALUES;
-    static std::vector<std::string> INVALID_CONTENT_VALUES;
-    static std::vector<std::string> TOO_LONG_CONTENT_VALUES;
+    static const uint64_t CAPACITY;
+    static const std::vector<std::string> VALID_VALUES;
+    static const std::vector<std::string> INVALID_CHARACTER_VALUES;
+    static const std::vector<std::string> INVALID_CONTENT_VALUES;
+    static const std::vector<std::string> TOO_LONG_CONTENT_VALUES;
+    static const std::string GREATER_VALID_VALUE;
+    static const std::string SMALLER_VALID_VALUE;
+    static const std::string MAX_CAPACITY_VALUE;
+    static const std::vector<std::string> INVALID_CONTENT_ADD_BEGIN;
+    static const std::vector<std::string> INVALID_CONTENT_ADD_END;
 };
 
-uint64_t TestValues<UserName>::CAPACITY = platform::MAX_USER_NAME_LENGTH;
-std::vector<std::string> TestValues<UserName>::VALID_VALUES{{"some-user"}, {"user2"}};
-std::vector<std::string> TestValues<UserName>::INVALID_CHARACTER_VALUES{
+template <>
+const uint64_t TestValues<UserName>::CAPACITY = platform::MAX_USER_NAME_LENGTH;
+template <>
+const std::vector<std::string> TestValues<UserName>::VALID_VALUES{{"some-user"}, {"user2"}};
+template <>
+const std::vector<std::string> TestValues<UserName>::INVALID_CHARACTER_VALUES{
     {"some-!user"}, {"*kasjd"}, {"_fuuuas"}, {"asd/asd"}, {";'1'fuuuu"}, {"argh/"}, {"fuu/arg/bla"}};
-std::vector<std::string> TestValues<UserName>::INVALID_CONTENT_VALUES{
+template <>
+const std::vector<std::string> TestValues<UserName>::INVALID_CONTENT_VALUES{
     {""}, {"-do-not-start-with-dash"}, {"5do-not-start-with-a-number"}};
-std::vector<std::string> TestValues<UserName>::TOO_LONG_CONTENT_VALUES{{"i-am-waaaaay-toooooooo-loooooooong"}};
-// NOLINTEND(hicpp-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays, hicpp-explicit-conversions)
+template <>
+const std::vector<std::string> TestValues<UserName>::TOO_LONG_CONTENT_VALUES{{"i-am-waaaaay-toooooooo-loooooooong"}};
+template <>
+const std::string TestValues<UserName>::GREATER_VALID_VALUE{"zebra-zusel"};
+template <>
+const std::string TestValues<UserName>::SMALLER_VALID_VALUE{"alfons-alf"};
+template <>
+const std::string TestValues<UserName>::MAX_CAPACITY_VALUE{"all-glory-to-the-incredible-and-legendary-hypno-toad"};
+template <>
+const std::vector<std::string> TestValues<UserName>::INVALID_CONTENT_ADD_BEGIN{"-bla", "81923"};
+template <>
+const std::vector<std::string> TestValues<UserName>::INVALID_CONTENT_ADD_END{};
 
 template <typename T>
 class SemanticString_test : public Test
 {
   protected:
+    void SetUp() override
+    {
+        EXPECT_FALSE(TestValues<T>::VALID_VALUES.empty());
+        EXPECT_FALSE(TestValues<T>::TOO_LONG_CONTENT_VALUES.empty());
+        EXPECT_FALSE(TestValues<T>::GREATER_VALID_VALUE.empty());
+        EXPECT_FALSE(TestValues<T>::SMALLER_VALID_VALUE.empty());
+        // Greater since not all platforms have the same capacity. The value will be truncated when the
+        // capacity is smaller.
+        EXPECT_TRUE(TestValues<T>::MAX_CAPACITY_VALUE >= TestValues<T>::MAX_CAPACITY_VALUE);
+        // we left out INVALID_CHARACTER_VALUES & INVALID_CONTENT_VALUES since a SemanticString can
+        // have only invalid characters or only invalid content or neither of both
+    }
+
     using SutType = T;
+    string<SutType::capacity()> greater_value_str =
+        string<SutType::capacity()>(TruncateToCapacity, TestValues<SutType>::GREATER_VALID_VALUE.c_str());
+    string<SutType::capacity()> smaller_value_str =
+        string<SutType::capacity()>(TruncateToCapacity, TestValues<SutType>::SMALLER_VALID_VALUE.c_str());
+
+    SutType greater_value = SutType::create(greater_value_str).expect("Failed to create test string.");
+    SutType smaller_value = SutType::create(smaller_value_str).expect("Failed to create test string.");
 };
 
 using Implementations = Types<UserName>;
@@ -74,19 +112,65 @@ TYPED_TEST(SemanticString_test, InitializeWithValidStringLiteralWorks)
     EXPECT_TRUE(sut->as_string() == "alwaysvalid");
 }
 
+TYPED_TEST(SemanticString_test, SizeWorksCorrectly)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "26cc39ac-84c6-45cf-b221-b6db7d210c44");
+    using SutType = typename TestFixture::SutType;
+
+    auto test_string =
+        string<SutType::capacity()>(TruncateToCapacity, TestValues<SutType>::GREATER_VALID_VALUE.c_str());
+    auto sut = SutType::create(test_string);
+
+    ASSERT_THAT(sut.has_error(), Eq(false));
+    EXPECT_THAT(sut->size(), Eq(test_string.size()));
+}
+
+TYPED_TEST(SemanticString_test, AsStringWorksCorrectly)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "c4d721d2-0cf8-41d6-a3fe-fbc4b19e9b10");
+    using SutType = typename TestFixture::SutType;
+
+    auto test_string =
+        string<SutType::capacity()>(TruncateToCapacity, TestValues<SutType>::SMALLER_VALID_VALUE.c_str());
+    auto sut = SutType::create(test_string);
+
+    ASSERT_THAT(sut.has_error(), Eq(false));
+    EXPECT_THAT(sut->as_string().c_str(), StrEq(test_string.c_str()));
+}
+
+TYPED_TEST(SemanticString_test, CapacityWorksCorrectly)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "d8f6eb13-8f2c-496f-901d-734ee22d85e3");
+    using SutType = typename TestFixture::SutType;
+
+    ASSERT_THAT(SutType::capacity(), Eq(TestValues<SutType>::CAPACITY));
+}
+
+TYPED_TEST(SemanticString_test, CanBeFilledUpToMaxCapacity)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "c5ed0595-380c-4caa-a392-a8d2933646d9");
+    using SutType = typename TestFixture::SutType;
+
+    auto test_string = string<SutType::capacity()>(TruncateToCapacity, TestValues<SutType>::MAX_CAPACITY_VALUE.c_str());
+    auto sut = SutType::create(test_string);
+
+    ASSERT_THAT(sut.has_error(), Eq(false));
+    EXPECT_THAT(sut->as_string().c_str(), StrEq(test_string.c_str()));
+}
+
 TYPED_TEST(SemanticString_test, InitializeWithValidStringValueWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "0100d764-628c-44ad-9af7-fe7a4540491a");
     using SutType = typename TestFixture::SutType;
 
-    for (auto& value : TestValues<UserName>::VALID_VALUES)
+    for (const auto& value : TestValues<UserName>::VALID_VALUES)
     {
         auto sut = SutType::create(string<SutType::capacity()>(TruncateToCapacity, value.c_str()));
 
         ASSERT_THAT(sut.has_error(), Eq(false));
         EXPECT_THAT(sut->size(), Eq(value.size()));
         EXPECT_THAT(sut->capacity(), Eq(TestValues<SutType>::CAPACITY));
-        EXPECT_THAT(sut->as_string().c_str(), StrEq(value.c_str()));
+        EXPECT_THAT(sut->as_string().c_str(), StrEq(value));
     }
 }
 
@@ -151,12 +235,12 @@ TYPED_TEST(SemanticString_test, AppendValidContentToValidStringWorks)
             EXPECT_THAT(sut->capacity(), Eq(TestValues<SutType>::CAPACITY));
 
             auto result = value + add_value;
-            EXPECT_THAT(sut->as_string().c_str(), StrEq(result.c_str()));
+            EXPECT_THAT(sut->as_string().c_str(), StrEq(result));
         }
     }
 }
 
-TYPED_TEST(SemanticString_test, AppendInvalidContentToValidStringFails)
+TYPED_TEST(SemanticString_test, AppendInvalidCharactersToValidStringFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "fddf4a56-c368-4ff0-8727-e732d6ebc87f");
     using SutType = typename TestFixture::SutType;
@@ -168,12 +252,60 @@ TYPED_TEST(SemanticString_test, AppendInvalidContentToValidStringFails)
             auto sut = SutType::create(string<SutType::capacity()>(TruncateToCapacity, value.c_str()));
             ASSERT_THAT(sut.has_error(), Eq(false));
 
-            EXPECT_THAT(sut->append(string<SutType::capacity()>(TruncateToCapacity, invalid_value.c_str())).has_error(),
-                        Eq(true));
+            auto result = sut->append(string<SutType::capacity()>(TruncateToCapacity, invalid_value.c_str()));
+            ASSERT_TRUE(result.has_error());
+            EXPECT_THAT(result.get_error(), Eq(SemanticStringError::ContainsInvalidCharacters));
             EXPECT_THAT(sut->size(), value.size());
             EXPECT_THAT(sut->capacity(), Eq(TestValues<SutType>::CAPACITY));
 
-            EXPECT_THAT(sut->as_string().c_str(), StrEq(value.c_str()));
+            EXPECT_THAT(sut->as_string().c_str(), StrEq(value));
+        }
+    }
+}
+
+TYPED_TEST(SemanticString_test, GenerateInvalidContentWithAppend)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "a416c7c6-eaff-4e5e-8945-fe9f2d06ee6d");
+    using SutType = typename TestFixture::SutType;
+
+    for (auto& value : TestValues<SutType>::VALID_VALUES)
+    {
+        for (auto& invalid_value : TestValues<SutType>::INVALID_CONTENT_ADD_END)
+        {
+            auto sut = SutType::create(string<SutType::capacity()>(TruncateToCapacity, value.c_str()));
+            ASSERT_THAT(sut.has_error(), Eq(false));
+
+            auto result = sut->append(string<SutType::capacity()>(TruncateToCapacity, invalid_value.c_str()));
+            ASSERT_TRUE(result.has_error());
+            EXPECT_THAT(result.get_error(), Eq(SemanticStringError::ContainsInvalidContent));
+            EXPECT_THAT(sut->size(), value.size());
+            EXPECT_THAT(sut->capacity(), Eq(TestValues<SutType>::CAPACITY));
+
+            EXPECT_THAT(sut->as_string().c_str(), StrEq(value));
+        }
+    }
+}
+
+TYPED_TEST(SemanticString_test, GenerateInvalidContentWithInsert)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "e7db87d3-2574-4b5f-9c3e-c103e05a6b46");
+    using SutType = typename TestFixture::SutType;
+
+    for (auto& value : TestValues<SutType>::VALID_VALUES)
+    {
+        for (auto& invalid_value : TestValues<SutType>::INVALID_CONTENT_ADD_BEGIN)
+        {
+            auto sut = SutType::create(string<SutType::capacity()>(TruncateToCapacity, value.c_str()));
+            ASSERT_THAT(sut.has_error(), Eq(false));
+
+            auto result = sut->insert(
+                0, string<SutType::capacity()>(TruncateToCapacity, invalid_value.c_str()), invalid_value.size());
+            ASSERT_TRUE(result.has_error());
+            EXPECT_THAT(result.get_error(), Eq(SemanticStringError::ContainsInvalidContent));
+            EXPECT_THAT(sut->size(), value.size());
+            EXPECT_THAT(sut->capacity(), Eq(TestValues<SutType>::CAPACITY));
+
+            EXPECT_THAT(sut->as_string().c_str(), StrEq(value));
         }
     }
 }
@@ -195,7 +327,7 @@ TYPED_TEST(SemanticString_test, AppendTooLongContentToValidStringFails)
             EXPECT_THAT(sut->size(), Eq(value.size()));
             EXPECT_THAT(sut->capacity(), Eq(TestValues<SutType>::CAPACITY));
 
-            EXPECT_THAT(sut->as_string().c_str(), StrEq(value.c_str()));
+            EXPECT_THAT(sut->as_string().c_str(), StrEq(value));
         }
     }
 }
@@ -226,13 +358,13 @@ TYPED_TEST(SemanticString_test, InsertValidContentToValidStringWorks)
 
                 auto result = value;
                 result.insert(insert_position, add_value);
-                EXPECT_THAT(sut->as_string().c_str(), StrEq(result.c_str()));
+                EXPECT_THAT(sut->as_string().c_str(), StrEq(result));
             }
         }
     }
 }
 
-TYPED_TEST(SemanticString_test, InsertInvalidContentToValidStringFails)
+TYPED_TEST(SemanticString_test, InsertInvalidCharactersToValidStringFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "35229fb8-e6e9-44d9-9d47-d00b71a4ce01");
     using SutType = typename TestFixture::SutType;
@@ -246,16 +378,16 @@ TYPED_TEST(SemanticString_test, InsertInvalidContentToValidStringFails)
                 auto sut = SutType::create(string<SutType::capacity()>(TruncateToCapacity, value.c_str()));
                 ASSERT_THAT(sut.has_error(), Eq(false));
 
-                EXPECT_THAT(sut->insert(insert_position,
-                                        string<SutType::capacity()>(TruncateToCapacity, add_value.c_str()),
-                                        add_value.size())
-                                .has_error(),
-                            Eq(true));
+                auto result = sut->insert(insert_position,
+                                          string<SutType::capacity()>(TruncateToCapacity, add_value.c_str()),
+                                          add_value.size());
+                ASSERT_TRUE(result.has_error());
+                EXPECT_THAT(result.get_error(), Eq(SemanticStringError::ContainsInvalidCharacters));
 
 
                 EXPECT_THAT(sut->size(), value.size());
                 EXPECT_THAT(sut->capacity(), Eq(TestValues<SutType>::CAPACITY));
-                EXPECT_THAT(sut->as_string().c_str(), StrEq(value.c_str()));
+                EXPECT_THAT(sut->as_string().c_str(), StrEq(value));
             }
         }
     }
@@ -285,10 +417,67 @@ TYPED_TEST(SemanticString_test, InsertTooLongContentToValidStringFails)
                 EXPECT_THAT(sut->size(), Eq(value.size()));
                 EXPECT_THAT(sut->capacity(), Eq(TestValues<SutType>::CAPACITY));
 
-                EXPECT_THAT(sut->as_string().c_str(), StrEq(value.c_str()));
+                EXPECT_THAT(sut->as_string().c_str(), StrEq(value));
             }
         }
     }
 }
 
+TYPED_TEST(SemanticString_test, EqualityOperatorWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "97889932-ac3b-4155-9958-34c843d2d323");
+
+    EXPECT_TRUE(this->greater_value == this->greater_value);
+    EXPECT_FALSE(this->greater_value == this->smaller_value);
+
+    EXPECT_TRUE(this->greater_value == this->greater_value_str);
+    EXPECT_FALSE(this->greater_value == this->smaller_value_str);
+}
+
+TYPED_TEST(SemanticString_test, InequalityOperatorWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "32903b0b-3594-4c00-9869-d18e1dfc773f");
+
+    EXPECT_FALSE(this->greater_value != this->greater_value);
+    EXPECT_TRUE(this->greater_value != this->smaller_value);
+
+    EXPECT_FALSE(this->greater_value != this->greater_value_str);
+    EXPECT_TRUE(this->greater_value != this->smaller_value_str);
+}
+
+TYPED_TEST(SemanticString_test, LessThanOrEqualOperatorWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "53f5b765-b462-4cc1-bab7-9b937fbbcecf");
+
+    EXPECT_TRUE(this->greater_value <= this->greater_value);
+    EXPECT_TRUE(this->smaller_value <= this->greater_value);
+    EXPECT_FALSE(this->greater_value <= this->smaller_value);
+}
+
+TYPED_TEST(SemanticString_test, LessThanOperatorWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "cea977a4-ccb3-42a6-9d13-e09dce24c273");
+
+    EXPECT_FALSE(this->greater_value < this->greater_value);
+    EXPECT_TRUE(this->smaller_value < this->greater_value);
+    EXPECT_FALSE(this->greater_value < this->smaller_value);
+}
+
+TYPED_TEST(SemanticString_test, GreaterThanOrEqualOperatorWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "5d731b17-f787-46fc-b64d-3d86c9102008");
+
+    EXPECT_TRUE(this->greater_value >= this->greater_value);
+    EXPECT_FALSE(this->smaller_value >= this->greater_value);
+    EXPECT_TRUE(this->greater_value >= this->smaller_value);
+}
+
+TYPED_TEST(SemanticString_test, GreaterThanOperatorWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "8c046cff-fb69-43b4-9a45-e86f17c874db");
+
+    EXPECT_FALSE(this->greater_value > this->greater_value);
+    EXPECT_FALSE(this->smaller_value > this->greater_value);
+    EXPECT_TRUE(this->greater_value > this->smaller_value);
+}
 } // namespace

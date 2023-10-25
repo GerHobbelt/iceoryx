@@ -39,7 +39,7 @@ using DoesContainInvalidCharacter = bool (*)(const string<Capacity>& value);
 template <uint64_t Capacity>
 using DoesContainInvalidContent = bool (*)(const string<Capacity>& value);
 
-/// @brief The SemanticString is a string which as an inner syntax and restrictions
+/// @brief The SemanticString is a string which has an inner syntax and restrictions
 ///         to valid content. Examples are for instance
 ///         * UserName, only characters and numbers are allowed
 ///         * FileNames, no slashes etc.
@@ -52,10 +52,16 @@ using DoesContainInvalidContent = bool (*)(const string<Capacity>& value);
 /// bool user_name_does_contain_invalid_content(const string<platform::MAX_USER_NAME_LENGTH>& value) noexcept;
 ///
 /// // define custom semantic string UserName
-/// class UserName : public SemanticString<platform::MAX_USER_NAME_LENGTH,
+/// class UserName : public SemanticString<UserName,
+///                                        platform::MAX_USER_NAME_LENGTH,
 ///                                        user_name_does_contain_invalid_content,
 ///                                        user_name_does_contain_invalid_characters>
 /// {
+///     using Parent = SemanticString<UserName,
+///                                  platform::MAX_USER_NAME_LENGTH,
+///                                  details::user_name_does_contain_invalid_content,
+///                                  details::user_name_does_contain_invalid_characters>;
+///     using Parent::Parent;
 /// };
 /// @endcode
 /// @note Since the inner logic of the SemanticString is always the same additional
@@ -63,7 +69,8 @@ using DoesContainInvalidContent = bool (*)(const string<Capacity>& value);
 ///         'test_vocabulary_semantic_string.cpp'.
 ///         One has to only add the specific implementation to the 'Implementations'
 ///         type list.
-template <uint64_t Capacity,
+template <typename Child,
+          uint64_t Capacity,
           DoesContainInvalidContent<Capacity> DoesContainInvalidContentCall,
           DoesContainInvalidCharacter<Capacity> DoesContainInvalidCharacterCall>
 class SemanticString
@@ -75,10 +82,10 @@ class SemanticString
     /// @param[in] value the value of the SemanticString
     /// @return expected either containing the new SemanticString or an error
     template <uint64_t N>
-    // avoid-c-arrays: we would like to assign string_literals, safe since it is known
+    // avoid-c-arrays: we would like to assign string literals, safe since it is known
     //                 at compile time.
     // NOLINTNEXTLINE(hicpp-avoid-c-arrays, cppcoreguidelines-avoid-c-arrays, hicpp-explicit-conversions)
-    static expected<SemanticString, SemanticStringError> create(const char (&value)[N]) noexcept;
+    static expected<Child, SemanticStringError> create(const char (&value)[N]) noexcept;
 
     /// @brief Creates a new SemanticString from the provided string.
     ///         If the value contains invalid characters or invalid content
@@ -86,7 +93,7 @@ class SemanticString
     /// @param[in] value the value of the SemanticString
     /// @return expected either containing the new SemanticString or an error
     template <uint64_t N>
-    static expected<SemanticString, SemanticStringError> create(const string<N>& value) noexcept;
+    static expected<Child, SemanticStringError> create(const string<N>& value) noexcept;
 
     /// @brief Returns the number of characters.
     /// @return number of characters
@@ -120,12 +127,79 @@ class SemanticString
     template <typename T>
     expected<SemanticStringError> insert(const uint64_t pos, const T& str, const uint64_t count) noexcept;
 
-  private:
+    /// @brief checks if another SemanticString is equal to this string
+    /// @param [in] rhs the other SemanticString
+    /// @return true if the contents are equal, otherwise false
+    bool operator==(const SemanticString& rhs) const noexcept;
+
+    /// @brief checks if another string or char array is equal to this string
+    /// @param [in] rhs the other string
+    /// @return true if the contents are equal, otherwise false
+    template <typename T>
+    IsStringOrCharArray<T, bool> operator==(const T& rhs) const noexcept;
+
+    /// @brief checks if another SemanticString is not equal to this string
+    /// @param [in] rhs the other SemanticString
+    /// @return true if the contents are not equal, otherwise false
+    bool operator!=(const SemanticString& rhs) const noexcept;
+
+    /// @brief checks if another string or char array is not equal to this string
+    /// @param [in] rhs the other string
+    /// @return true if the contents are not equal, otherwise false
+    template <typename T>
+    IsStringOrCharArray<T, bool> operator!=(const T& rhs) const noexcept;
+
+    /// @brief checks if another SemanticString is less than or equal this string
+    /// @param [in] rhs the other SemanticString
+    /// @return true if the contents are less than or equal rhs, otherwise false
+    bool operator<=(const SemanticString& rhs) const noexcept;
+
+    /// @brief checks if another string or char array is less than or equal this string
+    /// @param [in] rhs the other string
+    /// @return true if the contents are less than or equal rhs, otherwise false
+    template <typename T>
+    IsStringOrCharArray<T, bool> operator<=(const T& rhs) const noexcept;
+
+    /// @brief checks if another SemanticString is less than this string
+    /// @param [in] rhs the other SemanticString
+    /// @return true if the contents are less than rhs, otherwise false
+    bool operator<(const SemanticString& rhs) const noexcept;
+
+    /// @brief checks if another string or char array is less than this string
+    /// @param [in] rhs the other string
+    /// @return true if the contents are less than rhs, otherwise false
+    template <typename T>
+    IsStringOrCharArray<T, bool> operator<(const T& rhs) const noexcept;
+
+    /// @brief checks if another SemanticString is greater than or equal this string
+    /// @param [in] rhs the other SemanticString
+    /// @return true if the contents are greater than or equal rhs, otherwise false
+    bool operator>=(const SemanticString& rhs) const noexcept;
+
+    /// @brief checks if another string or char array is greater than or equal this string
+    /// @param [in] rhs the other string
+    /// @return true if the contents are greater than or equal rhs, otherwise false
+    template <typename T>
+    IsStringOrCharArray<T, bool> operator>=(const T& rhs) const noexcept;
+
+    /// @brief checks if another SemanticString is greater than this string
+    /// @param [in] rhs the other SemanticString
+    /// @return true if the contents are greater than rhs, otherwise false
+    bool operator>(const SemanticString& rhs) const noexcept;
+
+    /// @brief checks if another string or char array is greater than this string
+    /// @param [in] rhs the other string
+    /// @return true if the contents are greater than rhs, otherwise false
+    template <typename T>
+    IsStringOrCharArray<T, bool> operator>(const T& rhs) const noexcept;
+
+  protected:
     template <uint64_t N>
     explicit SemanticString(const string<N>& value) noexcept;
 
+  private:
     template <uint64_t N>
-    static expected<SemanticString, SemanticStringError> create_impl(const char* value) noexcept;
+    static expected<Child, SemanticStringError> create_impl(const char* value) noexcept;
 
   private:
     string<Capacity> m_data;
