@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "iceoryx_hoofs/error_reporting/source_location.hpp"
-#include "iceoryx_hoofs/testing/error_reporting/test_error_handler.hpp"
+#include "iceoryx_hoofs/testing/error_reporting/testing_error_handler.hpp"
 
 // NOLINTNEXTLINE(hicpp-deprecated-headers) required to work on some platforms
 #include <setjmp.h>
@@ -29,9 +29,9 @@
 namespace
 {
 using namespace ::testing;
-using namespace iox::err;
+using namespace iox::er;
 using namespace iox::testing;
-using iox::err::ErrorDescriptor;
+using iox::er::ErrorDescriptor;
 
 constexpr ErrorCode CODE1{73};
 constexpr ErrorCode CODE2{37};

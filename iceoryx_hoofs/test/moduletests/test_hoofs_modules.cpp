@@ -17,7 +17,7 @@
 
 #include "iceoryx_hoofs/testing/testing_logger.hpp"
 
-#include "iceoryx_hoofs/testing/error_reporting/test_support.hpp"
+#include "iceoryx_hoofs/testing/error_reporting/testing_support.hpp"
 
 #include "test.hpp"
 
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     iox::testing::TestingLogger::init();
 
     iox::testing::ErrorHandler handler;
-    iox::err::ErrorHandler::set(handler);
+    iox::er::ErrorHandler::set(handler);
 
     g_argc = argc;
     g_argv = argv;

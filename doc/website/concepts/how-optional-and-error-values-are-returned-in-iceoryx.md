@@ -91,14 +91,14 @@ iox::expected<int, E> result(iox::ok(73));
 and use the value or handle a potential error
 
 ```cpp
-if (!result.has_error())
+if (result.has_value())
 {
     auto value = result.value();
     // do something with the value
 }
 else
 {
-    auto error = result.get_error();
+    auto error = result.error();
     // handle the error
 }
 ```

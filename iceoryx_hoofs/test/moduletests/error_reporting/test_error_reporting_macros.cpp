@@ -21,7 +21,7 @@
 #include "module_b/error_reporting.hpp"
 
 // simplifies checking for errors during test execution
-#include "iceoryx_hoofs/testing/error_reporting/test_support.hpp"
+#include "iceoryx_hoofs/testing/error_reporting/testing_support.hpp"
 
 #include <iostream>
 
@@ -30,7 +30,7 @@ namespace
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-do-while) bad rule, disable globally
 using namespace ::testing;
-using namespace iox::err;
+using namespace iox::er;
 using namespace iox::cxx;
 using namespace iox::testing;
 
@@ -61,7 +61,7 @@ TEST_F(ErrorReportingMacroApi_test, panicWithoutMessage)
 
     runInTestThread(f);
 
-    EXPECT_PANIC();
+    IOX_TESTING_EXPECT_PANIC();
 }
 
 TEST_F(ErrorReportingMacroApi_test, panicWithMessage)
@@ -71,7 +71,7 @@ TEST_F(ErrorReportingMacroApi_test, panicWithMessage)
 
     runInTestThread(f);
 
-    EXPECT_PANIC();
+    IOX_TESTING_EXPECT_PANIC();
 }
 
 TEST_F(ErrorReportingMacroApi_test, reportNonFatal)
@@ -81,19 +81,8 @@ TEST_F(ErrorReportingMacroApi_test, reportNonFatal)
 
     runInTestThread(f);
 
-    EXPECT_NO_PANIC(); // but also not OK as there is an error!
-    EXPECT_ERROR(MyCodeA::OutOfBounds);
-}
-
-TEST_F(ErrorReportingMacroApi_test, reportExplicitFatal)
-{
-    ::testing::Test::RecordProperty("TEST_ID", "99693536-4034-4f8d-8870-1e2e68c9ec9d");
-    auto f = []() { IOX_REPORT(MyCodeA::OutOfMemory, FATAL); };
-
-    runInTestThread(f);
-
-    EXPECT_PANIC();
-    EXPECT_ERROR(MyCodeA::OutOfMemory);
+    IOX_TESTING_EXPECT_NO_PANIC(); // but also not OK as there is an error!
+    IOX_TESTING_EXPECT_ERROR(MyCodeA::OutOfBounds);
 }
 
 TEST_F(ErrorReportingMacroApi_test, reportFatal)
@@ -103,8 +92,8 @@ TEST_F(ErrorReportingMacroApi_test, reportFatal)
 
     runInTestThread(f);
 
-    EXPECT_PANIC();
-    EXPECT_ERROR(MyCodeA::OutOfBounds);
+    IOX_TESTING_EXPECT_PANIC();
+    IOX_TESTING_EXPECT_ERROR(MyCodeA::OutOfBounds);
 }
 
 TEST_F(ErrorReportingMacroApi_test, reportConditionalError)
@@ -114,17 +103,18 @@ TEST_F(ErrorReportingMacroApi_test, reportConditionalError)
 
     runInTestThread(f);
 
-    EXPECT_ERROR(MyCodeA::OutOfBounds);
+    IOX_TESTING_EXPECT_ERROR(MyCodeA::OutOfBounds);
 }
 
 TEST_F(ErrorReportingMacroApi_test, reportConditionalFatalError)
 {
     ::testing::Test::RecordProperty("TEST_ID", "c69e3a0d-4c0b-4f4e-bb25-66485bc551b9");
-    auto f = []() { IOX_REPORT_IF(true, MyCodeA::OutOfMemory, FATAL); };
+    auto f = []() { IOX_REPORT_FATAL_IF(true, MyCodeA::OutOfMemory); };
 
     runInTestThread(f);
 
-    EXPECT_ERROR(MyCodeA::OutOfMemory);
+    IOX_TESTING_EXPECT_PANIC();
+    IOX_TESTING_EXPECT_ERROR(MyCodeA::OutOfMemory);
 }
 
 TEST_F(ErrorReportingMacroApi_test, reportConditionalNoError)
@@ -134,7 +124,7 @@ TEST_F(ErrorReportingMacroApi_test, reportConditionalNoError)
 
     runInTestThread(f);
 
-    EXPECT_OK();
+    IOX_TESTING_EXPECT_OK();
 }
 
 TEST_F(ErrorReportingMacroApi_test, requireConditionSatisfied)
@@ -144,7 +134,7 @@ TEST_F(ErrorReportingMacroApi_test, requireConditionSatisfied)
 
     runInTestThread(f);
 
-    EXPECT_OK();
+    IOX_TESTING_EXPECT_OK();
 }
 
 TEST_F(ErrorReportingMacroApi_test, requireConditionNotSatisfied)
@@ -154,8 +144,8 @@ TEST_F(ErrorReportingMacroApi_test, requireConditionNotSatisfied)
 
     runInTestThread(f);
 
-    EXPECT_PANIC();
-    EXPECT_ERROR(MyCodeA::OutOfBounds);
+    IOX_TESTING_EXPECT_PANIC();
+    IOX_TESTING_EXPECT_ERROR(MyCodeA::OutOfBounds);
 }
 
 TEST_F(ErrorReportingMacroApi_test, checkPreconditionSatisfied)
@@ -165,7 +155,7 @@ TEST_F(ErrorReportingMacroApi_test, checkPreconditionSatisfied)
 
     runInTestThread(f, 1);
 
-    EXPECT_OK();
+    IOX_TESTING_EXPECT_OK();
 }
 
 TEST_F(ErrorReportingMacroApi_test, checkPreconditionViolated)
@@ -177,8 +167,8 @@ TEST_F(ErrorReportingMacroApi_test, checkPreconditionViolated)
 
     runInTestThread(f, 0);
 
-    EXPECT_PANIC();
-    EXPECT_PRECONDITION_VIOLATION();
+    IOX_TESTING_EXPECT_PANIC();
+    IOX_TESTING_EXPECT_PRECONDITION_VIOLATION();
 }
 
 TEST_F(ErrorReportingMacroApi_test, checkAssumptionSatisfied)
@@ -188,7 +178,7 @@ TEST_F(ErrorReportingMacroApi_test, checkAssumptionSatisfied)
 
     runInTestThread(f, 1);
 
-    EXPECT_OK();
+    IOX_TESTING_EXPECT_OK();
 }
 
 TEST_F(ErrorReportingMacroApi_test, checkAssumptionNotSatisfied)
@@ -198,8 +188,8 @@ TEST_F(ErrorReportingMacroApi_test, checkAssumptionNotSatisfied)
 
     runInTestThread(f, 0);
 
-    EXPECT_PANIC();
-    EXPECT_ASSUMPTION_VIOLATION();
+    IOX_TESTING_EXPECT_PANIC();
+    IOX_TESTING_EXPECT_ASSUMPTION_VIOLATION();
 }
 
 TEST_F(ErrorReportingMacroApi_test, checkPreconditionNotSatisfiedWithMessage)
@@ -210,8 +200,8 @@ TEST_F(ErrorReportingMacroApi_test, checkPreconditionNotSatisfiedWithMessage)
 
     runInTestThread(f, 0);
 
-    EXPECT_PANIC();
-    EXPECT_PRECONDITION_VIOLATION();
+    IOX_TESTING_EXPECT_PANIC();
+    IOX_TESTING_EXPECT_PRECONDITION_VIOLATION();
 }
 
 TEST_F(ErrorReportingMacroApi_test, checkAssumptionNotSatisfiedWithMessage)
@@ -221,8 +211,8 @@ TEST_F(ErrorReportingMacroApi_test, checkAssumptionNotSatisfiedWithMessage)
 
     runInTestThread(f, 0);
 
-    EXPECT_PANIC();
-    EXPECT_ASSUMPTION_VIOLATION();
+    IOX_TESTING_EXPECT_PANIC();
+    IOX_TESTING_EXPECT_ASSUMPTION_VIOLATION();
 }
 
 TEST_F(ErrorReportingMacroApi_test, reportErrorsFromDifferentModules)
@@ -235,9 +225,9 @@ TEST_F(ErrorReportingMacroApi_test, reportErrorsFromDifferentModules)
 
     runInTestThread(f);
 
-    EXPECT_NO_PANIC();
-    EXPECT_ERROR(MyCodeA::OutOfBounds);
-    EXPECT_ERROR(MyCodeB::OutOfMemory);
+    IOX_TESTING_EXPECT_NO_PANIC();
+    IOX_TESTING_EXPECT_ERROR(MyCodeA::OutOfBounds);
+    IOX_TESTING_EXPECT_ERROR(MyCodeB::OutOfMemory);
 }
 
 TEST_F(ErrorReportingMacroApi_test, distinguishErrorsFromDifferentModules)
@@ -248,7 +238,7 @@ TEST_F(ErrorReportingMacroApi_test, distinguishErrorsFromDifferentModules)
     runInTestThread(f);
 
     // these two are equivalent
-    EXPECT_ERROR(MyCodeA::OutOfBounds);
+    IOX_TESTING_EXPECT_ERROR(MyCodeA::OutOfBounds);
     EXPECT_TRUE(hasError(MyCodeA::OutOfBounds));
 
     // note that the below fails due to different enums (the errors are not the same)
@@ -266,10 +256,10 @@ TEST_F(ErrorReportingMacroApi_test, reportErrorsAndViolations)
 
     runInTestThread(f);
 
-    EXPECT_PANIC();
-    EXPECT_VIOLATION();
-    EXPECT_ERROR(MyCodeA::OutOfBounds);
-    EXPECT_ERROR(MyCodeB::OutOfMemory);
+    IOX_TESTING_EXPECT_PANIC();
+    IOX_TESTING_EXPECT_VIOLATION();
+    IOX_TESTING_EXPECT_ERROR(MyCodeA::OutOfBounds);
+    IOX_TESTING_EXPECT_ERROR(MyCodeB::OutOfMemory);
 }
 
 TEST_F(ErrorReportingMacroApi_test, panicAtUnreachableCode)
@@ -279,7 +269,7 @@ TEST_F(ErrorReportingMacroApi_test, panicAtUnreachableCode)
 
     runInTestThread(f);
 
-    EXPECT_PANIC();
+    IOX_TESTING_EXPECT_PANIC();
 }
 // NOLINTEND(cppcoreguidelines-avoid-do-while)
 

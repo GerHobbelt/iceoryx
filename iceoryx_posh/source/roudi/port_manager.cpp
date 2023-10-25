@@ -508,7 +508,8 @@ bool PortManager::sendToAllMatchingPublisherPorts(const capro::CaproMessage& mes
         // they do not have the same interface otherwise we have cyclic connections in gateways
         if (publisherInterface != capro::Interfaces::INTERNAL && publisherInterface == messageInterface)
         {
-            break;
+            // iox-#1908
+            continue;
         }
 
         if (isCompatiblePubSub(publisherPort, subscriberSource))
@@ -546,7 +547,8 @@ void PortManager::sendToAllMatchingSubscriberPorts(const capro::CaproMessage& me
         // they do not have the same interface otherwise we have cyclic connections in gateways
         if (subscriberInterface != capro::Interfaces::INTERNAL && subscriberInterface == messageInterface)
         {
-            break;
+            // iox-#1908
+            continue;
         }
 
         if (isCompatiblePubSub(publisherSource, subscriberPort))
@@ -891,7 +893,7 @@ PortManager::acquirePublisherPortDataWithoutDiscovery(const capro::ServiceDescri
     auto maybePublisherPortData = m_portPool->addPublisherPort(
         service, payloadDataSegmentMemoryManager, runtimeName, publisherOptions, portConfigInfo.memoryInfo);
 
-    if (!maybePublisherPortData.has_error())
+    if (maybePublisherPortData.has_value())
     {
         auto publisherPortData = maybePublisherPortData.value();
         if (publisherPortData)
@@ -944,7 +946,7 @@ PortManager::acquireSubscriberPortData(const capro::ServiceDescription& service,
 {
     auto maybeSubscriberPortData =
         m_portPool->addSubscriberPort(service, runtimeName, subscriberOptions, portConfigInfo.memoryInfo);
-    if (!maybeSubscriberPortData.has_error())
+    if (maybeSubscriberPortData.has_value())
     {
         auto subscriberPortData = maybeSubscriberPortData.value();
         if (subscriberPortData)
@@ -1024,7 +1026,7 @@ popo::InterfacePortData* PortManager::acquireInterfacePortData(capro::Interfaces
                                                                const NodeName_t& /*node*/) noexcept
 {
     auto result = m_portPool->addInterfacePort(runtimeName, interface);
-    if (!result.has_error())
+    if (result.has_value())
     {
         return result.value();
     }

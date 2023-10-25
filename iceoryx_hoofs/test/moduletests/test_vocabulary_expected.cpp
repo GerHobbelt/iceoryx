@@ -160,7 +160,7 @@ TEST_F(expected_test, CreateWithErrorResultsInError)
     ::testing::Test::RecordProperty("TEST_ID", "a2d10c89-6fc8-4c08-9e2d-9f61988ebb3f");
     auto sut = expected<int, TestError>(unexpect, TestError::ERROR1);
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error(), Eq(TestError::ERROR1));
+    EXPECT_THAT(sut.error(), Eq(TestError::ERROR1));
 }
 
 TEST_F(expected_test, ConstCreateWithErrorResultsInError)
@@ -168,7 +168,7 @@ TEST_F(expected_test, ConstCreateWithErrorResultsInError)
     ::testing::Test::RecordProperty("TEST_ID", "581447a6-0705-494b-8159-cf3434080a06");
     const auto sut = expected<int, TestError>(unexpect, TestError::ERROR2);
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error(), Eq(TestError::ERROR2));
+    EXPECT_THAT(sut.error(), Eq(TestError::ERROR2));
 }
 
 TEST_F(expected_test, ErrorTypeOnlyCreateWithErrorResultsInError)
@@ -176,23 +176,23 @@ TEST_F(expected_test, ErrorTypeOnlyCreateWithErrorResultsInError)
     ::testing::Test::RecordProperty("TEST_ID", "b01b2217-e67a-4bbf-b1a8-95d9b348d66e");
     auto sut = expected<void, TestError>(unexpect, TestError::ERROR1);
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error(), Eq(TestError::ERROR1));
+    EXPECT_THAT(sut.error(), Eq(TestError::ERROR1));
 }
 
 TEST_F(expected_test, CreateFromConstErrorResultsInError)
 {
     ::testing::Test::RecordProperty("TEST_ID", "8e4324ad-f221-4038-91ad-61a1567545dd");
-    auto constError = error<TestError>(TestError::ERROR3);
+    auto constError = err(TestError::ERROR3);
     auto sut = expected<int, TestError>(constError);
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error(), Eq(TestError::ERROR3));
+    EXPECT_THAT(sut.error(), Eq(TestError::ERROR3));
 }
 
 TEST_F(expected_test, CreateFromConstSuccessResultsInCorrectValue)
 {
     ::testing::Test::RecordProperty("TEST_ID", "cb20f217-6617-4c9e-8185-35cbf2bb8f3e");
     constexpr int VALUE = 424242;
-    auto constSuccess = success<int>(VALUE);
+    auto constSuccess = ok(VALUE);
     auto sut = expected<int, TestError>(constSuccess);
     ASSERT_THAT(sut.has_value(), Eq(true));
     EXPECT_THAT(sut.value(), Eq(VALUE));
@@ -215,7 +215,7 @@ TEST_F(expected_test, CreateWithSTLTypeIsSuccessful)
     const std::string ERROR_VALUE = "RedAlert";
     auto sut = expected<int, std::string>(unexpect, ERROR_VALUE);
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error(), Eq(ERROR_VALUE));
+    EXPECT_THAT(sut.error(), Eq(ERROR_VALUE));
 }
 
 TEST_F(expected_test, CreateWithComplexErrorResultsInError)
@@ -225,8 +225,8 @@ TEST_F(expected_test, CreateWithComplexErrorResultsInError)
     constexpr int VALUE_B = 212;
     auto sut = expected<int, TestClass>(unexpect, VALUE_A, VALUE_B);
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error().m_a, Eq(VALUE_A));
-    EXPECT_THAT(sut.get_error().m_b, Eq(VALUE_B));
+    EXPECT_THAT(sut.error().m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.error().m_b, Eq(VALUE_B));
 }
 
 TEST_F(expected_test, CreateRValueAndGetErrorResultsInCorrectError)
@@ -234,19 +234,81 @@ TEST_F(expected_test, CreateRValueAndGetErrorResultsInCorrectError)
     ::testing::Test::RecordProperty("TEST_ID", "b032400a-cd08-4ae7-af0c-5ae0362b4dc0");
     constexpr int VALUE_A = 131;
     constexpr int VALUE_B = 121;
-    auto sut = expected<int, TestClass>(unexpect, VALUE_A, VALUE_B).get_error();
+    auto sut = expected<int, TestClass>(unexpect, VALUE_A, VALUE_B).error();
     EXPECT_THAT(sut.m_a, Eq(VALUE_A));
     EXPECT_THAT(sut.m_b, Eq(VALUE_B));
+}
+
+TEST_F(expected_test, CreateConstRValueAndGetErrorResultsInCorrectError)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "936bb9c0-2559-4716-ba03-d5b927fff40f");
+    constexpr int VALUE_A = 123;
+    constexpr int VALUE_B = 122;
+    using SutType = expected<int, TestClass>;
+    auto sut = static_cast<const SutType&&>(SutType(unexpect, VALUE_A, VALUE_B)).error();
+    EXPECT_THAT(sut.m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.m_b, Eq(VALUE_B));
+}
+
+TEST_F(expected_test, CreateLValueAndGetErrorResultsInCorrectError)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "a167d79e-9c50-45d8-afb8-5a4cc2f3da1b");
+    constexpr int VALUE_A = 133;
+    constexpr int VALUE_B = 112;
+    auto sut = expected<int, TestClass>(unexpect, VALUE_A, VALUE_B);
+    EXPECT_THAT(sut.error().m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.error().m_b, Eq(VALUE_B));
 }
 
 TEST_F(expected_test, ConstCreateLValueAndGetErrorResultsInCorrectError)
 {
     ::testing::Test::RecordProperty("TEST_ID", "e56063ea-8b7c-4d47-a898-fe609ea3b283");
-    constexpr int VALUE_A = 131;
-    constexpr int VALUE_B = 121;
-    const auto& sut = expected<int, TestClass>(unexpect, VALUE_A, VALUE_B);
-    EXPECT_THAT(sut.get_error().m_a, Eq(VALUE_A));
-    EXPECT_THAT(sut.get_error().m_b, Eq(VALUE_B));
+    constexpr int VALUE_A = 112;
+    constexpr int VALUE_B = 211;
+    const auto sut = expected<int, TestClass>(unexpect, VALUE_A, VALUE_B);
+    EXPECT_THAT(sut.error().m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.error().m_b, Eq(VALUE_B));
+}
+
+TEST_F(expected_test, CreateRValueAndGetValueResultsInCorrectValue)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "fb5a3954-50de-419a-b29d-635d068fcb84");
+    constexpr int VALUE_A = 141;
+    constexpr int VALUE_B = 131;
+    auto sut = expected<TestClass, TestError>(in_place, VALUE_A, VALUE_B).value();
+    EXPECT_THAT(sut.m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.m_b, Eq(VALUE_B));
+}
+
+TEST_F(expected_test, CreateConstRValueAndGetValueResultsInCorrectValue)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "4af92b14-3b70-4ddd-8589-991abe3c8571");
+    constexpr int VALUE_A = 144;
+    constexpr int VALUE_B = 113;
+    using SutType = expected<TestClass, TestError>;
+    auto sut = static_cast<const SutType&&>(SutType(in_place, VALUE_A, VALUE_B)).value();
+    EXPECT_THAT(sut.m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.m_b, Eq(VALUE_B));
+}
+
+TEST_F(expected_test, CreateLValueAndGetValueResultsInCorrectValue)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "5adabab2-3329-47bf-bfb7-fe8aa98eacc2");
+    constexpr int VALUE_A = 114;
+    constexpr int VALUE_B = 311;
+    auto sut = expected<TestClass, TestError>(in_place, VALUE_A, VALUE_B);
+    EXPECT_THAT(sut.value().m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.value().m_b, Eq(VALUE_B));
+}
+
+TEST_F(expected_test, ConstCreateLValueAndGetValueResultsInCorrectValue)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "e33c2d23-7914-4ba7-a8ee-37e3c91c4a74");
+    constexpr int VALUE_A = 411;
+    constexpr int VALUE_B = 133;
+    const auto sut = expected<TestClass, TestError>(in_place, VALUE_A, VALUE_B);
+    EXPECT_THAT(sut.value().m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.value().m_b, Eq(VALUE_B));
 }
 
 TEST_F(expected_test, CreateWithValueAndMoveCtorLeadsToMovedSource)
@@ -279,12 +341,12 @@ TEST_F(expected_test, CreateWithErrorAndMoveCtorLeadsToMovedSource)
     // NOLINTJUSTIFICATION we explicitly want to test the defined state of a moved expected
     // NOLINTBEGIN(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move)
     ASSERT_TRUE(sutSource.has_error());
-    EXPECT_TRUE(sutSource.get_error().m_moved);
+    EXPECT_TRUE(sutSource.error().m_moved);
     // NOLINTEND(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move)
     ASSERT_TRUE(sutDestination.has_error());
-    EXPECT_FALSE(sutDestination.get_error().m_moved);
-    EXPECT_EQ(sutDestination.get_error().m_a, A);
-    EXPECT_EQ(sutDestination.get_error().m_b, B);
+    EXPECT_FALSE(sutDestination.error().m_moved);
+    EXPECT_EQ(sutDestination.error().m_a, A);
+    EXPECT_EQ(sutDestination.error().m_b, B);
 }
 
 TEST_F(expected_test, CreateWithValueAndMoveAssignmentLeadsToMovedSource)
@@ -317,12 +379,12 @@ TEST_F(expected_test, CreateWithErrorAndMoveAssignmentLeadsToMovedSource)
     // NOLINTJUSTIFICATION we explicitly want to test the defined state of a moved expected
     // NOLINTBEGIN(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move)
     ASSERT_TRUE(sutSource.has_error());
-    EXPECT_TRUE(sutSource.get_error().m_moved);
+    EXPECT_TRUE(sutSource.error().m_moved);
     // NOLINTEND(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move)
     ASSERT_TRUE(sutDestination.has_error());
-    EXPECT_FALSE(sutDestination.get_error().m_moved);
-    EXPECT_EQ(sutDestination.get_error().m_a, A);
-    EXPECT_EQ(sutDestination.get_error().m_b, B);
+    EXPECT_FALSE(sutDestination.error().m_moved);
+    EXPECT_EQ(sutDestination.error().m_a, A);
+    EXPECT_EQ(sutDestination.error().m_b, B);
 }
 
 TEST_F(expected_test, CreateWithOkFreeFunctionWithVoidValueTypeIsSuccessful)
@@ -370,7 +432,7 @@ TEST_F(expected_test, CreateWithErrFreeFunctionByCopyIsSuccessful)
     constexpr TestError ERROR = TestError::ERROR1;
     expected<int, TestError> sut = err(ERROR);
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error(), Eq(ERROR));
+    EXPECT_THAT(sut.error(), Eq(ERROR));
 }
 
 TEST_F(expected_test, CreateWithErrFreeFunctionByMoveIsSuccessful)
@@ -381,8 +443,8 @@ TEST_F(expected_test, CreateWithErrFreeFunctionByMoveIsSuccessful)
     NonTrivialTestClass error{A, B};
     expected<int, NonTrivialTestClass> sut = err(std::move(error));
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error().m_a, Eq(A));
-    EXPECT_THAT(sut.get_error().m_b, Eq(B));
+    EXPECT_THAT(sut.error().m_a, Eq(A));
+    EXPECT_THAT(sut.error().m_b, Eq(B));
 }
 
 TEST_F(expected_test, CreateWithErrFreeFunctionByForwardingIsSuccessful)
@@ -392,8 +454,8 @@ TEST_F(expected_test, CreateWithErrFreeFunctionByForwardingIsSuccessful)
     constexpr int B{55};
     expected<int, NonTrivialTestClass> sut = err<NonTrivialTestClass>(A, B);
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error().m_a, Eq(A));
-    EXPECT_THAT(sut.get_error().m_b, Eq(B));
+    EXPECT_THAT(sut.error().m_a, Eq(A));
+    EXPECT_THAT(sut.error().m_b, Eq(B));
 }
 
 TEST_F(expected_test, BoolOperatorReturnsError)
@@ -403,8 +465,8 @@ TEST_F(expected_test, BoolOperatorReturnsError)
     constexpr int VALUE_B = 11;
     expected<int, TestClass> sut = err<TestClass>(VALUE_A, VALUE_B);
     ASSERT_THAT(sut.operator bool(), Eq(false));
-    EXPECT_THAT(sut.get_error().m_a, Eq(VALUE_A));
-    EXPECT_THAT(sut.get_error().m_b, Eq(VALUE_B));
+    EXPECT_THAT(sut.error().m_a, Eq(VALUE_A));
+    EXPECT_THAT(sut.error().m_b, Eq(VALUE_B));
 }
 
 TEST_F(expected_test, BoolOperatorReturnsNoError)
@@ -424,7 +486,7 @@ TEST_F(expected_test, ErrorTypeOnlyBoolOperatorReturnsError)
     ::testing::Test::RecordProperty("TEST_ID", "7949f68f-c21c-43f1-ad8d-dc51eeee3257");
     expected<void, TestError> sut = err(TestError::ERROR1);
     ASSERT_THAT(sut.operator bool(), Eq(false));
-    EXPECT_THAT(sut.get_error(), Eq(TestError::ERROR1));
+    EXPECT_THAT(sut.error(), Eq(TestError::ERROR1));
 }
 
 TEST_F(expected_test, ErrorTypeOnlyBoolOperatorReturnsNoError)
@@ -465,7 +527,7 @@ TEST_F(expected_test, ConstArrowOperatorWorks)
     ::testing::Test::RecordProperty("TEST_ID", "b35a05e9-6dbc-4cfb-94c2-85ca9d214bb4");
     constexpr int VALUE_A = 554;
     constexpr int VALUE_B = 811;
-    const expected<TestClass, TestError> sut(success<TestClass>(TestClass(VALUE_A, VALUE_B)));
+    const expected<TestClass, TestError> sut(ok<TestClass>(VALUE_A, VALUE_B));
     ASSERT_THAT(sut.has_value(), Eq(true));
     EXPECT_THAT(sut->constGimme(), Eq(VALUE_A + VALUE_B));
 }
@@ -482,7 +544,7 @@ TEST_F(expected_test, DereferencingOperatorWorks)
 TEST_F(expected_test, ConstDereferencingOperatorWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "f09b9476-a4f6-4f56-9692-3c00146410fd");
-    const expected<int, TestError> sut(success<int>(981));
+    const expected<int, TestError> sut(ok(981));
     ASSERT_THAT(sut.has_value(), Eq(true));
     EXPECT_THAT(*sut, Eq(981));
 }
@@ -509,13 +571,13 @@ TEST_F(expected_test, CreateFromUnexpectTypeLeadsToValidSutWithError)
     constexpr TestError ERROR = TestError::ERROR3;
     expected<int, TestError> sut{unexpect, ERROR};
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error(), Eq(ERROR));
+    EXPECT_THAT(sut.error(), Eq(ERROR));
 }
 
 TEST_F(expected_test, CreateFromEmptySuccessTypeLeadsToValidSut)
 {
     ::testing::Test::RecordProperty("TEST_ID", "0204f08f-fb6d-45bb-aac7-fd14152ab1bf");
-    expected<void, TestError> sut{success<>()};
+    expected<void, TestError> sut{ok()};
     ASSERT_THAT(sut.has_error(), Eq(false));
 }
 
@@ -523,7 +585,7 @@ TEST_F(expected_test, CreateFromSuccessTypeLeadsToValidSut)
 {
     ::testing::Test::RecordProperty("TEST_ID", "fb83b62e-4e17-480b-8425-72181e6dd55d");
     constexpr int VALUE = 55;
-    expected<int, TestError> sut{success<int>(VALUE)};
+    expected<int, TestError> sut{ok(VALUE)};
     ASSERT_THAT(sut.has_value(), Eq(true));
     EXPECT_THAT(sut.value(), Eq(VALUE));
 }
@@ -531,16 +593,16 @@ TEST_F(expected_test, CreateFromSuccessTypeLeadsToValidSut)
 TEST_F(expected_test, CreateFromErrorLeadsToCorrectError)
 {
     ::testing::Test::RecordProperty("TEST_ID", "cb7e783d-0a79-45ce-9ea7-3b6e28631ceb");
-    expected<int, TestError> sut{error<TestError>(TestError::ERROR2)};
+    expected<int, TestError> sut{err(TestError::ERROR2)};
     ASSERT_THAT(sut.has_error(), Eq(true));
-    EXPECT_THAT(sut.get_error(), Eq(TestError::ERROR2));
+    EXPECT_THAT(sut.error(), Eq(TestError::ERROR2));
 }
 
 TEST_F(expected_test, ConvertNonEmptySuccessResultToVoidValueTypeResultIsSuccessful)
 {
     ::testing::Test::RecordProperty("TEST_ID", "b14f4aaa-abd0-4b99-84df-d644506712fa");
     constexpr int VALUE = 91823;
-    expected<int, TestError> sut{success<int>(VALUE)};
+    expected<int, TestError> sut{ok(VALUE)};
     expected<void, TestError> sut2 = sut;
     EXPECT_THAT(sut2.has_value(), Eq(true));
 }
@@ -548,7 +610,7 @@ TEST_F(expected_test, ConvertNonEmptySuccessResultToVoidValueTypeResultIsSuccess
 TEST_F(expected_test, ConvertConstNonEmptySuccessResultToVoidValueTypeResultIsSuccessful)
 {
     ::testing::Test::RecordProperty("TEST_ID", "6ccaf1cf-1b09-4930-ad33-8f961aca4c2e");
-    const expected<int, TestError> sut{success<int>(123)};
+    const expected<int, TestError> sut{ok(123)};
     expected<void, TestError> sut2 = sut;
     EXPECT_THAT(sut2.has_value(), Eq(true));
 }
@@ -556,17 +618,17 @@ TEST_F(expected_test, ConvertConstNonEmptySuccessResultToVoidValueTypeResultIsSu
 TEST_F(expected_test, ConvertNonEmptyErrorResultVoidValueTypeResultIsSuccessful)
 {
     ::testing::Test::RecordProperty("TEST_ID", "5907d318-cf1a-46f1-9016-07096153d7d9");
-    expected<int, TestError> sut{error<TestError>(TestError::ERROR2)};
+    expected<int, TestError> sut{err(TestError::ERROR2)};
     expected<void, TestError> sut2 = sut;
     EXPECT_THAT(sut2.has_error(), Eq(true));
-    EXPECT_THAT(sut2.get_error(), Eq(TestError::ERROR2));
+    EXPECT_THAT(sut2.error(), Eq(TestError::ERROR2));
 }
 
 TEST_F(expected_test, ExpectedWithValueConvertsToOptionalWithValue)
 {
     ::testing::Test::RecordProperty("TEST_ID", "a877f9bd-5793-437f-8dee-a109aed9f647");
     constexpr int VALUE = 4711;
-    expected<int, TestError> sut{success<int>(VALUE)};
+    expected<int, TestError> sut{ok(VALUE)};
     optional<int> value = sut.to_optional();
 
     ASSERT_THAT(value.has_value(), Eq(true));
@@ -576,7 +638,7 @@ TEST_F(expected_test, ExpectedWithValueConvertsToOptionalWithValue)
 TEST_F(expected_test, ExpectedWithErrorConvertsToOptionalWithoutValue)
 {
     ::testing::Test::RecordProperty("TEST_ID", "fe161275-8fa2-43c9-86e7-0a20d79eb44f");
-    expected<int, TestError> sut{error<TestError>(TestError::ERROR1)};
+    expected<int, TestError> sut{err(TestError::ERROR1)};
     optional<int> value = sut.to_optional();
 
     ASSERT_THAT(value.has_value(), Eq(false));
@@ -673,7 +735,7 @@ TEST_F(expected_test, AccessingErrorOfLValueExpectedWhichContainsValueLeadsToErr
     constexpr int VALID_VALUE{42};
     expected<TestClass, TestError> sut = ok<TestClass>(VALID_VALUE, VALID_VALUE);
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { sut.get_error(); }, iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { sut.error(); }, iox::HoofsError::EXPECTS_ENSURES_FAILED);
 }
 
 TEST_F(expected_test, AccessingErrorOfConstLValueExpectedWhichContainsValueLeadsToErrorHandlerCall)
@@ -683,7 +745,7 @@ TEST_F(expected_test, AccessingErrorOfConstLValueExpectedWhichContainsValueLeads
     constexpr int VALID_VALUE{42};
     const expected<TestClass, TestError> sut = ok<TestClass>(VALID_VALUE, VALID_VALUE);
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { sut.get_error(); }, iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { sut.error(); }, iox::HoofsError::EXPECTS_ENSURES_FAILED);
 }
 
 TEST_F(expected_test, AccessingErrorOfRValueExpectedWhichContainsValueLeadsToErrorHandlerCall)
@@ -693,8 +755,7 @@ TEST_F(expected_test, AccessingErrorOfRValueExpectedWhichContainsValueLeadsToErr
     constexpr int VALID_VALUE{42};
     expected<TestClass, TestError> sut = ok<TestClass>(VALID_VALUE, VALID_VALUE);
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { std::move(sut).get_error(); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { std::move(sut).error(); }, iox::HoofsError::EXPECTS_ENSURES_FAILED);
 }
 
 TEST_F(expected_test, TwoVoidValueTypeExpectedWithEqualErrorAreEqual)
