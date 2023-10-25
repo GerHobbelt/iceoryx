@@ -52,7 +52,7 @@
 - Add "inline" keyword to smart_lock method implementation [\#1551](https://github.com/eclipse-iceoryx/iceoryx/issues/1551)
 - Fix RouDi crash due to uninitialized `ServiceRegistry` chunk [\#1575](https://github.com/eclipse-iceoryx/iceoryx/issues/1575)
 - Add check in `cxx::unique_ptr::get` to avoid `nullptr` dereferencing [\#1571](https://github.com/eclipse-iceoryx/iceoryx/issues/1571)
-- Pass `CleanupCapacity` to underlying `cxx::function` in `ScopeGuard` (formerly known as `cxx::GenericRAII`) [\#1594](https://github.com/eclipse-iceoryx/iceoryx/issues/1594)
+- Pass `CleanupCapacity` to underlying `iox::function` in `ScopeGuard` (formerly known as `cxx::GenericRAII`) [\#1594](https://github.com/eclipse-iceoryx/iceoryx/issues/1594)
 - Add check in `RelativePointer::get` to avoid `nullptr` dereferencing [\#1596](https://github.com/eclipse-iceoryx/iceoryx/issues/1596)
 - iceoryx_posh_testing cannot find iceoryx_hoofs_testing in CMake [\#1602](https://github.com/eclipse-iceoryx/iceoryx/issues/1602)
 - locking_policy.cpp calls error handler without log message [\#1609](https://github.com/eclipse-iceoryx/iceoryx/issues/1609)
@@ -87,8 +87,8 @@
 - Refactor service discovery tests [/#1065](https://github.com/eclipse-iceoryx/iceoryx/issues/1065)
   to increase comprehension and cover more test cases
 - Remove usage of `std::function` [\#831](https://github.com/eclipse-iceoryx/iceoryx/issues/831)
-- Replace `MethodCallback` with `cxx::function` [\#831](https://github.com/eclipse-iceoryx/iceoryx/issues/831)
-- Remove null-ability `cxx::function_ref` [\#1104](https://github.com/eclipse-iceoryx/iceoryx/issues/1104)
+- Replace `MethodCallback` with `iox::function` [\#831](https://github.com/eclipse-iceoryx/iceoryx/issues/831)
+- Remove null-ability `iox::function_ref` [\#1104](https://github.com/eclipse-iceoryx/iceoryx/issues/1104)
 - Remove implicit conversion from `iox::expected` to `iox::optional` [\#1196](https://github.com/eclipse-iceoryx/iceoryx/issues/1196)
 - Remove AtomicRelocatablePointer [\#1512](https://github.com/eclipse-iceoryx/iceoryx/issues/1512)
 - `SignalHandler` returns an `iox::expected` in `registerSignalHandler` [\#1196](https://github.com/eclipse-iceoryx/iceoryx/issues/1196)
@@ -101,14 +101,14 @@
 - Move package `iceoryx_dds` to [separate repository](https://github.com/eclipse-iceoryx/iceoryx-gateway-dds) [\#1564](https://github.com/eclipse-iceoryx/iceoryx/issues/1564)
 - Set `SOVERSION` with project major version for shared libraries in CMake [\#1308](https://github.com/eclipse-iceoryx/iceoryx/issues/1308)
 - Monitoring feature of RouDi is now disabled by default [\#1580](https://github.com/eclipse-iceoryx/iceoryx/issues/1580)
-- Rename `cxx::GenericRAII` to `cxx::ScopeGuard` [\#1450](https://github.com/eclipse-iceoryx/iceoryx/issues/1450)
+- Rename `cxx::GenericRAII` to `iox::ScopeGuard` [\#1450](https://github.com/eclipse-iceoryx/iceoryx/issues/1450)
 - Rename `algorithm::max` and `algorithm::min` to `algorithm::maxVal` and `algorithm::minVal` [\#1394](https://github.com/eclipse-iceoryx/iceoryx/issues/1394)
 - Extract `iceoryx_hoofs/platform` into separate package `iceoryx_platform` [\#1615](https://github.com/eclipse-iceoryx/iceoryx/issues/1615)
 - `cxx::unique_ptr` is no longer nullable [\#1104](https://github.com/eclipse-iceoryx/iceoryx/issues/1104)
 - Use builder pattern in mutex [\#1036](https://github.com/eclipse-iceoryx/iceoryx/issues/1036)
 - Change return type of `vector::erase` to bool [\#1662](https://github.com/eclipse-iceoryx/iceoryx/issues/1662)
 - `ReleativePointer::registerPtr` returns `iox::optional` [\#605](https://github.com/eclipse-iceoryx/iceoryx/issues/605)
-- `cxx::function` is no longer nullable [\#1104](https://github.com/eclipse-iceoryx/iceoryx/issues/1104)
+- `iox::function` is no longer nullable [\#1104](https://github.com/eclipse-iceoryx/iceoryx/issues/1104)
 - Rename `BaseRelativePointer` to `UntypedRelativePointer` [\#605](https://github.com/eclipse-iceoryx/iceoryx/issues/605)
 - Prevent building GoogleTest when `GTest_DIR` is defined [\#1758](https://github.com/eclipse-iceoryx/iceoryx/issues/1758)
 - Refactor `iceoryx_posh_testing` library into own CMakeLists.txt [\#1516](https://github.com/eclipse-iceoryx/iceoryx/issues/1516)
@@ -443,7 +443,7 @@
     std::cout << iox::size(ARRAY) << std::endl;    // prints 42
     ```
 
-18. Rename `cxx::GenericRAII` to `cxx::ScopeGuard`
+18. Rename `cxx::GenericRAII` to `iox::ScopeGuard`
 
     ```cpp
     // before
@@ -457,8 +457,8 @@
     }};
 
     // after
-    #include "iceoryx_hoofs/cxx/scope_guard.hpp"
-    iox::cxx::ScopeGuard {[]()
+    #include "iox/scope_guard.hpp"
+    iox::ScopeGuard {[]()
     {
         // do on creation
     },[]()
@@ -501,7 +501,7 @@
     }
     ```
 
-21. Renamed `BaseRelativePointer` to `UntypedRelativePointer` and moved it from namespace `rp::` to `memory::`
+21. Renamed `BaseRelativePointer` to `UntypedRelativePointer` and removed it from namespace `rp::`
 
     ```cpp
     // before
@@ -509,8 +509,8 @@
     iox::rp::BaseRelativePointer myUntypedRelativePointer;
 
     // after
-    #include "iceoryx_hoofs/memory/relative_pointer.hpp"
-    iox::memory::UntypedRelativePointer myUntypedRelativePointer;
+    #include "iox/relative_pointer.hpp"
+    iox::UntypedRelativePointer myUntypedRelativePointer;
     ```
 
 22. The `CMakeLists.txt` of apps using iceoryx need to add `iceoryx_platform`
@@ -607,20 +607,20 @@
     bool success = myCxxVector.erase(myCxxVector.begin());
     ```
 
-27. `cxx::function` is no longer nullable.
+27. `iox::function` is no longer nullable.
 
     ```cpp
     // before
-    cxx::function<void()> helloFunc = []{ std::cout << "hello world\n"; };
-    cxx::function<void()> emptyFunction;
+    iox::cxx::function<void()> helloFunc = []{ std::cout << "hello world\n"; };
+    iox::cxx::function<void()> emptyFunction;
 
     if (helloFunc) { // required since the object could always be null
         helloFunc();
     }
 
     // after
-    cxx::function<void()> helloFunc = []{ std::cout << "hello world\n"; };
-    iox::optional<cxx::function<void()>> emptyPtr(nullopt); // if function shall be nullable use optional
+    iox::function<void()> helloFunc = []{ std::cout << "hello world\n"; };
+    iox::optional<iox::function<void()>> emptyPtr(nullopt); // if function shall be nullable use optional
 
     // no more null check required since it is no longer nullable
     helloFunc();

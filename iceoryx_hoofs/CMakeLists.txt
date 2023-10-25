@@ -58,6 +58,7 @@ iox_add_library(
                                 ${PROJECT_SOURCE_DIR}/posix/time/include
                                 ${PROJECT_SOURCE_DIR}/buffer/include
                                 ${PROJECT_SOURCE_DIR}/filesystem/include
+                                ${PROJECT_SOURCE_DIR}/functional/include
                                 ${CMAKE_BINARY_DIR}/generated/iceoryx_hoofs/include
     INSTALL_INTERFACE           include/${PREFIX}
     EXPORT_INCLUDE_DIRS         include/
@@ -72,11 +73,13 @@ iox_add_library(
                                 posix/time/include/
                                 buffer/include/
                                 filesystem/include/
+                                functional/include/
     FILES
         design/source/functional_interface.cpp
         filesystem/source/filesystem.cpp
         memory/source/bump_allocator.cpp
         memory/source/memory.cpp
+        memory/source/relative_pointer_data.cpp
         posix/time/source/adaptive_wait.cpp
         posix/time/source/deadline_timer.cpp
         primitives/source/type_traits.cpp
@@ -103,7 +106,6 @@ iox_add_library(
         source/posix_wrapper/types.cpp
         source/posix_wrapper/unnamed_semaphore.cpp
         source/posix_wrapper/unix_domain_socket.cpp
-        source/memory/relative_pointer_data.cpp
         time/source/duration.cpp
 )
 

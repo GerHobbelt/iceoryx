@@ -1,5 +1,4 @@
-// Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
-// Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2023 by Apex.AI Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +13,25 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-#ifndef IOX_HOOFS_CXX_SCOPED_STATIC_INL
-#define IOX_HOOFS_CXX_SCOPED_STATIC_INL
 
-#include "iceoryx_hoofs/cxx/scoped_static.hpp"
+#ifndef IOX_HOOFS_CXX_FUNCTION_REF_HPP
+#define IOX_HOOFS_CXX_FUNCTION_REF_HPP
+
+#include "iox/function_ref.hpp"
 
 namespace iox
 {
+/// @todo iox-#1593 Deprecate include
+/// [[deprecated("Deprecated in 3.0, removed in 4.0, please include 'iox/function_ref.hpp' instead")]]
 namespace cxx
 {
-template <typename T, typename... CTorArgs>
-inline ScopeGuard makeScopedStatic(T& memory, CTorArgs&&... ctorArgs) noexcept
-{
-    memory.emplace(std::forward<CTorArgs>(ctorArgs)...);
-    return ScopeGuard([&memory]() { memory.reset(); });
-}
+/// @deprecated use `iox::function_ref` instead of `iox::cxx::function_ref`
+using iox::function_ref;
+
+/// @deprecated use `iox::has_same_decayed_type` instead of `iox::cxx::has_same_decayed_type`
+using iox::has_same_decayed_type;
+
 } // namespace cxx
 } // namespace iox
 
-#endif // IOX_HOOFS_CXX_SCOPED_STATIC_INL
+#endif // IOX_HOOFS_CXX_FUNCTION_REF_HPP
