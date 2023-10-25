@@ -1,63 +1,83 @@
-#pragma once
+#ifndef IOX_HOOFS_ERROR_REPORTING_ERROR_HPP
+#define IOX_HOOFS_ERROR_REPORTING_ERROR_HPP
 
-#include <cstdint>
+#include <utility>
+
+#include "iceoryx_hoofs/error_reporting/types.hpp"
 
 namespace iox
 {
 namespace err
 {
-using error_code_t = uint32_t;
-using module_id_t = uint32_t;
-
-// no need to reserve, we can distinguish violations from error
-constexpr error_code_t DEBUG_ASSERT_VIOLATION_CODE = 0;
-constexpr error_code_t PRECONDITION_VIOLATION_CODE = 1;
-
 
 // a complex hierarchy is not required yet, maybe move to a violation header
 class Violation
 {
   public:
-    explicit Violation(error_code_t code)
+    /// @todo: fix ctor types and class hierarchy (violation)
+    explicit Violation(ErrorCode::type code)
         : m_code(code)
     {
     }
 
-    static constexpr module_id_t module()
+    Violation(ErrorCode::type code, ModuleId module)
+        : m_code(code)
+        , m_module(module)
     {
-        return 0;
     }
 
-    error_code_t code() const
+    ErrorCode code() const
     {
         return m_code;
     }
 
-    // Contract: must return a pointer to data segment (no dynamic memory)
+    ModuleId module() const
+    {
+        return m_module;
+    }
+
+    // must return a pointer to data segment (no dynamic memory)
     const char* name() const
     {
         return NAME;
     }
 
   public:
-    error_code_t m_code{DEBUG_ASSERT_VIOLATION_CODE};
+    ErrorCode m_code{ErrorCode::DEBUG_ASSERT_VIOLATION};
+    ModuleId m_module{ModuleId::UNKNOWN};
 
     static constexpr const char* NAME = "Violation";
 };
 
 // we expect an error to have
-// 1. error_code_t code()
+// 1. ErrorCode code()
 // 2. module_id_t module()
 // 3. const char* name()
 
-// 0 is reserved
-constexpr module_id_t INVALID_MODULE = 0;
-
 // primary template is the identity
-template <typename Error>
-auto toError(Error&& error)
+// this can be overriden by modules to create their own errors
+template <typename ErrorLike>
+auto toError(ErrorLike&& value)
+{
+    return std::forward<ErrorLike>(value);
+}
+
+template <class Error>
+inline ErrorCode toCode(const Error& error)
+{
+    return error.code();
+}
+
+template <>
+inline ErrorCode toCode<ErrorCode>(const ErrorCode& error)
 {
     return error;
+}
+
+template <class Error>
+inline ModuleId toModule(const Error& error)
+{
+    return error.module();
 }
 
 // generic comparison, has interface requirements on error types E1 and E2 without
@@ -70,3 +90,5 @@ bool equals(const E1& a, const E2& b)
 
 } // namespace err
 } // namespace iox
+
+#endif

@@ -1,6 +1,5 @@
-#pragma once
-
-#include <stdint.h>
+#ifndef IOX_HOOFS_ERROR_REPORTING_LOCATION_HPP
+#define IOX_HOOFS_ERROR_REPORTING_LOCATION_HPP
 
 namespace iox
 {
@@ -16,7 +15,10 @@ struct SourceLocation
 } // namespace err
 } // namespace iox
 
-// clang-format off
-#define CURRENT_SOURCE_LOCATION \
-    iox::err::SourceLocation{ __FILE__, __LINE__, __func__}
-// clang-format on
+#define CURRENT_SOURCE_LOCATION                                                                                        \
+    iox::err::SourceLocation                                                                                           \
+    {                                                                                                                  \
+        __FILE__, __LINE__, __func__                                                                                   \
+    }
+
+#endif

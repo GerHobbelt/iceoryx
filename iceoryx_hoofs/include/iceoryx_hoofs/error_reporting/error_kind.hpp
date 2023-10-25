@@ -1,12 +1,16 @@
-#pragma once
+#ifndef IOX_HOOFS_ERROR_REPORTING_ERROR_KIND_HPP
+#define IOX_HOOFS_ERROR_REPORTING_ERROR_KIND_HPP
 
-#include <stdint.h>
+#include <cstdint>
 #include <type_traits>
 
 namespace iox
 {
 namespace err
 {
+
+/// todo: abstract in types
+
 using error_level_t = uint32_t;
 constexpr error_level_t FATAL_LEVEL{0};
 
@@ -98,7 +102,6 @@ bool constexpr requiresHandling(Kind)
     return true;
 }
 
-// FATAL always requires handling
 bool constexpr requiresHandling(Fatal)
 {
     return true;
@@ -125,3 +128,5 @@ constexpr DebugAssertViolation DEBUG_ASSERT_VIOLATION;
 
 } // namespace err
 } // namespace iox
+
+#endif

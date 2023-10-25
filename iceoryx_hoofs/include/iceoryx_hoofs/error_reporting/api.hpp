@@ -1,10 +1,15 @@
-#pragma once
+#ifndef IOX_HOOFS_ERROR_REPORTING_API_HPP
+#define IOX_HOOFS_ERROR_REPORTING_API_HPP
 
-#include "error_forward.hpp"
-#include "error_kind.hpp"
+#include "iceoryx_hoofs/error_reporting/error_forwarding.hpp"
+#include "iceoryx_hoofs/error_reporting/platform/error_kind.hpp"
 
 // clang-format on
 
+/// @brief transforms an error code to an error object according to
+///        default specification or override by module
+/// @code error code to be transformed
+/// @note this relies on overloading
 #define IOX_ERROR(code) iox::err::toError(code)
 
 // The following macros are statements (not expressions).
@@ -14,7 +19,11 @@
 /// @brief calls panic handler and does not return
 /// @param msg optional message string literal
 /// @note could actually throw if desired without breaking control flow asssumptions
-#define IOX_PANIC(...) do { iox::err::panic(__VA_ARGS__); } while(false)
+#define IOX_PANIC(...)                                                                                                 \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        iox::err::panic(CURRENT_SOURCE_LOCATION);                                                                      \
+    } while (false)
 
 /// @brief report error of some kind
 /// @param error error object (or code)
@@ -22,7 +31,7 @@
 #define IOX_REPORT(error, kind)                                                                                        \
     do                                                                                                                 \
     {                                                                                                                  \
-        forwardError(CURRENT_SOURCE_LOCATION, error, kind);                                                            \
+        iox::err::forwardError(CURRENT_SOURCE_LOCATION, IOX_ERROR(error), kind);                                       \
     } while (false)
 
 /// @brief report fatal error
@@ -36,11 +45,11 @@
 #define IOX_REPORT_IF(expr, error, kind)                                                                               \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (requiresHandling(iox::err::kind))                                                                          \
+        if (iox::err::requiresHandling(iox::err::kind))                                                                \
         {                                                                                                              \
             if (expr)                                                                                                  \
             {                                                                                                          \
-                forwardError(CURRENT_SOURCE_LOCATION, error, kind);                                                    \
+                iox::err::forwardError(CURRENT_SOURCE_LOCATION, IOX_ERROR(error), kind);                               \
             }                                                                                                          \
         }                                                                                                              \
     } while (false)
@@ -62,50 +71,54 @@
 // Instead a special internal error type is used.
 // If required, a custom error option can be added but for now location should be sufficient.
 
-/// @brief in debug mode only: report fatal error if expr evaluates to false
+/// @brief if enabled: report fatal error if expr evaluates to false
 /// @param expr boolean expression that must hold upon entry of the function it appears in
 /// @param message message to be logged in case of violation
-#ifdef IOX_DEBUG
+#ifdef IOX_CHECK_PRECONDITIONS
 #define IOX_PRECONDITION(expr, message)                                                                                \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (requiresHandling(iox::err::PRECONDITION_VIOLATION_CODE))                                                   \
+        if (iox::err::requiresHandling(iox::err::ErrorCode::PRECONDITION_VIOLATION))                                   \
             if (!(expr))                                                                                               \
-                forwardError(CURRENT_SOURCE_LOCATION,                                                                  \
-                             Violation(iox::err::PRECONDITION_VIOLATION_CODE),                                         \
-                             PRECONDITION_VIOLATION,                                                                   \
-                             message);                                                                                 \
+                iox::err::forwardError(CURRENT_SOURCE_LOCATION,                                                        \
+                                       iox::err::Violation(iox::err::ErrorCode::PRECONDITION_VIOLATION),               \
+                                       iox::err::PRECONDITION_VIOLATION,                                               \
+                                       message);                                                                       \
     } while (false)
 #else
 #define IOX_PRECONDITION(expr, message)                                                                                \
     do                                                                                                                 \
     {                                                                                                                  \
-        discard([&]() { return expr; });                                                                               \
+        iox::err::discard([&]() { return expr; });                                                                     \
+        iox::err::discard(message);                                                                                    \
     } while (false)
 #endif
 
-/// @brief in debug mode only: report fatal error if expr evaluates to false
+/// @brief if enabled: report fatal error if expr evaluates to false
 /// @note for conditions that should not happen with correct use
 /// @param expr boolean expression that must hold
 /// @param message message to be logged in case of violation
-#ifdef IOX_DEBUG
+#ifdef IOX_CHECK_ASSUMPTIONS
 #define IOX_ASSUME(expr, message)                                                                                      \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (requiresHandling(iox::err::DEBUG_ASSERT_VIOLATION_CODE))                                                   \
+        if (iox::err::requiresHandling(iox::err::ErrorCode::DEBUG_ASSERT_VIOLATION))                                   \
             if (!(expr))                                                                                               \
-                forwardError(CURRENT_SOURCE_LOCATION,                                                                  \
-                             Violation(iox::err::DEBUG_ASSERT_VIOLATION_CODE),                                         \
-                             DEBUG_ASSERT_VIOLATION,                                                                   \
-                             message);                                                                                 \
+                iox::err::forwardError(CURRENT_SOURCE_LOCATION,                                                        \
+                                       iox::err::Violation(iox::err::ErrorCode::DEBUG_ASSERT_VIOLATION),               \
+                                       iox::err::DEBUG_ASSERT_VIOLATION,                                               \
+                                       message);                                                                       \
     } while (false)
 
 #else
 #define IOX_ASSUME(expr, message)                                                                                      \
     do                                                                                                                 \
     {                                                                                                                  \
-        discard([&]() { return expr; });                                                                               \
+        iox::err::discard([&]() { return expr; });                                                                     \
+        iox::err::discard(message);                                                                                    \
     } while (false)
 #endif
 
 // clang-format on
+
+#endif
