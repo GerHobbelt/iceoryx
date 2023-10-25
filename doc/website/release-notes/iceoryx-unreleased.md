@@ -102,6 +102,8 @@
     - `MemoryMap`
     - `SharedMemory`
     - `MessageQueue`
+    - `NamedPipe`
+    - `UnixDomainSocket`
     - `FileLock`
         - Add the ability to adjust path and file permissions of the file lock
     - `Mutex`
@@ -933,7 +935,7 @@
     #include "iceoryx_hoofs/design_pattern/creation.hpp"
 
     // after
-    #include "iceoryx_dust/design/creation.hpp"
+    // fully removed
     ```
 
     ```cpp
@@ -1151,3 +1153,23 @@
 
     // after
     auto e = exp.error();
+    ```
+
+52. `UnixDomainSocket`, `MessageQueue` and `NamedPipe` are not default constructible anymore
+
+    ```cpp
+    // before
+    iox::posix::UnixDomainSocket socket;
+
+    // after
+    // option 1
+    iox::optional<iox::posix::UnixDomainSocket> socket;
+    // option 2
+    iox::posix::UnixDomainSocket socket { UnixDomainSocketBuilder()
+        .name("foo")
+        .channelSide(iox::posix::IpcChannelSide::CLIENT)
+        .create()
+        .expect("Valid UnixDomainSocket")
+    };
+
+    ```
