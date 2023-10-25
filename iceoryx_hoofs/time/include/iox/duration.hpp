@@ -17,6 +17,7 @@
 #ifndef IOX_HOOFS_TIME_UNITS_DURATION_HPP
 #define IOX_HOOFS_TIME_UNITS_DURATION_HPP
 
+#include "iceoryx_hoofs/cxx/type_traits.hpp"
 #include "iceoryx_hoofs/log/logging.hpp"
 #include "iceoryx_hoofs/log/logstream.hpp"
 #include "iceoryx_platform/time.hpp" // required for QNX
@@ -206,7 +207,7 @@ class Duration
 
     /// @brief Adds a Duration to itself. On overflow duration saturates to Duration::max().
     /// @param[in] rhs is the second summand
-    /// @return a new Duration object
+    /// @return a reference to itself
     // AXIVION Next Line AutosarC++19_03-A8.4.7 : Argument is larger than two words
     constexpr Duration& operator+=(const Duration& rhs) noexcept;
 
@@ -219,7 +220,7 @@ class Duration
 
     /// @brief Subtracts a Duration from itself. On underflow duration saturates to Duration::zero().
     /// @param[in] rhs is the subtrahend
-    /// @return a new Duration object
+    /// @return a reference to itself
     /// @attention Since negative durations are not allowed, the duration will be clamped to 0
     // AXIVION Next Line AutosarC++19_03-A8.4.7 : Argument is larger than two words
     constexpr Duration& operator-=(const Duration& rhs) noexcept;
@@ -233,9 +234,20 @@ class Duration
     /// @note There is no explicit division operator! This can be achieved by multiplication with the inverse of the
     /// divisor.
     /// @note Multiplication of a non-zero duration with NaN and +Inf results in a saturated max duration
-    // AXIVION Next Construct AutosarC++19_03-M5.17.1 : Self assignment with 'operator*=' is not supported for now
     template <typename T>
     constexpr Duration operator*(const T rhs) const noexcept;
+
+    /// @brief Multiplies a Duration with an arithmetic type and assigns the result to itself.
+    /// @tparam T is an arithmetic type for the multiplicator
+    /// @param[in] rhs is the multiplicator
+    /// @return a reference to itself
+    /// @attention Since negative durations are not allowed, the duration will be clamped to 0
+    /// @note A duration of 0 will always result in 0, no matter if multiplied with NaN or +Inf
+    /// @note There is no explicit division operator! This can be achieved by multiplication with the inverse of the
+    /// divisor.
+    /// @note Multiplication of a non-zero duration with NaN and +Inf results in a saturated max duration
+    template <typename T>
+    constexpr Duration& operator*=(const T rhs) noexcept;
 
     // END ARITHMETIC
 
@@ -354,12 +366,16 @@ class Duration
 /// @return a new Duration object
 /// @attention Since negative durations are not allowed, the duration will be clamped to 0
 // AXIVION Next Construct AutosarC++19_03-A8.4.7 : Each argument is larger than two words
-// AXIVION Next Construct AutosarC++19_03-M5.17.1 : Assigning the result of a Duration multiplication with 'operator*=' to an arithmetic type is not supported
 template <typename T>
 constexpr Duration operator*(const T& lhs, const Duration& rhs) noexcept;
 
+/// @brief Dummy implementation with a static assert. Assigning the result of a Duration
+/// multiplication with 'operator*=' to an arithmetic type is not supported
+// AXIVION Next Construct AutosarC++19_03-A8.4.7 : Each argument is larger than two words
+template <typename T>
+constexpr T& operator*=(const T& lhs, const Duration& rhs) noexcept;
+
 /// @brief stream operator for the Duration class
-// AXIVION Next Line AutosarC++19_03-A8.4.7 : Argument is larger than two words
 std::ostream& operator<<(std::ostream& stream, const Duration t);
 
 /// @brief Equal to operator

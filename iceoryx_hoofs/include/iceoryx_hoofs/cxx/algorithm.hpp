@@ -17,9 +17,9 @@
 #ifndef IOX_HOOFS_CXX_ALGORITHM_HPP
 #define IOX_HOOFS_CXX_ALGORITHM_HPP
 
-#include "iceoryx_hoofs/cxx/attributes.hpp"
 #include "iceoryx_hoofs/cxx/requires.hpp"
-#include "iceoryx_hoofs/cxx/type_traits.hpp"
+#include "iox/attributes.hpp"
+#include "iox/type_traits.hpp"
 
 #include <cstdint>
 #include <limits>
