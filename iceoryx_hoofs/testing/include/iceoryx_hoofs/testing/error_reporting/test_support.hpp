@@ -19,7 +19,7 @@
 
 #include <gtest/gtest.h>
 
-#include "iceoryx_hoofs/error_reporting/platform/default/error_handler.hpp"
+#include "iceoryx_hoofs/error_reporting/custom/default/error_handler.hpp"
 #include "iceoryx_hoofs/testing/error_reporting/test_error_handler.hpp"
 #include "iox/static_lifetime_guard.hpp"
 
@@ -34,35 +34,41 @@ namespace iox
 namespace testing
 {
 
-using TestErrorHandler = iox::StaticLifetimeGuard<iox::testing::TestHandler>;
-
-/// @brief indicates whether the test error handler invoked panic
-inline bool hasPanicked()
-{
-    return TestErrorHandler::instance().hasPanicked();
-}
+using ErrorHandler = iox::StaticLifetimeGuard<iox::testing::TestErrorHandler>;
 
 /// @brief indicates whether the test error handler registered a specific error
 template <typename Code>
 inline bool hasError(Code&& code)
 {
     auto e = iox::err::toError(std::forward<Code>(code));
-    return TestErrorHandler::instance().hasError(e.code());
+    return ErrorHandler::instance().hasError(e.code(), e.module());
 }
 
+/// @brief indicates whether the test error handler invoked panic
+bool hasPanicked();
+
 /// @brief indicates whether the test error handler registered any error
-inline bool hasError()
-{
-    return TestErrorHandler::instance().hasError();
-}
+bool hasError();
+
+/// @brief indicates whether the test error handler registered a precondition violation
+bool hasPreconditionViolation();
+
+/// @brief indicates whether the test error handler registered a precondition violation
+bool hasAssumptionViolation();
+
+/// @brief indicates whether the test error handler registered  violation (there are only two kinds).
+bool hasViolation();
+
+/// @brief indicates there is no error, violation or panic.
+bool isInNormalState();
 
 /// @brief runs testFunction in a testContext that can detect fatal failures;
 /// runs in the same thread
-/// @note uses a longjump
+/// @note uses setjmp/longjmp
 template <typename Function, typename... Args>
 inline void testContext(Function&& testFunction, Args&&... args)
 {
-    jmp_buf* buf = TestErrorHandler::instance().prepareJump();
+    jmp_buf* buf = ErrorHandler::instance().prepareJump();
 
     if (buf == nullptr)
     {
@@ -73,8 +79,8 @@ inline void testContext(Function&& testFunction, Args&&... args)
     // setjmp must be called in a stackframe that still exists when longjmp is called
     // Therefore there cannot be a convenient abstraction that does not also
     // know the test function that is being called.
-    // NOLINTNEXTLINE
-    if (setjmp(*buf) != TestErrorHandler::instance().jumpIndicator())
+    // NOLINTNEXTLINE(cert-err52-cpp) exception cannot be used, required for testing to jump in case of failure
+    if (setjmp(&(*buf)[0]) != ErrorHandler::instance().jumpIndicator())
     {
         testFunction(std::forward<Args>(args)...);
     }
@@ -99,51 +105,54 @@ inline void runInTestThread(Function&& testFunction, Args&&... args)
 } // namespace testing
 } // namespace iox
 
-#define ASSERT_NO_PANIC()                                                                                              \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        ASSERT_FALSE(iox::testing::hasPanicked());                                                                     \
-    } while (false)
+// Use macros to preserve line numbers in tests (failure case).
 
-#define ASSERT_PANIC()                                                                                                 \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        ASSERT_TRUE(iox::testing::hasPanicked());                                                                      \
-    } while (false)
+// ASSERT_* aborts test if the check fails.
 
-#define ASSERT_ERROR(code)                                                                                             \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        ASSERT_TRUE(iox::testing::hasError(code));                                                                     \
-    } while (false)
+// NOLINTBEGIN(cppcoreguidelines-macro-usage) macro required for source location in tests
 
-#define ASSERT_NO_ERROR()                                                                                              \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        ASSERT_FALSE(iox::testing::hasError());                                                                        \
-    } while (false)
+#define ASSERT_IOX_OK() ASSERT_TRUE(iox::testing::isInNormalState())
 
-#define EXPECT_NO_PANIC()                                                                                              \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        EXPECT_FALSE(iox::testing::hasPanicked());                                                                     \
-    } while (false)
+#define ASSERT_NO_PANIC() ASSERT_FALSE(iox::testing::hasPanicked())
 
-#define EXPECT_PANIC()                                                                                                 \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        EXPECT_TRUE(iox::testing::hasPanicked());                                                                      \
-    } while (false)
+#define ASSERT_PANIC() ASSERT_TRUE(iox::testing::hasPanicked())
 
-#define EXPECT_ERROR(code)                                                                                             \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        EXPECT_TRUE(iox::testing::hasError(code));                                                                     \
-    } while (false)
+#define ASSERT_ERROR(code) ASSERT_TRUE(iox::testing::hasError(code))
+
+#define ASSERT_NO_ERROR() ASSERT_FALSE(iox::testing::hasError())
+
+#define EXPECT_NO_PANIC() EXPECT_FALSE(iox::testing::hasPanicked())
+
+#define ASSERT_VIOLATION()                                                                                             \
+    ASSERT_TRUE(iox::testing::hasPreconditionViolation() || iox::testing::hasAssumptionViolation())
+
+#define ASSERT_NO_VIOLATION()                                                                                          \
+    ASSERT_FALSE(iox::testing::hasPreconditionViolation() || iox::testing::hasAssumptionViolation())
+
+#define ASSERT_PRECONDITION_VIOLATION() ASSERT_TRUE(iox::testing::hasPreconditionViolation())
+
+#define ASSERT_ASSUMPTION_VIOLATION() ASSERT_TRUE(iox::testing::hasAssumptionViolation())
+
+// EXPECT_* continues with test if the check fails.
+
+#define EXPECT_IOX_OK() EXPECT_TRUE(iox::testing::isInNormalState())
+
+#define EXPECT_PANIC() EXPECT_TRUE(iox::testing::hasPanicked())
+
+#define EXPECT_ERROR(code) EXPECT_TRUE(iox::testing::hasError(code))
+
+#define EXPECT_NO_ERROR() EXPECT_FALSE(iox::testing::hasError())
+
+#define EXPECT_VIOLATION()                                                                                             \
+    EXPECT_TRUE(iox::testing::hasPreconditionViolation() || iox::testing::hasAssumptionViolation())
+
+#define EXPECT_NO_VIOLATION()                                                                                          \
+    EXPECT_FALSE(iox::testing::hasPreconditionViolation() || iox::testing::hasAssumptionViolation())
+
+#define EXPECT_PRECONDITION_VIOLATION() EXPECT_TRUE(iox::testing::hasPreconditionViolation())
+
+#define EXPECT_ASSUMPTION_VIOLATION() EXPECT_TRUE(iox::testing::hasAssumptionViolation())
+
+// NOLINTEND(cppcoreguidelines-macro-usage)
+
 #endif
-
-#define EXPECT_NO_ERROR()                                                                                              \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        EXPECT_FALSE(iox::testing::hasError());                                                                        \
-    } while (false)

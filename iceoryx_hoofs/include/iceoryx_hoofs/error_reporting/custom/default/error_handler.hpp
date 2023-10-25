@@ -14,18 +14,25 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_ERROR_REPORTING_MODULES_HOOFS_ERROR_REPORTING_HPP
-#define IOX_HOOFS_ERROR_REPORTING_MODULES_HOOFS_ERROR_REPORTING_HPP
+#ifndef IOX_HOOFS_ERROR_REPORTING_CUSTOM_ERROR_HANDLER_HPP
+#define IOX_HOOFS_ERROR_REPORTING_CUSTOM_ERROR_HANDLER_HPP
 
-// Each module (= some unit with its own errors) must provide the following.
+#include "iox/polymorphic_handler.hpp"
+#include "iox/static_lifetime_guard.hpp"
 
-// 1. Define the errors of the module
-#include "iceoryx_hoofs/error_reporting/modules/hoofs/errors.hpp"
+#include "iceoryx_hoofs/error_reporting/custom/default/default_error_handler.hpp"
+#include "iceoryx_hoofs/error_reporting/custom/default/error_handler_interface.hpp"
 
-// 2. Include the custom reporting implementation
-#include "iceoryx_hoofs/error_reporting/custom/error_reporting.hpp"
+namespace iox
+{
+namespace err
+{
 
-// 3. Include the error reporting API
-#include "iceoryx_hoofs/error_reporting/api.hpp"
+using ErrorHandler = iox::PolymorphicHandler<ErrorHandlerInterface, DefaultErrorHandler>;
+
+using DefaultErrorHandlerGuard = iox::StaticLifetimeGuard<DefaultErrorHandler>;
+
+} // namespace err
+} // namespace iox
 
 #endif

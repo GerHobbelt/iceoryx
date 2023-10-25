@@ -14,13 +14,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_TESTING_TEST_ERROR_HANDLER_ERROR_REPORTING_HPP
-#define IOX_HOOFS_TESTING_TEST_ERROR_HANDLER_ERROR_REPORTING_HPP
+#ifndef IOX_HOOFS_TESTING_ERROR_REPORTING_TEST_ERROR_HANDLER_HPP
+#define IOX_HOOFS_TESTING_ERROR_REPORTING_TEST_ERROR_HANDLER_HPP
 
-#include "iceoryx_hoofs/error_reporting/error.hpp"
+#include "iceoryx_hoofs/error_reporting/custom/default/error_handler_interface.hpp"
 #include "iceoryx_hoofs/error_reporting/error_logging.hpp"
-#include "iceoryx_hoofs/error_reporting/location.hpp"
-#include "iceoryx_hoofs/error_reporting/platform/default/error_handler_interface.hpp"
+#include "iceoryx_hoofs/error_reporting/errors.hpp"
+#include "iceoryx_hoofs/error_reporting/source_location.hpp"
 #include "iceoryx_hoofs/error_reporting/types.hpp"
 
 #include <algorithm>
@@ -39,16 +39,16 @@ namespace testing
 {
 
 /// @brief Defines the test reaction of dynamic error handling.
-class TestHandler : public iox::err::ErrorHandlerInterface
+class TestErrorHandler : public iox::err::ErrorHandlerInterface
 {
   public:
-    TestHandler();
+    TestErrorHandler();
 
-    ~TestHandler() override = default;
-    TestHandler(const TestHandler&) = delete;
-    TestHandler(TestHandler&&) = delete;
-    TestHandler& operator=(const TestHandler&) = delete;
-    TestHandler operator=(TestHandler&&) = delete;
+    ~TestErrorHandler() override = default;
+    TestErrorHandler(const TestErrorHandler&) = delete;
+    TestErrorHandler(TestErrorHandler&&) = delete;
+    TestErrorHandler& operator=(const TestErrorHandler&) = delete;
+    TestErrorHandler operator=(TestErrorHandler&&) = delete;
 
     /// @brief Defines the reaction on panic.
     void panic() override;
@@ -100,8 +100,10 @@ class TestHandler : public iox::err::ErrorHandlerInterface
     // and we would need multiple jump buffers
     jmp_buf m_jumpBuffer{};
 
-    // actually not needed to be atomic since it is not supposed to be used from multiple threads
+    // Actually not needed to be atomic since it is not supposed to be used from multiple threads
     // (longjmp does not support this)
+    // We need to ensure though that only one jump buffer is considered by panic and controlling
+    // ownership of the buffer is one way to accomplish that.
     std::atomic<jmp_buf*> m_jump{nullptr};
 
     void jump();

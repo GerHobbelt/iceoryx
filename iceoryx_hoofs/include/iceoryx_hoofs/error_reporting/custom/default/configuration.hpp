@@ -14,37 +14,25 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_ERROR_REPORTING_CONFIGURATION_HPP
-#define IOX_HOOFS_ERROR_REPORTING_CONFIGURATION_HPP
+#ifndef IOX_HOOFS_ERROR_REPORTING_CUSTOM_DEFAULT_CONFIGURATION_HPP
+#define IOX_HOOFS_ERROR_REPORTING_CUSTOM_DEFAULT_CONFIGURATION_HPP
 
-#include <type_traits>
-
-// ***
-// * Configure active checks and other compile time parameters
-// ***
+#include "iceoryx_hoofs/error_reporting/configuration.hpp"
 
 namespace iox
 {
 namespace err
 {
 
-// tag type that can be used to override the configuration in a custom implementation
-struct ConfigurationTag
+// Specialize to change the checks (and other options if needed) at compile time.
+// this can later also be done depending on a #define to select a header
+// but we should avoid to have a #define for each option.
+template <>
+struct ConfigurationParameters<ConfigurationTag>
 {
-};
-
-// can be specialized here to change parameters at compile time
-template <typename T>
-struct ConfigurationParameters
-{
-    static_assert(std::is_same<T, ConfigurationTag>::value, "Incorrect configuration tag type");
-
     static constexpr bool CHECK_PRECONDITIONS{true};
     static constexpr bool CHECK_ASSUMPTIONS{true};
 };
-
-// used by the API to obtain the compile time parameters
-using Configuration = ConfigurationParameters<ConfigurationTag>;
 
 } // namespace err
 } // namespace iox

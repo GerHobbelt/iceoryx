@@ -5,7 +5,7 @@
 // *** TO BE IMPLEMENTED BY CLIENT - part of any module
 // ***
 
-#include "iceoryx_hoofs/error_reporting/error.hpp"
+#include "iceoryx_hoofs/error_reporting/errors.hpp"
 #include "iceoryx_hoofs/error_reporting/types.hpp"
 
 namespace module_a
@@ -15,6 +15,8 @@ namespace errors
 
 using ErrorCode = iox::err::ErrorCode;
 using ModuleId = iox::err::ModuleId;
+
+constexpr ModuleId MODULE_ID{666};
 
 enum class Code : ErrorCode::type
 {
@@ -26,7 +28,7 @@ enum class Code : ErrorCode::type
 class Error
 {
   public:
-    explicit Error(Code code = Code::Unknown)
+    constexpr explicit Error(Code code = Code::Unknown)
         : m_code(static_cast<ErrorCode::type>(code))
     {
     }
@@ -41,37 +43,8 @@ class Error
         return static_cast<ErrorCode>(m_code);
     }
 
-    const char* name() const
-    {
-        return errorNames[code().value];
-    }
-
-    static constexpr ModuleId MODULE_ID{1};
-
   protected:
     ErrorCode m_code;
-
-    static constexpr const char* errorNames[] = {"Unknown", "OutOfMemory", "OutOfBounds"};
-};
-
-// could be wrapped by a result/optional monadic type
-// could also be implemented without inheritence
-class OutOfBoundsError : public Error
-{
-  public:
-    OutOfBoundsError()
-        : Error(Code::OutOfBounds)
-    {
-    }
-
-    void* details()
-    {
-        return m_details;
-    }
-
-  private:
-    // more infos if available
-    void* m_details{nullptr};
 };
 
 } // namespace errors
@@ -92,7 +65,7 @@ inline module_a::errors::Error toError(module_a::errors::Code code)
 // Any error code of this enum has the same module id.
 inline ModuleId toModule(module_a::errors::Code)
 {
-    return module_a::errors::Error::MODULE_ID;
+    return module_a::errors::MODULE_ID;
 }
 
 } // namespace err

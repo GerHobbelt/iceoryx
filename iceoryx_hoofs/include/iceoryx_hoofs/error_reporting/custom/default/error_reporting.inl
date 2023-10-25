@@ -14,16 +14,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_ERROR_REPORTING_PLATFORM_DEFAULT_ERROR_REPORTING_HPP
-#define IOX_HOOFS_ERROR_REPORTING_PLATFORM_DEFAULT_ERROR_REPORTING_HPP
+#ifndef IOX_HOOFS_ERROR_REPORTING_CUSTOM_DEFAULT_ERROR_REPORTING_INL
+#define IOX_HOOFS_ERROR_REPORTING_CUSTOM_DEFAULT_ERROR_REPORTING_INL
 
-#include "iceoryx_hoofs/error_reporting/error.hpp"
 #include "iceoryx_hoofs/error_reporting/error_kind.hpp"
 #include "iceoryx_hoofs/error_reporting/error_logging.hpp"
-#include "iceoryx_hoofs/error_reporting/location.hpp"
+#include "iceoryx_hoofs/error_reporting/errors.hpp"
+#include "iceoryx_hoofs/error_reporting/source_location.hpp"
 
-#include "iceoryx_hoofs/error_reporting/platform/default/error_handler.hpp"
-#include "iceoryx_hoofs/error_reporting/platform/error_kind.hpp"
+#include "iceoryx_hoofs/error_reporting/custom/default/error_handler.hpp"
+#include "iceoryx_hoofs/error_reporting/custom/error_kind.hpp"
 
 namespace iox
 {
@@ -43,7 +43,10 @@ namespace err
     abort();
 }
 
-[[noreturn]] inline void panic(const SourceLocation& location, const char* msg)
+// note that Message is generic as the logger technically accepts more general loggable constructs
+// beyond const char*
+template <class Message>
+[[noreturn]] inline void panic(const SourceLocation& location, Message&& msg)
 {
     IOX_LOG_PANIC(location) << "Panic " << msg;
     auto& h = ErrorHandler::get();
@@ -62,31 +65,53 @@ inline void report(const SourceLocation& location, Kind, const Error& error)
 }
 
 template <class Error>
-inline void report(const SourceLocation& location, iox::err::Fatal, const Error& error)
+inline void report(const SourceLocation& location, iox::err::FatalKind kind, const Error& error)
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_FATAL_ERROR(location) << " Fatal Error " << code.value << " in module " << module.value;
+    IOX_LOG_FATAL_ERROR(location) << kind.name << " " << code.value << " in module " << module.value;
     auto& h = ErrorHandler::get();
     h.reportError(ErrorDescriptor(location, code, module));
 }
 
-template <class Error, class Message>
-inline void report(const SourceLocation& location, iox::err::PreconditionViolation, const Error& error, Message&& msg)
+template <class Error>
+inline void report(const SourceLocation& location, iox::err::PreconditionViolationKind kind, const Error& error)
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_FATAL_ERROR(location) << ": Precondition Violation " << std::forward<Message>(msg);
+    IOX_LOG_FATAL_ERROR(location) << kind.name;
+    auto& h = ErrorHandler::get();
+    h.reportViolation(ErrorDescriptor(location, code, module));
+}
+
+template <class Error>
+inline void report(const SourceLocation& location, iox::err::AssumptionViolationKind kind, const Error& error)
+{
+    auto code = toCode(error);
+    auto module = toModule(error);
+    IOX_LOG_FATAL_ERROR(location) << kind.name;
     auto& h = ErrorHandler::get();
     h.reportViolation(ErrorDescriptor(location, code, module));
 }
 
 template <class Error, class Message>
-inline void report(const SourceLocation& location, iox::err::DebugAssertViolation, const Error& error, Message&& msg)
+inline void
+report(const SourceLocation& location, iox::err::PreconditionViolationKind kind, const Error& error, Message&& msg)
 {
     auto code = toCode(error);
     auto module = toModule(error);
-    IOX_LOG_FATAL_ERROR(location) << ": Debug Assert Violation " << std::forward<Message>(msg);
+    IOX_LOG_FATAL_ERROR(location) << kind.name << " " << std::forward<Message>(msg);
+    auto& h = ErrorHandler::get();
+    h.reportViolation(ErrorDescriptor(location, code, module));
+}
+
+template <class Error, class Message>
+inline void
+report(const SourceLocation& location, iox::err::AssumptionViolationKind kind, const Error& error, Message&& msg)
+{
+    auto code = toCode(error);
+    auto module = toModule(error);
+    IOX_LOG_FATAL_ERROR(location) << kind.name << " " << std::forward<Message>(msg);
     auto& h = ErrorHandler::get();
     h.reportViolation(ErrorDescriptor(location, code, module));
 }

@@ -14,18 +14,24 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_ERROR_REPORTING_MODULES_HOOFS_ERROR_REPORTING_HPP
-#define IOX_HOOFS_ERROR_REPORTING_MODULES_HOOFS_ERROR_REPORTING_HPP
+#include "iceoryx_hoofs/error_reporting/custom/default/default_error_handler.hpp"
 
-// Each module (= some unit with its own errors) must provide the following.
+namespace iox
+{
+namespace err
+{
 
-// 1. Define the errors of the module
-#include "iceoryx_hoofs/error_reporting/modules/hoofs/errors.hpp"
+void DefaultErrorHandler::reportError(ErrorDescriptor)
+{
+}
 
-// 2. Include the custom reporting implementation
-#include "iceoryx_hoofs/error_reporting/custom/error_reporting.hpp"
+void DefaultErrorHandler::reportViolation(ErrorDescriptor)
+{
+}
 
-// 3. Include the error reporting API
-#include "iceoryx_hoofs/error_reporting/api.hpp"
+void DefaultErrorHandler::panic()
+{
+}
 
-#endif
+} // namespace err
+} // namespace iox
