@@ -20,9 +20,37 @@
 #include "iox/string.hpp"
 
 #include <string>
+#include <ostream>
 
 namespace iox
 {
+
+template <>
+struct is_custom_string<std::string> : public std::true_type
+{
+};
+
+namespace internal
+{
+template <>
+struct GetData<std::string>
+{
+    static const char* call(const std::string& data) noexcept
+    {
+        return data.data();
+    }
+};
+
+template <>
+struct GetSize<std::string>
+{
+    static uint64_t call(const std::string& data) noexcept
+    {
+        return data.size();
+    }
+};
+} // namespace internal
+
 template <uint64_t N>
 struct FromImpl<string<N>, std::string>
 {
@@ -40,6 +68,15 @@ struct FromImpl<std::string, lossy<string<N>>>
 {
     static string<N> fromImpl(const std::string& value) noexcept;
 };
+
+/// @brief outputs the fixed string on stream
+///
+/// @param [in] stream is the output stream
+/// @param [in] str is the fixed string
+///
+/// @return the stream output of the fixed string
+template <uint64_t Capacity>
+std::ostream& operator<<(std::ostream& stream, const string<Capacity>& str) noexcept;
 } // namespace iox
 
 #include "iceoryx_dust/internal/cxx/std_string_support.inl"
