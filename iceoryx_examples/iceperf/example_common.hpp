@@ -28,6 +28,7 @@ enum class Technology
 {
     ALL,
     ICEORYX_CPP_API,
+    ICEORYX_CPP_WAIT_API,
     ICEORYX_C_API,
     POSIX_MESSAGE_QUEUE,
     UNIX_DOMAIN_SOCKET

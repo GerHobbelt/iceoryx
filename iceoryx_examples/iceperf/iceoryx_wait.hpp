@@ -1,5 +1,4 @@
-// Copyright (c) 2022 by Apex.AI Inc. All rights reserved.
-// Copyright (c) 2023 by NXP. All rights reserved.
+// Copyright 2023, Eclipse Foundation and the iceoryx contributors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +13,21 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
+#ifndef IOX_EXAMPLES_ICEPERF_ICEORYX_WAIT_HPP
+#define IOX_EXAMPLES_ICEPERF_ICEORYX_WAIT_HPP
 
-#ifndef IOX_HOOFS_FREERTOS_PLATFORM_SCHED_HPP
-#define IOX_HOOFS_FREERTOS_PLATFORM_SCHED_HPP
+#include "iceoryx.hpp"
 
-#include <sched.h>
-
-#define SCHED_FIFO 1
-
-inline int sched_get_priority_max(int)
+class IceoryxWait : public Iceoryx
 {
-    return 0;
-}
-inline int sched_get_priority_min(int)
-{
-    return 0;
-}
+  public:
+    IceoryxWait(const iox::capro::IdString_t& publisherName, const iox::capro::IdString_t& subscriberName) noexcept;
 
-#endif
+  private:
+    void init() noexcept override;
+    PerfTopic receivePerfTopic() noexcept override;
+
+    iox::popo::WaitSet<> waitset;
+};
+
+#endif // IOX_EXAMPLES_ICEPERF_ICEORYX_WAIT_HPP

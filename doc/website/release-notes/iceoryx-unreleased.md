@@ -45,6 +45,8 @@
 - `NewType` supports arithmetic operations and loops [\#1554](https://github.com/eclipse-iceoryx/iceoryx/issues/1554)
 - Add `iox::span` [\#180](https://github.com/eclipse-iceoryx/iceoryx/issues/180)
 - Implement custom error reporting API [\#1032](https://github.com/eclipse-iceoryx/iceoryx/issues/1032)
+- Implement iceoryx platform for FreeRTOS [#1982](https://github.com/eclipse-iceoryx/iceoryx/issues/1982)
+- Extend 'iceperf' with 'WaitSet' [#2003](https://github.com/eclipse-iceoryx/iceoryx/issues/2003)
 
 **Bugfixes:**
 
