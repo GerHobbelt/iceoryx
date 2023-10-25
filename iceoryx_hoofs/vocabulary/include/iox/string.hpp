@@ -1,5 +1,5 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
-// Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2021 - 2023 by Apex.AI Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 #ifndef IOX_HOOFS_VOCABULARY_STRING_HPP
 #define IOX_HOOFS_VOCABULARY_STRING_HPP
 
-#include "iceoryx_hoofs/log/logstream.hpp"
 #include "iox/detail/string_internal.hpp"
 #include "iox/detail/string_type_traits.hpp"
+#include "iox/logstream.hpp"
 #include "iox/optional.hpp"
 #include "iox/type_traits.hpp"
 
@@ -46,37 +46,37 @@ struct is_custom_string : public std::false_type
 
 template <typename T, typename ReturnType>
 using IsStringOrCharArrayOrChar =
-    typename std::enable_if<(is_cxx_string<T>::value || is_char_array<T>::value || std::is_same<T, char>::value
-                             || is_custom_string<T>::value),
+    typename std::enable_if<((is_iox_string<T>::value || is_char_array<T>::value)
+                             || (std::is_same<T, char>::value || is_custom_string<T>::value)),
                             ReturnType>::type;
 
 template <typename T, typename ReturnType>
 using IsStringOrCharArray =
-    typename std::enable_if<(is_cxx_string<T>::value || is_char_array<T>::value || is_custom_string<T>::value),
+    typename std::enable_if<((is_iox_string<T>::value || is_char_array<T>::value) || is_custom_string<T>::value),
                             ReturnType>::type;
 
 template <typename T, typename ReturnType>
 using IsCustomStringOrCharArrayOrChar =
-    typename std::enable_if<(is_char_array<T>::value || std::is_same<T, char>::value || is_custom_string<T>::value),
+    typename std::enable_if<((is_char_array<T>::value || std::is_same<T, char>::value) || is_custom_string<T>::value),
                             ReturnType>::type;
 
 template <typename T, typename ReturnType>
 using IsIoxStringOrCharArray =
-    typename std::enable_if<(is_cxx_string<T>::value || is_char_array<T>::value), ReturnType>::type;
+    typename std::enable_if<(is_iox_string<T>::value || is_char_array<T>::value), ReturnType>::type;
 
 template <typename T1, typename T2, typename ReturnType>
 using IsIoxStringOrCharArrayOrChar =
-    typename std::enable_if<((is_char_array<T1>::value || is_cxx_string<T1>::value) || std::is_same<T1, char>::value)
-                                && ((is_char_array<T2>::value || is_cxx_string<T2>::value)
+    typename std::enable_if<((is_char_array<T1>::value || is_iox_string<T1>::value) || std::is_same<T1, char>::value)
+                                && ((is_char_array<T2>::value || is_iox_string<T2>::value)
                                     || std::is_same<T2, char>::value),
                             ReturnType>::type;
 
 template <typename T1, typename T2, typename ReturnType>
 using IsIoxStringAndIoxStringOrCharArrayOrChar =
-    typename std::enable_if<((is_char_array<T1>::value || std::is_same<T1, char>::value) && is_cxx_string<T2>::value)
-                                || (is_cxx_string<T1>::value
+    typename std::enable_if<((is_char_array<T1>::value || std::is_same<T1, char>::value) && is_iox_string<T2>::value)
+                                || (is_iox_string<T1>::value
                                     && ((is_char_array<T2>::value || std::is_same<T2, char>::value)
-                                        || (is_cxx_string<T1>::value && is_cxx_string<T2>::value))),
+                                        || (is_iox_string<T1>::value && is_iox_string<T2>::value))),
                             ReturnType>::type;
 
 /// @brief concatenates two iox::strings/string literals/chars
@@ -336,7 +336,7 @@ class string final
     /// @return true if the assignment succeeds, otherwise false
     bool unsafe_assign(const char* const str) noexcept;
 
-    /// @brief compares self and an iox::string or char array
+    /// @brief compares self and an iox::string, custom string or char array
     ///
     /// @param [in] other is the string to compare with self
     ///
@@ -387,12 +387,12 @@ class string final
     // NOLINTNEXTLINE(hicpp-named-parameter, readability-named-parameter) method is disabled via static_assert
     string& operator+=(const T&) noexcept;
 
-    /// @brief appends a iox::string/string literal to the end of this. If this' capacity is too
+    /// @brief appends a iox::string/string literal/custom string to the end of this. If this' capacity is too
     /// small for appending the whole string (literal), the remainder of the characters are truncated.
     ///
     /// @param [in] TruncateToCapacity_t is a compile time variable which is used to make the user aware of the possible
     /// truncation
-    /// @param [in] str is the iox::string/string literal to append
+    /// @param [in] str is the iox::string/string literal/custom string to append
     ///
     /// @return reference to self
     ///
@@ -414,10 +414,10 @@ class string final
     // NOLINTNEXTLINE(hicpp-named-parameter, readability-named-parameter)
     string& append(TruncateToCapacity_t, char cstr) noexcept;
 
-    /// @brief appends a iox::string/string literal/char to the end of this. The appending fails if the
+    /// @brief appends a iox::string/string literal/char/custom string to the end of this. The appending fails if the
     /// sum of both sizes is greater than this' capacity.
     ///
-    /// @param [in] iox::string/string literal/char to append
+    /// @param [in] iox::string/string literal/char/custom string to append
     ///
     /// @return true if the appending succeeds, otherwise false
     template <typename T>
@@ -458,7 +458,7 @@ class string final
     /// @brief finds the first occurence of the given character sequence; returns the position of the first character of
     /// the found substring, returns iox::nullopt if no substring is found or if pos is greater than this' size
     ///
-    /// @param [in] str is the character sequence to search for; must be a iox::string or string literal
+    /// @param [in] str is the character sequence to search for; must be a iox::string, string literal or custom string
     /// @param [in] pos is the position at which to start the search
     ///
     /// @return an optional containing the position of the first character of the found substring, iox::nullopt if
@@ -470,7 +470,7 @@ class string final
     /// and returns its position; returns iox::nullopt if no character is found or if pos is greater than this'
     /// size
     ///
-    /// @param [in] str is the character sequence to search for; must be a iox::string or string literal
+    /// @param [in] str is the character sequence to search for; must be a iox::string, string literal or custom string
     /// @param [in] pos is the position at which to start the search
     ///
     /// @return an optional containing the position of the first character equal to one of the characters of the given
@@ -481,7 +481,7 @@ class string final
     /// @brief finds the last occurence of a character equal to one of the characters of the given character sequence
     /// and returns its position; returns iox::nullopt if no character is found
     ///
-    /// @param [in] str is the character sequence to search for; must be a iox::string or string literal
+    /// @param [in] str is the character sequence to search for; must be a iox::string, string literal or custom string
     /// @param [in] pos is the position at which to finish the search
     ///
     /// @return an optional containing the position of the last character equal to one of the characters of the given
@@ -553,7 +553,9 @@ class string final
 template <uint64_t Capacity>
 log::LogStream& operator<<(log::LogStream& stream, const string<Capacity>& str) noexcept;
 
-/// @brief checks if a lhs char array or char is equal to a rhs iox::string
+// AXIVION DISABLE STYLE AutosarC++19_03-A13.5.5: Comparison with custom string, char array or
+// char is also intended
+/// @brief checks if a lhs custom string, char array or char is equal to a rhs iox::string
 ///
 /// @param [in] rhs is the iox::string
 ///
@@ -561,45 +563,45 @@ log::LogStream& operator<<(log::LogStream& stream, const string<Capacity>& str) 
 template <typename T, uint64_t Capacity>
 IsCustomStringOrCharArrayOrChar<T, bool> operator==(const T& lhs, const string<Capacity>& rhs) noexcept;
 
-/// @brief checks if a lhs  char array or char is not equal to a rhs iox::string
+/// @brief checks if a lhs custom string, char array or char is not equal to a rhs iox::string
 ///
-/// @param [in] lhs is the char array or char
+/// @param [in] lhs is the custom string, char array or char
 /// @param [in] rhs is the iox::string
 ///
 /// @return true if the contents of lhs and rhs are not equal, otherwise false
 template <typename T, uint64_t Capacity>
 IsCustomStringOrCharArrayOrChar<T, bool> operator!=(const T& lhs, const string<Capacity>& rhs) noexcept;
 
-/// @brief checks if a lhs char array or char is less than a rhs iox::string
+/// @brief checks if a lhs custom string, char array or char is less than a rhs iox::string
 ///
-/// @param [in] lhs is the char array or char
+/// @param [in] lhs is the custom string, char array or char
 /// @param [in] rhs is the iox::string
 ///
 /// @return true if lhs is less than rhs, otherwise false
 template <typename T, uint64_t Capacity>
 IsCustomStringOrCharArrayOrChar<T, bool> operator<(const T& lhs, const string<Capacity>& rhs) noexcept;
 
-/// @brief checks if a lhs char array or char is less than or equal to a rhs iox::string
+/// @brief checks if a lhs custom string, char array or char is less than or equal to a rhs iox::string
 ///
-/// @param [in] lhs is the char array or char
+/// @param [in] lhs is the custom string, char array or char
 /// @param [in] rhs is the iox::string
 ///
 /// @return true if lhs is less than or equal to rhs, otherwise false
 template <typename T, uint64_t Capacity>
 IsCustomStringOrCharArrayOrChar<T, bool> operator<=(const T& lhs, const string<Capacity>& rhs) noexcept;
 
-/// @brief checks if a lhs char array or char is greater than a rhs iox::string
+/// @brief checks if a lhs custom string, char array or char is greater than a rhs iox::string
 ///
-/// @param [in] lhs is the char array or char
+/// @param [in] lhs is the custom string, char array or char
 /// @param [in] rhs is the iox::string
 ///
 /// @return true if lhs is greater than rhs, otherwise false
 template <typename T, uint64_t Capacity>
 IsCustomStringOrCharArrayOrChar<T, bool> operator>(const T& lhs, const string<Capacity>& rhs) noexcept;
 
-/// @brief checks if a lhs char array or char is greater than or equal to a rhs iox::string
+/// @brief checks if a lhs custom string, char array or char is greater than or equal to a rhs iox::string
 ///
-/// @param [in] lhs is the char array or char
+/// @param [in] lhs is the custom string, char array or char
 /// @param [in] rhs is the iox::string
 ///
 /// @return true if lhs is greater than or equal to rhs, otherwise false
@@ -609,7 +611,7 @@ IsCustomStringOrCharArrayOrChar<T, bool> operator>=(const T& lhs, const string<C
 /// @brief checks if lhs is equal to rhs
 ///
 /// @param [in] lhs is the iox::string
-/// @param [in] rhs is the iox::string, char array or char to compare with lhs
+/// @param [in] rhs is the iox::string, custom string, char array or char to compare with lhs
 ///
 /// @return true if both strings are equal, otherwise false
 template <typename T, uint64_t Capacity>
@@ -618,7 +620,7 @@ IsStringOrCharArrayOrChar<T, bool> operator==(const string<Capacity>& lhs, const
 /// @brief checks if lhs is not equal to rhs
 ///
 /// @param [in] lhs is the iox::string
-/// @param [in] rhs is the iox::string, char array or char to compare with lhs
+/// @param [in] rhs is the iox::string, custom string, char array or char to compare with lhs
 ///
 /// @return true if both strings are not equal, otherwise false
 template <typename T, uint64_t Capacity>
@@ -627,7 +629,7 @@ IsStringOrCharArrayOrChar<T, bool> operator!=(const string<Capacity>& lhs, const
 /// @brief checks if lhs is less than rhs, in lexicographical order
 ///
 /// @param [in] lhs is the iox::string
-/// @param [in] rhs is the iox::string, char array or char to compare with lhs
+/// @param [in] rhs is the iox::string, custom string, char array or char to compare with lhs
 ///
 /// @return true if lhs is less than rhs, otherwise false
 template <typename T, uint64_t Capacity>
@@ -636,7 +638,7 @@ IsStringOrCharArrayOrChar<T, bool> operator<(const string<Capacity>& lhs, const 
 /// @brief checks if lhs is less than or equal to rhs, in lexicographical order
 ///
 /// @param [in] lhs is the iox::string
-/// @param [in] rhs is the iox::string, char array or char to compare with lhs
+/// @param [in] rhs is the iox::string, custom string, char array or char to compare with lhs
 ///
 /// @return true if lhs is less than or equal to rhs, otherwise false
 template <typename T, uint64_t Capacity>
@@ -645,7 +647,7 @@ IsStringOrCharArrayOrChar<T, bool> operator<=(const string<Capacity>& lhs, const
 /// @brief checks if lhs is greater than rhs, in lexicographical order
 ///
 /// @param [in] lhs is the iox::string
-/// @param [in] rhs is the iox::string, char array or char to compare with lhs
+/// @param [in] rhs is the iox::string, custom string, char array or char to compare with lhs
 ///
 /// @return true if lhs is greater than rhs, otherwise false
 template <typename T, uint64_t Capacity>
@@ -654,7 +656,7 @@ IsStringOrCharArrayOrChar<T, bool> operator>(const string<Capacity>& lhs, const 
 /// @brief checks if lhs is greater than or equal to rhs, in lexicographical order
 ///
 /// @param [in] lhs is the iox::string
-/// @param [in] rhs is the iox::string, char array or char to compare with lhs
+/// @param [in] rhs is the iox::string, custom string, char array or char to compare with lhs
 ///
 /// @return true if lhs is greater than or equal to rhs, otherwise false
 template <typename T, uint64_t Capacity>

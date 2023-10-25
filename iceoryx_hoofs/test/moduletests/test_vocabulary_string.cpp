@@ -1,5 +1,5 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
-// Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2021 - 2023 by Apex.AI Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ TYPED_TEST(stringTyped_test, CopyConstructStringOfSizeCapaResultsInSizeCapa)
     string<STRINGCAP> fuu(this->testSubject);
     EXPECT_THAT(fuu.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(fuu.size(), Eq(STRINGCAP));
-    EXPECT_THAT(fuu.c_str(), StrEq(testString.c_str()));
+    EXPECT_THAT(fuu.c_str(), StrEq(testString));
 }
 
 /// @note string(string&& other) noexcept
@@ -1835,7 +1835,7 @@ TYPED_TEST(stringTyped_test, ConcatenateTwoNotEmptyStringsWorks)
 
     EXPECT_THAT(testString2.capacity(), Eq(2U * STRINGCAP + 3U));
     EXPECT_THAT(testString2.size(), Eq(this->testSubject.size() + testString1.size()));
-    EXPECT_THAT(testString2.c_str(), StrEq((testStdString0 + testStdString1).c_str()));
+    EXPECT_THAT(testString2.c_str(), StrEq(testStdString0 + testStdString1));
 }
 
 TYPED_TEST(stringTyped_test, ConcatenateThreeStringsWorks)
@@ -1852,7 +1852,7 @@ TYPED_TEST(stringTyped_test, ConcatenateThreeStringsWorks)
                             + std::string(testString1.c_str(), testString1.size());
     EXPECT_THAT(testString3.capacity(), Eq(3U * STRINGCAP + 2U));
     EXPECT_THAT(testString3.size(), Eq(cmpString.size()));
-    EXPECT_THAT(testString3.c_str(), StrEq(cmpString.c_str()));
+    EXPECT_THAT(testString3.c_str(), StrEq(cmpString));
 }
 
 TYPED_TEST(stringTyped_test, ConcatenateEmptyStringAndStringLiteralWorks)
@@ -1996,7 +1996,7 @@ TYPED_TEST(stringTyped_test, ConcatenateNotEmptyStringsWorks)
     string<6U * STRINGCAP> testString2 = this->testSubject + testString1 + this->testSubject;
     EXPECT_THAT(testString2.capacity(), Eq(6U * STRINGCAP));
     EXPECT_THAT(testString2.size(), Eq(2U * this->testSubject.size() + testString1.size()));
-    EXPECT_THAT(testString2.c_str(), StrEq((testStdString0 + testStdString1 + testStdString0).c_str()));
+    EXPECT_THAT(testString2.c_str(), StrEq(testStdString0 + testStdString1 + testStdString0));
 }
 
 TYPED_TEST(stringTyped_test, ConcatenateEmptyStringAndStringLiteralWithOperatorPlusWorks)
@@ -2184,12 +2184,12 @@ TYPED_TEST(stringTyped_test, UnsafeAppendWithCharFailsWhenCapacityIsExceeded)
     EXPECT_THAT(this->testSubject.unsafe_append('L'), Eq(false));
     EXPECT_THAT(this->testSubject.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(this->testSubject.size(), Eq(STRINGCAP));
-    EXPECT_THAT(this->testSubject.c_str(), StrEq(temp.c_str()));
+    EXPECT_THAT(this->testSubject.c_str(), StrEq(temp));
 
     EXPECT_THAT(this->testSubject.unsafe_append('\0'), Eq(false));
     EXPECT_THAT(this->testSubject.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(this->testSubject.size(), Eq(STRINGCAP));
-    EXPECT_THAT(this->testSubject.c_str(), StrEq(temp.c_str()));
+    EXPECT_THAT(this->testSubject.c_str(), StrEq(temp));
 }
 
 TYPED_TEST(stringTyped_test, UnsafeAppendWithCharToEmptyStringWorks)
@@ -2370,7 +2370,7 @@ TYPED_TEST(stringTyped_test, AppendCharDoesNotChangeStringWhenCapacityIsExceeded
     this->testSubject.append(TruncateToCapacity, 'L');
     EXPECT_THAT(this->testSubject.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(this->testSubject.size(), Eq(STRINGCAP));
-    EXPECT_THAT(this->testSubject.c_str(), StrEq(temp.substr(0, STRINGCAP).c_str()));
+    EXPECT_THAT(this->testSubject.c_str(), StrEq(temp.substr(0, STRINGCAP)));
 }
 
 /// @note iox::cxx::optional<string<Capacity>> substr(uint64_t pos = 0) const noexcept;
@@ -2388,10 +2388,10 @@ TYPED_TEST(stringTyped_test, SubstrWithDefaultPosAndSizeResultsInWholeString)
     std::string testStdSubstring = testStdString.substr();
     EXPECT_THAT(testSubstring.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(testSubstring.size(), Eq(testStdSubstring.size()));
-    EXPECT_THAT(testSubstring.c_str(), StrEq(testStdSubstring.c_str()));
+    EXPECT_THAT(testSubstring.c_str(), StrEq(testStdSubstring));
     EXPECT_THAT(this->testSubject.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(this->testSubject.size(), Eq(STRINGCAP));
-    EXPECT_THAT(this->testSubject.c_str(), StrEq(testStdString.c_str()));
+    EXPECT_THAT(this->testSubject.c_str(), StrEq(testStdString));
 }
 
 TEST(String100, SubstrWithDefaultSizeWorks)
@@ -2408,7 +2408,7 @@ TEST(String100, SubstrWithDefaultSizeWorks)
     auto testSubstring = res.value();
     EXPECT_THAT(testSubstring.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(testSubstring.size(), Eq(testStdSubstring.size()));
-    EXPECT_THAT(testSubstring.c_str(), StrEq(testStdSubstring.c_str()));
+    EXPECT_THAT(testSubstring.c_str(), StrEq(testStdSubstring));
 }
 
 /// @note iox::cxx::optional<string<Capacity>> substr(uint64_t pos, uint64_t count) const noexcept
@@ -2425,7 +2425,7 @@ TEST(String100, SubstrWithValidPosAndSizeWorks)
     auto testSubstring1 = res1.value();
     EXPECT_THAT(testSubstring1.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(testSubstring1.size(), Eq(testStdSubstring.size()));
-    EXPECT_THAT(testSubstring1.c_str(), StrEq(testStdSubstring.c_str()));
+    EXPECT_THAT(testSubstring1.c_str(), StrEq(testStdSubstring));
 
     testStdSubstring = testStdString.substr(20, 5);
     auto res2 = testCxxString.substr(20U, 5U);
@@ -2433,7 +2433,7 @@ TEST(String100, SubstrWithValidPosAndSizeWorks)
     auto testSubstring2 = res2.value();
     EXPECT_THAT(testSubstring2.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(testSubstring2.size(), Eq(testStdSubstring.size()));
-    EXPECT_THAT(testSubstring2.c_str(), StrEq(testStdSubstring.c_str()));
+    EXPECT_THAT(testSubstring2.c_str(), StrEq(testStdSubstring));
 
     testStdSubstring = testStdString.substr(0, 26);
     auto res3 = testCxxString.substr(0U, 26U);
@@ -2441,7 +2441,7 @@ TEST(String100, SubstrWithValidPosAndSizeWorks)
     auto testSubstring3 = res3.value();
     EXPECT_THAT(testSubstring3.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(testSubstring3.size(), Eq(testStdSubstring.size()));
-    EXPECT_THAT(testSubstring3.c_str(), StrEq(testStdSubstring.c_str()));
+    EXPECT_THAT(testSubstring3.c_str(), StrEq(testStdSubstring));
 
     testStdSubstring = testStdString.substr(11, 8);
     auto res4 = testCxxString.substr(11U, 8U);
@@ -2449,7 +2449,7 @@ TEST(String100, SubstrWithValidPosAndSizeWorks)
     auto testSubstring4 = res4.value();
     EXPECT_THAT(testSubstring4.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(testSubstring4.size(), Eq(testStdSubstring.size()));
-    EXPECT_THAT(testSubstring4.c_str(), StrEq(testStdSubstring.c_str()));
+    EXPECT_THAT(testSubstring4.c_str(), StrEq(testStdSubstring));
 
     testStdSubstring = testStdString.substr(13, 98);
     auto res5 = testCxxString.substr(13U, 98U);
@@ -2457,7 +2457,7 @@ TEST(String100, SubstrWithValidPosAndSizeWorks)
     auto testSubstring5 = res5.value();
     EXPECT_THAT(testSubstring5.capacity(), Eq(STRINGCAP));
     EXPECT_THAT(testSubstring5.size(), Eq(testStdSubstring.size()));
-    EXPECT_THAT(testSubstring5.c_str(), StrEq(testStdSubstring.c_str()));
+    EXPECT_THAT(testSubstring5.c_str(), StrEq(testStdSubstring));
 }
 
 TYPED_TEST(stringTyped_test, SubstrWithInvalidPosFails)
@@ -2482,11 +2482,6 @@ TYPED_TEST(stringTyped_test, FindEmptyStringInEmptyStringWorks)
     EXPECT_THAT(res.value(), Eq(0U));
 
     res = this->testSubject.find("");
-    ASSERT_THAT(res.has_value(), Eq(true));
-    EXPECT_THAT(res.value(), Eq(0U));
-
-    MyString testStdString;
-    res = this->testSubject.find(testStdString);
     ASSERT_THAT(res.has_value(), Eq(true));
     EXPECT_THAT(res.value(), Eq(0U));
 }
@@ -2572,21 +2567,6 @@ TEST(String100, FindNotIncludedStringLiteralFails)
     EXPECT_THAT(res.has_value(), Eq(false));
 
     res = testString.find("abc", 50U);
-    EXPECT_THAT(res.has_value(), Eq(false));
-}
-
-TEST(String100, FindNotIncludedSTDStringFails)
-{
-    ::testing::Test::RecordProperty("TEST_ID", "8b2116c9-5f7d-48b4-8c26-cb3b71cf0ea2");
-    string<100U> testString("Kernfusionsbaby");
-    string<100U> testStdString = "abc";
-    auto res = testString.find(testStdString);
-    EXPECT_THAT(res.has_value(), Eq(false));
-
-    res = testString.find(testStdString, 0U);
-    EXPECT_THAT(res.has_value(), Eq(false));
-
-    res = testString.find(testStdString, 50U);
     EXPECT_THAT(res.has_value(), Eq(false));
 }
 
@@ -2854,7 +2834,7 @@ TYPED_TEST(stringTyped_test, AccessAndAssignToMaxPositionOfNotEmptyStringViaAtSu
 
     this->testSubject.at(STRINGCAP - 1) = NEW_CHARACTER;
     testSTDString.at(STRINGCAP - 1) = NEW_CHARACTER;
-    EXPECT_THAT(this->testSubject.c_str(), StrEq(testSTDString.c_str()));
+    EXPECT_THAT(this->testSubject.c_str(), StrEq(testSTDString));
 }
 
 /// @note constexpr const char& at(const uint64_t pos) const noexcept
@@ -2940,7 +2920,7 @@ TYPED_TEST(stringTyped_test, AccessAndAssignToMaxPositionOfNotEmptyStringViaSubs
 
     this->testSubject[STRINGCAP - 1] = NEW_CHARACTER;
     testSTDString[STRINGCAP - 1] = NEW_CHARACTER;
-    EXPECT_THAT(this->testSubject.c_str(), StrEq(testSTDString.c_str()));
+    EXPECT_THAT(this->testSubject.c_str(), StrEq(testSTDString));
 }
 
 /// @note constexpr const char& operator[](const uint64_t pos) const noexcept
@@ -3203,20 +3183,20 @@ TEST(stringTyped_test, NonCxxStringsAreIdentifiedCorrectly)
 {
     ::testing::Test::RecordProperty("TEST_ID", "898fdeb7-2b35-4d33-8db4-ed3b9447a1da");
 
-    EXPECT_FALSE(is_cxx_string<int>::value);
+    EXPECT_FALSE(is_iox_string<int>::value);
     /// @NOLINTJUSTIFICATION we want test explicitly the c arrays case
     /// @NOLINTBEGIN(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
-    EXPECT_FALSE(is_cxx_string<int[10]>::value);
-    EXPECT_FALSE(is_cxx_string<char[11]>::value);
+    EXPECT_FALSE(is_iox_string<int[10]>::value);
+    EXPECT_FALSE(is_iox_string<char[11]>::value);
     /// @NOLINTEND(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
-    EXPECT_FALSE(is_cxx_string<char>::value);
+    EXPECT_FALSE(is_iox_string<char>::value);
 }
 
 TEST(stringTyped_test, CxxStringsAreIdentifiedCorrectly)
 {
     ::testing::Test::RecordProperty("TEST_ID", "778995dc-9be4-47f1-9490-cd111930d3d3");
 
-    EXPECT_TRUE(is_cxx_string<iox::string<1>>::value);
-    EXPECT_TRUE(is_cxx_string<iox::string<10>>::value);
+    EXPECT_TRUE(is_iox_string<iox::string<1>>::value);
+    EXPECT_TRUE(is_iox_string<iox::string<10>>::value);
 }
 } // namespace

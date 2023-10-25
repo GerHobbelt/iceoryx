@@ -17,7 +17,7 @@
 #ifndef IOX_HOOFS_VOCABULARY_STRING_INL
 #define IOX_HOOFS_VOCABULARY_STRING_INL
 
-#include "iceoryx_hoofs/log/logging.hpp"
+#include "iox/logging.hpp"
 #include "iox/string.hpp"
 
 namespace iox
@@ -328,6 +328,7 @@ inline string<Capacity>& string<Capacity>::operator+=(const T&) noexcept
 
 template <typename T1, typename T2>
 inline IsIoxStringOrCharArrayOrChar<T1, T2, string<internal::SumCapa<T1, T2>::value>>
+// AXIVION Next Line AutosarC++19_03-M3.2.1 : False positive, the return value is compatible with the declaration
 concatenate(const T1& str1, const T2& str2) noexcept
 {
     uint64_t size1{internal::GetSize<T1>::call(str1)};
@@ -572,7 +573,7 @@ inline constexpr const char& string<Capacity>::operator[](const uint64_t pos) co
     return at(pos);
 }
 
-// AXIVION DISABLE STYLE AutosarC++19_03-A13.5.5: Comparison with char array or
+// AXIVION DISABLE STYLE AutosarC++19_03-A13.5.5: Comparison with custom string, char array or
 // char is also intended
 template <typename T, uint64_t Capacity>
 inline IsCustomStringOrCharArrayOrChar<T, bool> operator==(const T& lhs, const string<Capacity>& rhs) noexcept
