@@ -47,6 +47,11 @@ long sysconf(int name)
 
 int iox_close(int fd)
 {
+    return _close(fd);
+}
+
+int iox_ext_close(int fd)
+{
     HANDLE handle = HandleTranslator::getInstance().get(fd);
     if (handle == nullptr)
     {

@@ -19,6 +19,8 @@
 #include "iceoryx_platform/attributes.hpp"
 #include "iceoryx_platform/errno.hpp"
 #include "iceoryx_platform/fcntl.hpp"
+#include "iceoryx_platform/stdio.hpp"
+#include "iox/filesystem.hpp"
 
 namespace iox
 {
@@ -64,7 +66,33 @@ expected<File, FileCreationError> FileBuilder::open_impl(const bool print_error_
 
     if (!result.has_error())
     {
-        return iox::success<File>(File(result.value().value, m_access_mode));
+        File file(result.value().value, m_access_mode);
+        const auto perms = file.get_permissions();
+        if (perms.has_error())
+        {
+            IOX_LOG(ERROR) << "Unable to acquire the permissions of the file.";
+            return iox::error<FileCreationError>(FileCreationError::PermissionDenied);
+        }
+
+        if (m_access_mode == posix::AccessMode::READ_ONLY || m_access_mode == posix::AccessMode::READ_WRITE)
+        {
+            if ((perms->value() & perms::owner_read.value()) == 0)
+            {
+                IOX_LOG(ERROR) << "Unable to open/create file due to insufficient read permissions.";
+                return iox::error<FileCreationError>(FileCreationError::PermissionDenied);
+            }
+        }
+
+        if (m_access_mode == posix::AccessMode::WRITE_ONLY || m_access_mode == posix::AccessMode::READ_WRITE)
+        {
+            if ((perms->value() & perms::owner_write.value()) == 0)
+            {
+                IOX_LOG(ERROR) << "Unable to open/create file due to insufficient write permissions.";
+                return iox::error<FileCreationError>(FileCreationError::PermissionDenied);
+            }
+        }
+
+        return iox::success<File>(std::move(file));
     }
 
     switch (result.get_error().errnum)
@@ -216,7 +244,7 @@ expected<bool, FileAccessError> File::does_exist(const FilePath& file) noexcept
 
 expected<bool, FileRemoveError> File::remove(const FilePath& file) noexcept
 {
-    auto result = posix::posixCall(iox_unlink)(file.as_string().c_str())
+    auto result = posix::posixCall(iox_remove)(file.as_string().c_str())
                       .failureReturnValue(-1)
                       .suppressErrorMessagesForErrnos(ENOENT)
                       .evaluate();
