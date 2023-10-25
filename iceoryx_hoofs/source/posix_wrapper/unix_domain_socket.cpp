@@ -1,5 +1,5 @@
 // Copyright (c) 2020 by Robert Bosch GmbH. All rights reserved.
-// Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2021 - 2023 by Apex.AI Inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ UnixDomainSocket::UnixDomainSocket(const IpcChannelName_t& name,
         [&]() -> UdsName_t {
             /// invalid names will be forwarded and handled by the other constructor
             /// separately
-            if (!cxx::isValidPathToFile(name))
+            if (!isValidPathToFile(name))
             {
                 return name;
             }
@@ -75,7 +75,7 @@ UnixDomainSocket::UnixDomainSocket(const NoPathPrefix_t,
     : m_name(name)
     , m_channelSide(channelSide)
 {
-    if (!cxx::isValidPathToFile(name))
+    if (!isValidPathToFile(name))
     {
         this->m_isInitialized = false;
         this->m_errorValue = IpcChannelError::INVALID_CHANNEL_NAME;
@@ -137,7 +137,7 @@ bool UnixDomainSocket::isInitialized() const noexcept
 
 expected<bool, IpcChannelError> UnixDomainSocket::unlinkIfExists(const UdsName_t& name) noexcept
 {
-    if (!cxx::isValidPathToFile(name))
+    if (!isValidPathToFile(name))
     {
         return error<IpcChannelError>(IpcChannelError::INVALID_CHANNEL_NAME);
     }
@@ -153,7 +153,7 @@ expected<bool, IpcChannelError> UnixDomainSocket::unlinkIfExists(const UdsName_t
 
 expected<bool, IpcChannelError> UnixDomainSocket::unlinkIfExists(const NoPathPrefix_t, const UdsName_t& name) noexcept
 {
-    if (!cxx::isValidPathToFile(name))
+    if (!isValidPathToFile(name))
     {
         return error<IpcChannelError>(IpcChannelError::INVALID_CHANNEL_NAME);
     }
@@ -178,7 +178,14 @@ expected<IpcChannelError> UnixDomainSocket::closeFileDescriptor() noexcept
         {
             if (IpcChannelSide::SERVER == m_channelSide)
             {
-                unlink(&(m_sockAddr.sun_path[0]));
+                auto unlinkCall = posixCall(unlink)(&(m_sockAddr.sun_path[0]))
+                                      .failureReturnValue(ERROR_CODE)
+                                      .ignoreErrnos(ENOENT)
+                                      .evaluate();
+                if (unlinkCall.has_error())
+                {
+                    return error<IpcChannelError>(IpcChannelError::INTERNAL_LOGIC_ERROR);
+                }
             }
 
             m_sockfd = INVALID_FD;
