@@ -19,72 +19,70 @@
 
 #include "iox/expected.hpp"
 
-
 namespace iox
 {
-// AXIVION Next Construct AutosarC++19_03-A12.1.5 : This is a false positive since there is no fitting constructor
-// available for delegation
-template <typename T>
-inline success<T>::success(const T& t) noexcept
-    : value(t)
+template <typename T, typename>
+detail::ok<void> ok()
 {
+    return detail::ok<void>{};
 }
 
-// AXIVION Next Construct AutosarC++19_03-A18.9.2 : For universal references std::forward must be used
-template <typename T>
-inline success<T>::success(T&& t) noexcept
-    : value(std::forward<T>(t))
+template <typename T, typename>
+detail::ok<T> ok(const T& value)
 {
+    return detail::ok<T>{value};
 }
 
-// AXIVION Next Construct AutosarC++19_03-A15.4.2, FaultDetection-NoexceptViolations : Intentional behavior. 'success' is not intended to be used with a type which throws
-template <typename T>
-template <typename... Targs>
-inline success<T>::success(Targs&&... args) noexcept
-    : value(std::forward<Targs>(args)...)
+template <typename T, typename, typename>
+detail::ok<T> ok(T&& value)
 {
+    return detail::ok<T>{std::forward<T>(value)};
 }
-// AXIVION Next Construct AutosarC++19_03-A12.1.5 : This is a false positive since there is no fitting constructor
-// available for delegation
-template <typename T>
-inline error<T>::error(const T& t) noexcept
-    : value(t)
+
+template <typename T, typename... Targs, typename>
+detail::ok<T> ok(Targs&&... args)
 {
-}
-// AXIVION Next Construct AutosarC++19_03-A18.9.2 : For universal references std::forward must be used
-template <typename T>
-inline error<T>::error(T&& t) noexcept
-    : value(std::forward<T>(t))
-{
+    return detail::ok<T>{std::forward<Targs>(args)...};
 }
 
 template <typename T>
-template <typename... Targs>
-inline error<T>::error(Targs&&... args) noexcept
-    : value(std::forward<Targs>(args)...)
+detail::err<T> err(const T& error)
 {
+    return detail::err<T>{error};
+}
+
+template <typename T, typename>
+detail::err<T> err(T&& error)
+{
+    return detail::err<T>{std::forward<T>(error)};
+}
+
+template <typename T, typename... Targs>
+detail::err<T> err(Targs&&... args)
+{
+    return detail::err<T>{std::forward<Targs>(args)...};
 }
 
 template <typename ValueType, typename ErrorType>
-inline expected<ValueType, ErrorType>::expected(const success<ValueType>& successValue) noexcept
+inline expected<ValueType, ErrorType>::expected(const detail::ok<ValueType>& successValue) noexcept
     : m_store(in_place, successValue.value)
 {
 }
 
 template <typename ValueType, typename ErrorType>
-inline expected<ValueType, ErrorType>::expected(success<ValueType>&& successValue) noexcept
+inline expected<ValueType, ErrorType>::expected(detail::ok<ValueType>&& successValue) noexcept
     : m_store(in_place, std::move(successValue.value))
 {
 }
 
 template <typename ValueType, typename ErrorType>
-inline expected<ValueType, ErrorType>::expected(const error<ErrorType>& errorValue) noexcept
+inline expected<ValueType, ErrorType>::expected(const detail::err<ErrorType>& errorValue) noexcept
     : m_store(unexpect, errorValue.value)
 {
 }
 
 template <typename ValueType, typename ErrorType>
-inline expected<ValueType, ErrorType>::expected(error<ErrorType>&& errorValue) noexcept
+inline expected<ValueType, ErrorType>::expected(detail::err<ErrorType>&& errorValue) noexcept
     : m_store(unexpect, std::move(errorValue.value))
 {
 }
@@ -122,23 +120,15 @@ expected<ValueType, ErrorType>::operator=(expected<ValueType, ErrorType>&& rhs) 
 }
 
 template <typename ValueType, typename ErrorType>
-template <typename... Targs>
-inline expected<ValueType, ErrorType> expected<ValueType, ErrorType>::create_value(Targs&&... args) noexcept
-{
-    return expected{in_place, std::forward<Targs>(args)...};
-}
-
-template <typename ValueType, typename ErrorType>
-template <typename... Targs>
-inline expected<ValueType, ErrorType> expected<ValueType, ErrorType>::create_error(Targs&&... args) noexcept
-{
-    return expected{unexpect, std::forward<Targs>(args)...};
-}
-
-template <typename ValueType, typename ErrorType>
 inline expected<ValueType, ErrorType>::operator bool() const noexcept
 {
     return !has_error();
+}
+
+template <typename ValueType, typename ErrorType>
+inline bool expected<ValueType, ErrorType>::has_value() const noexcept
+{
+    return m_store.has_value();
 }
 
 template <typename ValueType, typename ErrorType>
@@ -170,14 +160,14 @@ inline const ErrorType& expected<ValueType, ErrorType>::get_error() const& noexc
 
 template <typename ValueType, typename ErrorType>
 template <typename U>
-inline ExpectedValueTypeNonVoid<U>&& expected<ValueType, ErrorType>::value() && noexcept
+inline enable_if_non_void_t<U>&& expected<ValueType, ErrorType>::value() && noexcept
 {
     return std::move(value());
 }
 
 template <typename ValueType, typename ErrorType>
 template <typename U>
-inline const ExpectedValueTypeNonVoid<U>& expected<ValueType, ErrorType>::value() const& noexcept
+inline const enable_if_non_void_t<U>& expected<ValueType, ErrorType>::value() const& noexcept
 {
     cxx::ExpectsWithMsg(!has_error(), "Trying to access a value but an error is stored!");
     return m_store.value_unchecked();
@@ -185,7 +175,7 @@ inline const ExpectedValueTypeNonVoid<U>& expected<ValueType, ErrorType>::value(
 
 template <typename ValueType, typename ErrorType>
 template <typename U>
-inline ExpectedValueTypeNonVoid<U>& expected<ValueType, ErrorType>::value() & noexcept
+inline enable_if_non_void_t<U>& expected<ValueType, ErrorType>::value() & noexcept
 {
     // AXIVION Next Construct AutosarC++19_03-A5.2.3 : const cast to avoid code duplication
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
@@ -194,14 +184,14 @@ inline ExpectedValueTypeNonVoid<U>& expected<ValueType, ErrorType>::value() & no
 
 template <typename ValueType, typename ErrorType>
 template <typename U>
-inline ExpectedValueTypeNonVoid<U>* expected<ValueType, ErrorType>::operator->() noexcept
+inline enable_if_non_void_t<U>* expected<ValueType, ErrorType>::operator->() noexcept
 {
     return &value();
 }
 
 template <typename ValueType, typename ErrorType>
 template <typename U>
-inline const ExpectedValueTypeNonVoid<U>* expected<ValueType, ErrorType>::operator->() const noexcept
+inline const enable_if_non_void_t<U>* expected<ValueType, ErrorType>::operator->() const noexcept
 {
     // AXIVION Next Construct AutosarC++19_03-A5.2.3 : const_cast avoids code duplication, is safe since the
     // constness of the return value is restored
@@ -211,14 +201,14 @@ inline const ExpectedValueTypeNonVoid<U>* expected<ValueType, ErrorType>::operat
 
 template <typename ValueType, typename ErrorType>
 template <typename U>
-inline ExpectedValueTypeNonVoid<U>& expected<ValueType, ErrorType>::operator*() noexcept
+inline enable_if_non_void_t<U>& expected<ValueType, ErrorType>::operator*() noexcept
 {
     return value();
 }
 
 template <typename ValueType, typename ErrorType>
 template <typename U>
-inline const ExpectedValueTypeNonVoid<U>& expected<ValueType, ErrorType>::operator*() const noexcept
+inline const enable_if_non_void_t<U>& expected<ValueType, ErrorType>::operator*() const noexcept
 {
     // AXIVION Next Construct AutosarC++19_03-A5.2.3 : const_cast avoids code duplication and is safe here, since the
     // constness of the return value is restored
@@ -232,16 +222,16 @@ inline expected<ValueType, ErrorType>::operator expected<void, ErrorType>() cons
 {
     if (has_error())
     {
-        return error<ErrorType>(get_error());
+        return err(m_store.error_unchecked());
     }
-    return success<>();
+    return expected<void, ErrorType>(in_place);
 }
 
 template <typename ValueType, typename ErrorType>
 template <typename U>
-inline optional<ExpectedValueTypeNonVoid<U>> expected<ValueType, ErrorType>::to_optional() const noexcept
+inline optional<enable_if_non_void_t<U>> expected<ValueType, ErrorType>::to_optional() const noexcept
 {
-    optional<ExpectedValueTypeNonVoid<U>> returnValue;
+    optional<enable_if_non_void_t<U>> returnValue;
     if (!has_error())
     {
         returnValue.emplace(value());

@@ -26,86 +26,100 @@
 
 namespace iox
 {
-/// @brief helper struct to create an expected which is signalling success more easily
-/// @param T type which the success helper class should contain
-/// @code
-///     expected<int, float> callMe() {
-///         //...
-///         return success<int>(55);
-///     }
-/// @endcode
 template <typename T = void>
-struct success
-{
-    /// @brief constructor which creates a success helper class by copying
-    ///         the value of t
-    /// @param[in] t value which should be later stored in an expected
-    explicit success(const T& t) noexcept;
+using success = detail::ok<T>;
 
-    /// @brief constructor which creates a success helper class by moving
-    ///         the value of t
-    /// @param[in] t value which should be later moved into an expected
-    explicit success(T&& t) noexcept;
-    template <typename... Targs>
+template <typename T>
+using error = detail::err<T>;
 
-    /// @brief constructor which creates a success helper class by forwarding
-    ///         arguments to the constructor of T
-    /// @param[in] args... arguments which will be perfectly forwarded to the
-    ///                     constructor
-    explicit success(Targs&&... args) noexcept;
-
-    T value;
-};
-
-/// @brief helper struct to handle 'void' value type specialization
+/// @brief convenience function to create an 'expected' with a 'void' value type
+/// @tparam T helper template parameter for SFINEA
 /// @code
-///     expected<void, float> callMe() {
+///     expected<void, uint64_t> callMe() {
 ///         //...
-///         return success<>();
+///         return ok();
 ///     }
 /// @endcode
-template <>
-struct success<void>
-{
-    // dummy value
-    bool value{true};
-};
+template <typename T = void, typename = enable_if_void_t<T>>
+detail::ok<void> ok();
 
-/// @brief helper struct to create an expected which is signalling an error more easily
-/// @param T type which the success helper class should contain
+/// @brief convenience function to create an 'expected' with a value type by copy
+/// @tparam T value type for the 'expected'
+/// @param[in] value is the value for the 'expected'
 /// @code
-///     expected<void, float> callMe() {
+///     expected<bool, uint64_t> callMe() {
 ///         //...
-///         return error<float>(12.34f);
+///         return ok(true);
+///     }
+/// @endcode
+template <typename T, typename = enable_if_non_void_t<T>>
+detail::ok<T> ok(const T& value);
+
+/// @brief convenience function to create an 'expected' with a value type by move
+/// @tparam T value type for the 'expected'
+/// @param[in] value is the value for the 'expected'
+/// @code
+///     expected<MyClass, uint64_t> callMe() {
+///         //...
+///         MyClass m;
+///         //...
+///         return ok(std::move(m));
+///     }
+/// @endcode
+template <typename T, typename = enable_if_non_void_t<T>, typename = enable_if_not_lvalue_referece_t<T>>
+detail::ok<T> ok(T&& value);
+
+/// @brief convenience function to create an 'expected' with a value type by argument forwarding
+/// @tparam T value type for the 'expected'
+/// @tparam Targs types for the constructor of the value type
+/// @param[in] args... arguments which will be perfectly forwarded to the value type constructor
+/// @code
+///     expected<SomeClass, uint64_t> callMe() {
+///         //...
+///         return ok<SomeClass>(42, 73);
+///     }
+/// @endcode
+template <typename T, typename... Targs, typename = enable_if_non_void_t<T>>
+detail::ok<T> ok(Targs&&... args);
+
+/// @brief convenience function to create an 'expected' with an error type by copy
+/// @tparam T error type for the 'expected'
+/// @param[in] error is the error for the 'expected'
+/// @code
+///     expected<bool, uint64_t> callMe() {
+///         //...
+///         return err(37);
 ///     }
 /// @endcode
 template <typename T>
-struct error
-{
-    /// @brief constructor which creates a error helper class by copying
-    ///         the value of t
-    /// @param[in] t value which should be later stored in an expected
-    explicit error(const T& t) noexcept;
+detail::err<T> err(const T& error);
 
-    /// @brief constructor which creates a error helper class by moving
-    ///         the value of t
-    /// @param[in] t value which should be later moved into an expected
-    explicit error(T&& t) noexcept;
+/// @brief convenience function to create an 'expected' with an error type by move
+/// @tparam T error type for the 'expected'
+/// @param[in] error is the error for the 'expected'
+/// @code
+///     expected<bool, MyError> callMe() {
+///         //...
+///         MyError e;
+///         //...
+///         return err(std::move(e));
+///     }
+/// @endcode
+template <typename T, typename = enable_if_not_lvalue_referece_t<T>>
+detail::err<T> err(T&& error);
 
-    /// @brief constructor which creates a error helper class by forwarding
-    ///         arguments to the constructor of T
-    /// @param[in] args... arguments which will be perfectly forwarded to the
-    ///                     constructor
-    template <typename... Targs>
-    explicit error(Targs&&... args) noexcept;
-
-    T value;
-};
-
-/// @brief helper trait for SFINEA to disable specific functions for 'void' value type
-/// @tparam ValueType type of the value which can be stored in the expected
-template <typename ValueType>
-using ExpectedValueTypeNonVoid = typename std::enable_if<!std::is_void<ValueType>::value, ValueType>::type;
+/// @brief convenience function to create an 'expected' with an error type by argument forwarding
+/// @tparam T error type for the 'expected'
+/// @tparam Targs types for the constructor of the error type
+/// @param[in] args... arguments which will be perfectly forwarded to the error type constructor
+/// @code
+///     expected<bool, SomeError> callMe() {
+///         //...
+///         return err<SomeError>(13, "Friday");
+///     }
+/// @endcode
+template <typename T, typename... Targs>
+detail::err<T> err(Targs&&... args);
 
 /// @brief Implementation of the C++23 expected class which can contain an error or a success value
 /// @param ValueType type of the value which can be stored in the expected
@@ -165,7 +179,7 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     // we would like to use 'return ok(myValue)' with an implicit
     // conversion to return an expected easily
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    expected(const success<ValueType>& successValue) noexcept;
+    expected(const detail::ok<ValueType>& successValue) noexcept;
 
     /// @brief  constructs an expected which is signaling success and uses the value
     ///         provided by successValue to move construct its success value
@@ -174,7 +188,7 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     // we would like to use 'return ok(myValue)' with an implicit
     // conversion to return an expected easily
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    expected(success<ValueType>&& successValue) noexcept;
+    expected(detail::ok<ValueType>&& successValue) noexcept;
 
     /// @brief  constructs an expected which is signaling an error and stores the
     ///         error value provided by errorValue
@@ -183,7 +197,7 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     // we would like to use 'return err(myErrorValue)' with an implicit
     // conversion to return an expected easily
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    expected(const error<ErrorType>& errorValue) noexcept;
+    expected(const detail::err<ErrorType>& errorValue) noexcept;
 
     /// @brief  constructs an expected which is signaling an error and stores the
     ///         error value provided by errorValue
@@ -192,26 +206,16 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     // we would like to use 'return err(myErrorValue)' with an implicit
     // conversion to return an expected easily
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    expected(error<ErrorType>&& errorValue) noexcept;
-
-    /// @brief  creates an expected which is signaling success and perfectly forwards
-    ///         the args to the constructor of ValueType
-    /// @param[in] args... arguments which will be forwarded to the ValueType constructor
-    /// @return expected signalling success
-    template <typename... Targs>
-    static expected create_value(Targs&&... args) noexcept;
-
-    /// @brief  creates an expected which is signaling an error and perfectly forwards
-    ///         the args to the constructor of ErrorType
-    /// @param[in] args... arguments which will be forwarded to the ErrorType constructor
-    /// @return expected signalling error
-    template <typename... Targs>
-    static expected create_error(Targs&&... args) noexcept;
+    expected(detail::err<ErrorType>&& errorValue) noexcept;
 
     // AXIVION Next Construct AutosarC++19_03-A13.5.3: Implementation is inspired from std::expected
-    /// @brief  returns true if the expected does not contain an error otherwise false
+    /// @brief  returns true if the expected contains a value type and false if it is an error type
     /// @return bool which contains true if the expected contains an error
     explicit operator bool() const noexcept;
+
+    /// @brief  returns true if the expected contains a value type and false if it is an error type
+    /// @return bool which contains true if the expected contains an error
+    bool has_value() const noexcept;
 
     /// @brief  returns true if the expected contains an error otherwise false
     /// @return bool which contains true if the expected contains an error
@@ -234,30 +238,30 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
 
     /// @brief  returns a reference to the contained success value, if the expected
     ///         does not contain a success value the error handler is called
-    /// @tparam U helper temlate parameter for SFINEA
+    /// @tparam U helper template parameter for SFINEA
     /// @return reference to the internally contained value
     /// @note this only works for non void ValueTypes
     template <typename U = ValueType>
-    ExpectedValueTypeNonVoid<U>& value() & noexcept;
+    enable_if_non_void_t<U>& value() & noexcept;
 
     /// @brief  returns a const reference to the contained success value, if the expected
     ///         does not contain a success value the error handler is called
-    /// @tparam U helper temlate parameter for SFINEA
+    /// @tparam U helper template parameter for SFINEA
     /// @return const reference to the internally contained value
     /// @note this only works for non void ValueTypes
     template <typename U = ValueType>
-    const ExpectedValueTypeNonVoid<U>& value() const& noexcept;
+    const enable_if_non_void_t<U>& value() const& noexcept;
 
     /// @brief  returns a reference to the contained success value, if the expected
     ///         does not contain a success value the error handler is called
-    /// @tparam U helper temlate parameter for SFINEA
+    /// @tparam U helper template parameter for SFINEA
     /// @return rvalue reference to the internally contained value
     template <typename U = ValueType>
-    ExpectedValueTypeNonVoid<U>&& value() && noexcept;
+    enable_if_non_void_t<U>&& value() && noexcept;
 
     /// @brief dereferencing operator which returns a reference to the contained
     ///         success value. if the expected contains an error the error handler is called
-    /// @tparam U helper temlate parameter for SFINEA
+    /// @tparam U helper template parameter for SFINEA
     /// @return reference to the contained value
     /// @note this only works for non void ValueTypes
     /// @code
@@ -266,11 +270,11 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     ///     IOX_LOG(INFO) << *frodo; // prints 57
     /// @endcode
     template <typename U = ValueType>
-    ExpectedValueTypeNonVoid<U>& operator*() noexcept;
+    enable_if_non_void_t<U>& operator*() noexcept;
 
     /// @brief dereferencing operator which returns a reference to the contained
     ///         success value. if the expected contains an error the error handler is called
-    /// @tparam U helper temlate parameter for SFINEA
+    /// @tparam U helper template parameter for SFINEA
     /// @return const reference to the contained value
     /// @note this only works for non void ValueTypes
     /// @code
@@ -279,11 +283,11 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     ///     IOX_LOG(INFO) << *frodo; // prints 57
     /// @endcode
     template <typename U = ValueType>
-    const ExpectedValueTypeNonVoid<U>& operator*() const noexcept;
+    const enable_if_non_void_t<U>& operator*() const noexcept;
 
     /// @brief arrow operator which returns the pointer to the contained success value
     ///         if the expected contains an error the error handler is called
-    /// @tparam U helper temlate parameter for SFINEA
+    /// @tparam U helper template parameter for SFINEA
     /// @return pointer of type ValueType to the contained value
     /// @note this only works for non void ValueTypes
     /// @code
@@ -291,11 +295,11 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     ///     holyPiotr->push_back(4);
     /// @endcode
     template <typename U = ValueType>
-    ExpectedValueTypeNonVoid<U>* operator->() noexcept;
+    enable_if_non_void_t<U>* operator->() noexcept;
 
     /// @brief arrow operator which returns the pointer to the contained success value
     ///         if the expected contains an error the the error handler is called
-    /// @tparam U helper temlate parameter for SFINEA
+    /// @tparam U helper template parameter for SFINEA
     /// @return pointer of type const ValueType to the contained value
     /// @note this only works for non void ValueTypes
     /// @code
@@ -303,7 +307,7 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     ///     holyPiotr->push_back(4);
     /// @endcode
     template <typename U = ValueType>
-    const ExpectedValueTypeNonVoid<U>* operator->() const noexcept;
+    const enable_if_non_void_t<U>* operator->() const noexcept;
 
     /// @brief conversion operator to a 'void' value type expected which can be useful
     ///         if you would like to return only the success of a function
@@ -323,11 +327,11 @@ class IOX_NO_DISCARD expected final : public FunctionalInterface<expected<ValueT
     operator expected<void, ErrorType>() const noexcept;
 
     /// @brief conversion operator to an optional.
-    /// @tparam U helper temlate parameter for SFINEA
+    /// @tparam U helper template parameter for SFINEA
     /// @return optional containing the value if the expected contains a value, otherwise a nullopt
     /// @note this only works for non void ValueTypes
     template <typename U = ValueType>
-    optional<ExpectedValueTypeNonVoid<U>> to_optional() const noexcept;
+    optional<enable_if_non_void_t<U>> to_optional() const noexcept;
 
     template <typename T, typename E>
     friend constexpr bool ::iox::operator==(const expected<T, E>&, const expected<T, E>&) noexcept;

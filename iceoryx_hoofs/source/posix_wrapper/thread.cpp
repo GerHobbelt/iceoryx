@@ -51,8 +51,8 @@ ThreadName_t getThreadName(iox_pthread_t thread) noexcept
     return ThreadName_t(TruncateToCapacity, &tempName[0]);
 }
 
-expected<ThreadError> ThreadBuilder::create(optional<Thread>& uninitializedThread,
-                                            const Thread::callable_t& callable) noexcept
+expected<void, ThreadError> ThreadBuilder::create(optional<Thread>& uninitializedThread,
+                                                  const Thread::callable_t& callable) noexcept
 {
     uninitializedThread.emplace(m_name, callable);
 
@@ -67,10 +67,10 @@ expected<ThreadError> ThreadBuilder::create(optional<Thread>& uninitializedThrea
     if (!uninitializedThread->m_isThreadConstructed)
     {
         uninitializedThread.reset();
-        return error<ThreadError>(Thread::errnoToEnum(createResult.get_error().errnum));
+        return err(Thread::errnoToEnum(createResult.get_error().errnum));
     }
 
-    return success<>();
+    return ok();
 }
 
 Thread::Thread(const ThreadName_t& name, const callable_t& callable) noexcept
