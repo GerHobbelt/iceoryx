@@ -37,6 +37,8 @@ enum class SharedMemoryObjectError
 {
     SHARED_MEMORY_CREATION_FAILED,
     MAPPING_SHARED_MEMORY_FAILED,
+    UNABLE_TO_VERIFY_MEMORY_SIZE,
+    REQUESTED_SIZE_EXCEEDS_ACTUAL_SIZE,
     INTERNAL_LOGIC_FAILURE,
 };
 
@@ -70,25 +72,22 @@ class SharedMemoryObject : public FileManagementInterface<SharedMemoryObject>
     /// @brief Returns start- or base-address of the shared memory.
     void* getBaseAddress() noexcept;
 
-    /// @brief Returns the size of the shared memory
-    uint64_t getSizeInBytes() const noexcept;
-
     /// @brief Returns the underlying file handle of the shared memory
-    int get_file_handle() const noexcept;
+    int getFileHandle() const noexcept;
 
     /// @brief True if the shared memory has the ownership. False if an already
     ///        existing shared memory was opened.
     bool hasOwnership() const noexcept;
 
-
     friend class SharedMemoryObjectBuilder;
 
   private:
-    SharedMemoryObject(SharedMemory&& sharedMemory, MemoryMap&& memoryMap, const uint64_t memorySizeInBytes) noexcept;
+    SharedMemoryObject(SharedMemory&& sharedMemory, MemoryMap&& memoryMap) noexcept;
+
+    friend struct FileManagementInterface<SharedMemoryObject>;
+    int get_file_handle() const noexcept;
 
   private:
-    uint64_t m_memorySizeInBytes;
-
     SharedMemory m_sharedMemory;
     MemoryMap m_memoryMap;
 };
