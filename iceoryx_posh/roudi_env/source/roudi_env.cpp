@@ -17,26 +17,25 @@
 
 #include "iceoryx_posh/roudi_env/roudi_env.hpp"
 #include "iceoryx_hoofs/internal/posix_wrapper/shared_memory_object/memory_map.hpp"
-#include "iceoryx_hoofs/testing/mocks/error_handler_mock.hpp" // get rid of this
 #include "iceoryx_posh/internal/popo/building_blocks/unique_port_id.hpp"
 #include "iceoryx_posh/internal/roudi/roudi.hpp"
 #include "iceoryx_posh/runtime/posh_runtime.hpp"
+
+#include <memory>
 
 namespace iox
 {
 namespace roudi_env
 {
-RouDiEnv::RouDiEnv(BaseCTor, const uint16_t uniqueRouDiId)
+RouDiEnv::RouDiEnv(MainCTor, const uint16_t uniqueRouDiId) noexcept
 {
-    // setUniqueRouDiId is called multiple times but it is okay for the tests
-    auto errorHandlerGuard = iox::ErrorHandlerMock::setTemporaryErrorHandler<iox::PoshError>([](auto, auto) {});
-    iox::popo::UniquePortId::setUniqueRouDiId(uniqueRouDiId);
+    popo::UniquePortId::rouDiEnvOverrideUniqueRouDiId(uniqueRouDiId);
 }
 
 RouDiEnv::RouDiEnv(const RouDiConfig_t& roudiConfig,
                    const roudi::MonitoringMode monitoringMode,
-                   const uint16_t uniqueRouDiId)
-    : RouDiEnv(BaseCTor::BASE, uniqueRouDiId)
+                   const uint16_t uniqueRouDiId) noexcept
+    : RouDiEnv(MainCTor{}, uniqueRouDiId)
 {
     m_roudiComponents = std::unique_ptr<roudi::IceOryxRouDiComponents>(new roudi::IceOryxRouDiComponents(roudiConfig));
     m_roudiApp =
@@ -45,33 +44,31 @@ RouDiEnv::RouDiEnv(const RouDiConfig_t& roudiConfig,
                                                        roudi::RouDi::RoudiStartupParameters{monitoringMode, false}));
 }
 
-RouDiEnv::~RouDiEnv()
+RouDiEnv::~RouDiEnv() noexcept
 {
     if (m_runtimes.m_doCleanupOnDestruction)
     {
-        // setUniqueRouDiId is called multiple times but it is okay for the tests
-        auto errorHandlerGuard = iox::ErrorHandlerMock::setTemporaryErrorHandler<iox::PoshError>([](auto, auto) {});
-        popo::UniquePortId::setUniqueRouDiId(roudi::DEFAULT_UNIQUE_ROUDI_ID);
+        popo::UniquePortId::rouDiEnvOverrideUniqueRouDiId(roudi::DEFAULT_UNIQUE_ROUDI_ID);
     }
-    CleanupRuntimes();
+    cleanupRuntimes();
 }
 
-void RouDiEnv::SetInterOpWaitingTime(const std::chrono::milliseconds& v)
+void RouDiEnv::setDiscoveryLoopWaitToFinishTimeout(const units::Duration timeout) noexcept
 {
-    m_interOpWaitingTimeout = units::Duration::fromMilliseconds(v.count());
+    m_discoveryLoopWaitToFinishTimeout = timeout;
 }
 
-void RouDiEnv::InterOpWait()
+void RouDiEnv::triggerDiscoveryLoopAndWaitToFinish() noexcept
 {
-    m_roudiApp->triggerDiscoveryLoopAndWaitToFinish(m_interOpWaitingTimeout);
+    m_roudiApp->triggerDiscoveryLoopAndWaitToFinish(m_discoveryLoopWaitToFinishTimeout);
 }
 
-void RouDiEnv::CleanupAppResources(const RuntimeName_t& name)
+void RouDiEnv::cleanupAppResources(const RuntimeName_t& name) noexcept
 {
     m_runtimes.eraseRuntime(name);
 }
 
-void RouDiEnv::CleanupRuntimes()
+void RouDiEnv::cleanupRuntimes() noexcept
 {
     m_runtimes.cleanupRuntimes();
 }

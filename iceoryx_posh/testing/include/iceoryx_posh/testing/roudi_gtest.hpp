@@ -22,13 +22,33 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-using namespace ::testing;
-
-class RouDi_GTest : public iox::roudi_env::RouDiEnv, public Test
+namespace iox
+{
+namespace testing
+{
+class RouDi_GTest : public iox::roudi_env::RouDiEnv, public ::testing::Test
 {
   public:
     RouDi_GTest() = default;
-    RouDi_GTest(const iox::RouDiConfig_t& roudiConfig);
+    RouDi_GTest(const iox::RouDiConfig_t& roudiConfig) noexcept;
+
+    /// @deprecated Deprecated in 3.0, removed in 4.0, please port to 'setDiscoveryLoopWaitToFinishTimeout'
+    [[deprecated("Deprecated in 3.0, removed in 4.0, please port to 'setDiscoveryLoopWaitToFinishTimeout'")]] void
+    SetInterOpWaitingTime(const std::chrono::milliseconds& v) noexcept;
+
+    /// @deprecated Deprecated in 3.0, removed in 4.0, please port to 'triggerDiscoveryLoopAndWaitToFinish'
+    [[deprecated("Deprecated in 3.0, removed in 4.0, please port to 'triggerDiscoveryLoopAndWaitToFinish'")]] void
+    InterOpWait() noexcept;
+
+    /// @deprecated Deprecated in 3.0, removed in 4.0, please port to 'cleanupAppResources'
+    [[deprecated("Deprecated in 3.0, removed in 4.0, please port to 'cleanupAppResources'")]] void
+    CleanupAppResources(const RuntimeName_t& name) noexcept;
 };
+
+} // namespace testing
+} // namespace iox
+
+/// @deprecated Deprecated in 3.0, removed in 4.0, please use 'RouDi_GTest' with the 'iox::testing' namespace
+using RouDi_GTest = iox::testing::RouDi_GTest;
 
 #endif // IOX_POSH_TESTUTILS_ROUDI_GTEST_HPP
