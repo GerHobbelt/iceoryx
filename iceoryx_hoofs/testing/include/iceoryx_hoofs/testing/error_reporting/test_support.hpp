@@ -1,7 +1,27 @@
-#ifndef IOX_HOOFS_MODULETESTS_ERROR_REPORTING_TEST_HELPER_HPP
-#define IOX_HOOFS_MODULETESTS_ERROR_REPORTING_TEST_HELPER_HPP
+// Copyright (c) 2023 by Apex.AI Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef IOX_HOOFS_TESTING_ERROR_REPORTING_TEST_SUPPORT_HPP
+#define IOX_HOOFS_TESTING_ERROR_REPORTING_TEST_SUPPORT_HPP
+
+#include <gtest/gtest.h>
 
 #include "iceoryx_hoofs/error_reporting/platform/default/error_handler.hpp"
+#include "iceoryx_hoofs/testing/error_reporting/test_error_handler.hpp"
+#include "iox/static_lifetime_guard.hpp"
 
 #include <thread>
 #include <utility>
@@ -14,10 +34,12 @@ namespace iox
 namespace testing
 {
 
+using TestErrorHandler = iox::StaticLifetimeGuard<iox::testing::TestHandler>;
+
 /// @brief indicates whether the test error handler invoked panic
 inline bool hasPanicked()
 {
-    return iox::err::TestErrorHandler::instance().hasPanicked();
+    return TestErrorHandler::instance().hasPanicked();
 }
 
 /// @brief indicates whether the test error handler registered a specific error
@@ -25,7 +47,13 @@ template <typename Code>
 inline bool hasError(Code&& code)
 {
     auto e = iox::err::toError(std::forward<Code>(code));
-    return iox::err::TestErrorHandler::instance().hasError(e.code());
+    return TestErrorHandler::instance().hasError(e.code());
+}
+
+/// @brief indicates whether the test error handler registered any error
+inline bool hasError()
+{
+    return TestErrorHandler::instance().hasError();
 }
 
 /// @brief runs testFunction in a testContext that can detect fatal failures;
@@ -34,13 +62,19 @@ inline bool hasError(Code&& code)
 template <typename Function, typename... Args>
 inline void testContext(Function&& testFunction, Args&&... args)
 {
-    auto& buf = iox::err::TestErrorHandler::instance().prepareJump();
+    jmp_buf* buf = TestErrorHandler::instance().prepareJump();
+
+    if (buf == nullptr)
+    {
+        // should not fail with correct usage
+        GTEST_FAIL();
+    };
 
     // setjmp must be called in a stackframe that still exists when longjmp is called
     // Therefore there cannot be a convenient abstraction that does not also
     // know the test function that is being called.
     // NOLINTNEXTLINE
-    if (setjmp(&buf[0]) != iox::err::TestErrorHandler::instance().jumpIndicator())
+    if (setjmp(*buf) != TestErrorHandler::instance().jumpIndicator())
     {
         testFunction(std::forward<Args>(args)...);
     }
@@ -83,6 +117,12 @@ inline void runInTestThread(Function&& testFunction, Args&&... args)
         ASSERT_TRUE(iox::testing::hasError(code));                                                                     \
     } while (false)
 
+#define ASSERT_NO_ERROR()                                                                                              \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        ASSERT_FALSE(iox::testing::hasError());                                                                        \
+    } while (false)
+
 #define EXPECT_NO_PANIC()                                                                                              \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -101,3 +141,9 @@ inline void runInTestThread(Function&& testFunction, Args&&... args)
         EXPECT_TRUE(iox::testing::hasError(code));                                                                     \
     } while (false)
 #endif
+
+#define EXPECT_NO_ERROR()                                                                                              \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        EXPECT_FALSE(iox::testing::hasError());                                                                        \
+    } while (false)

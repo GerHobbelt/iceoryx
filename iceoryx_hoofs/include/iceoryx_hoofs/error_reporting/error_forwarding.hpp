@@ -44,16 +44,13 @@ void forwardError(const SourceLocation& location, Error&& error, Kind&& kind)
 {
     // forwarding selection happens at compile time
     // important: the fatal branch is visibly no-return for the compiler here
-    if (requiresHandling(kind))
+    if (isFatal(kind))
     {
-        if (isFatal(kind))
-        {
-            forwardFatalError(location, std::forward<Error>(error), std::forward<Kind>(kind));
-        }
-        else
-        {
-            forwardNonFatalError(location, std::forward<Error>(error), std::forward<Kind>(kind));
-        }
+        forwardFatalError(location, std::forward<Error>(error), std::forward<Kind>(kind));
+    }
+    else
+    {
+        forwardNonFatalError(location, std::forward<Error>(error), std::forward<Kind>(kind));
     }
 }
 
@@ -67,7 +64,6 @@ template <typename Error, typename Kind, typename Message>
 {
     report(location, kind, error, msg);
     panic(location);
-
     abort();
 }
 
@@ -91,26 +87,22 @@ template <typename Error, typename Kind, typename Message>
 void forwardError(const SourceLocation& location, Error&& error, Kind&& kind, Message&& msg)
 {
     // forwarding selection happens at compile time
-    if (requiresHandling(kind))
+    if (isFatal(kind))
     {
-        if (isFatal(kind))
-        {
-            forwardFatalError(
-                location, std::forward<Error>(error), std::forward<Kind>(kind), std::forward<Message>(msg));
-        }
-        else
-        {
-            forwardNonFatalError(
-                location, std::forward<Error>(error), std::forward<Kind>(kind), std::forward<Message>(msg));
-        }
+        forwardFatalError(location, std::forward<Error>(error), std::forward<Kind>(kind), std::forward<Message>(msg));
+    }
+    else
+    {
+        forwardNonFatalError(
+            location, std::forward<Error>(error), std::forward<Kind>(kind), std::forward<Message>(msg));
     }
 }
 
-/// @brief Discards some generic value.
+/// @brief Discards some generic values.
 /// @note used to suppress unused variable warnings if certain checks are disabled,
 /// the artificial use of value will be optimized away by the compiler.
-template <typename T>
-void discard(T&&)
+template <typename... Args>
+void discard(Args&&...)
 {
 }
 
