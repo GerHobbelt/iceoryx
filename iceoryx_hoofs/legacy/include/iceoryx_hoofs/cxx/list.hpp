@@ -1,4 +1,4 @@
-// Copyright (c) 2023 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2023 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,21 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef IOX_HOOFS_CXX_SCOPE_GUARD_HPP
-#define IOX_HOOFS_CXX_SCOPE_GUARD_HPP
+#ifndef IOX_HOOFS_CXX_LIST_HPP
+#define IOX_HOOFS_CXX_LIST_HPP
 
 #include "iox/detail/deprecation_marker.hpp"
-#include "iox/scope_guard.hpp"
+#include "iox/list.hpp"
 
-IOX_DEPRECATED_HEADER_SINCE(3, "Please include 'iox/scope_guard.hpp' instead.")
+IOX_DEPRECATED_HEADER_SINCE(3, "Please include 'iox/list.hpp' instead.")
 
 namespace iox
 {
 namespace cxx
 {
-/// @deprecated use 'iox::ScopeGuard' instead of 'iox::cxx::ScopeGuard'
-using iox::ScopeGuard;
-
+/// @deprecated use 'iox::list' instead of 'iox::cxx::list'
+using iox::list;
 } // namespace cxx
 } // namespace iox
 
-#endif // IOX_HOOFS_CXX_SCOPE_GUARD_HPP
+#endif // IOX_HOOFS_CXX_LIST_HPP
