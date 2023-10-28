@@ -31,8 +31,8 @@ namespace iox
 /// inserting or removing elements does not change their positions. The container is optimized for efficient iteration
 /// over the elements by always having the 'next' index point to the closest element in memory, which prevents
 /// unnecessary back-and-forth jumps.
-/// @param T is the type the container holds
-/// @param Capacity is the maximum number of elements the container can hold
+/// @tparam T is the type the container holds
+/// @tparam CAPACITY is the maximum number of elements the container can hold
 template <typename T, uint64_t CAPACITY>
 class FixedPositionContainer final
 {
@@ -65,7 +65,6 @@ class FixedPositionContainer final
     FixedPositionContainer() noexcept;
     ~FixedPositionContainer() noexcept;
 
-    /// @todo iox-#2052 create an issue to implement copy/move ctors and assignment operators
     FixedPositionContainer(const FixedPositionContainer&) noexcept = delete;
     FixedPositionContainer(FixedPositionContainer&&) noexcept = delete;
 
@@ -184,12 +183,6 @@ class FixedPositionContainer final
         USED,
     };
 
-    struct Slot
-    {
-        IndexType next{Index::INVALID};
-        SlotStatus status{SlotStatus::FREE};
-    };
-
     template <IterMutability ITER_MUTABILITY>
     class IteratorBase
     {
@@ -227,7 +220,7 @@ class FixedPositionContainer final
         {
             if (m_index <= Index::LAST)
             {
-                m_index = m_container.get().m_slots[m_index].next;
+                m_index = m_container.get().m_next[m_index];
             }
             return *this;
         }
@@ -249,7 +242,7 @@ class FixedPositionContainer final
         IOX_NO_DISCARD Value& operator*() const
         {
             iox::cxx::EnsuresWithMsg(m_index <= Index::LAST, "Access with invalid index!");
-            iox::cxx::EnsuresWithMsg(m_container.get().m_slots[m_index].status == SlotStatus::USED,
+            iox::cxx::EnsuresWithMsg(m_container.get().m_status[m_index] == SlotStatus::USED,
                                      "Invalid access! Slot not in use!");
             return m_container.get().m_data[m_index];
         }
@@ -262,7 +255,7 @@ class FixedPositionContainer final
         IOX_NO_DISCARD Value* operator->() const
         {
             iox::cxx::EnsuresWithMsg(m_index <= Index::LAST, "Access with invalid index!");
-            iox::cxx::EnsuresWithMsg(m_container.get().m_slots[m_index].status == SlotStatus::USED,
+            iox::cxx::EnsuresWithMsg(m_container.get().m_status[m_index] == SlotStatus::USED,
                                      "Invalid access! Slot not in use!");
             return &m_container.get().m_data[m_index];
         }
@@ -275,7 +268,7 @@ class FixedPositionContainer final
         IOX_NO_DISCARD Value* to_ptr() const
         {
             iox::cxx::EnsuresWithMsg(m_index <= Index::LAST, "Access with invalid index!");
-            iox::cxx::EnsuresWithMsg(m_container.get().m_slots[m_index].status == SlotStatus::USED,
+            iox::cxx::EnsuresWithMsg(m_container.get().m_status[m_index] == SlotStatus::USED,
                                      "Invalid access! Slot not in use!");
             return &m_container.get().m_data[m_index];
         }
@@ -326,7 +319,9 @@ class FixedPositionContainer final
 
   private:
     UninitializedArray<T, CAPACITY> m_data;
-    UninitializedArray<Slot, CAPACITY> m_slots;
+    UninitializedArray<SlotStatus, CAPACITY> m_status;
+    UninitializedArray<IndexType, CAPACITY> m_next;
+    IndexType m_size{0};
     IndexType m_begin_free{Index::FIRST};
     IndexType m_begin_used{Index::INVALID};
 };
