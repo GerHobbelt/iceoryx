@@ -177,7 +177,7 @@ std::string shm_state_file_name(const std::string& name)
 
 int iox_shm_unlink(const char* name)
 {
-    DeleteFile(static_cast<LPCTSTR>(shm_state_file_name(name).c_str()));
+    DeleteFileA(static_cast<LPCSTR>(shm_state_file_name(name).c_str()));
 
     std::lock_guard<std::mutex> lock(openedSharedMemorySegmentsMutex);
     auto iter = openedSharedMemorySegments.find(name);
