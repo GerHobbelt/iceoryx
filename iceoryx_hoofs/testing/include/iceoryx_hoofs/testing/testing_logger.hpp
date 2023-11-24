@@ -115,7 +115,7 @@ class TestingLogger : public log::TestingLoggerBase
 class LogPrinter : public ::testing::EmptyTestEventListener
 {
     void OnTestStart(const ::testing::TestInfo&) override;
-    void OnTestPartResult(const ::testing::TestPartResult& result) override;
+	virtual ::testing::TestPartResult OnTestPartResult(const ::testing::TestPartResult& test_part_result) override;
 };
 
 } // namespace testing

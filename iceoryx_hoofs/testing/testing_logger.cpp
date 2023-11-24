@@ -169,7 +169,7 @@ void LogPrinter::OnTestStart(const ::testing::TestInfo&)
 #endif
 }
 
-void LogPrinter::OnTestPartResult(const ::testing::TestPartResult& result)
+::testing::TestPartResult OnTestPartResult(const ::testing::TestPartResult& result) 
 {
     if (result.failed())
     {
@@ -177,6 +177,8 @@ void LogPrinter::OnTestPartResult(const ::testing::TestPartResult& result)
     }
 
     /// @todo iox-#1755 de-register the signal handler from 'OnTestStart'
+
+	return result;
 }
 
 } // namespace testing
