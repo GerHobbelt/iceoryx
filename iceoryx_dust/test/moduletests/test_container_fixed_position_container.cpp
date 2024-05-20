@@ -1,4 +1,5 @@
 // Copyright (c) 2023 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
+// Copyright (c) 2023 by Dennis Liu <dennis48161025@gmail.com>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +18,8 @@
 #include "iox/fixed_position_container.hpp"
 
 #include "iceoryx_hoofs/error_handling/error_handling.hpp"
-#include "iceoryx_hoofs/testing/ctor_and_assignment_operator_test_class.hpp"
 #include "iceoryx_hoofs/testing/fatal_failure.hpp"
+#include "iceoryx_hoofs/testing/lifetime_and_assignment_tracker.hpp"
 
 #include "test.hpp"
 
@@ -35,7 +36,7 @@ struct FixedPositionContainer_test : public Test
 
     using Sut = FixedPositionContainer<DataType, CAPACITY>;
 
-    using ComplexType = CTorAndAssignmentOperatorTestClass<DataType, 0>;
+    using ComplexType = LifetimeAndAssignmentTracker<DataType, 0>;
     using SutComplex = FixedPositionContainer<ComplexType, CAPACITY>;
 
     void SetUp() override
@@ -74,6 +75,7 @@ struct FixedPositionContainer_test : public Test
 
 TEST_F(FixedPositionContainer_test, ContainerIsNotMovable)
 {
+    GTEST_SKIP() << "@deprecated iox-#2052 Add moveable feature";
     ::testing::Test::RecordProperty("TEST_ID", "5c05f240-9822-427b-9eb5-69fd43f1ac28");
     EXPECT_FALSE(std::is_move_constructible<Sut>::value);
     EXPECT_FALSE(std::is_move_assignable<Sut>::value);
@@ -81,6 +83,7 @@ TEST_F(FixedPositionContainer_test, ContainerIsNotMovable)
 
 TEST_F(FixedPositionContainer_test, ContainerIsNotCopyable)
 {
+    GTEST_SKIP() << "@deprecated iox-#2052 Add copyable feature";
     ::testing::Test::RecordProperty("TEST_ID", "1b421af5-d014-4f9b-98ed-fbfdf5a9beb8");
     EXPECT_FALSE(std::is_copy_constructible<Sut>::value);
     EXPECT_FALSE(std::is_copy_assignable<Sut>::value);
@@ -91,6 +94,396 @@ TEST_F(FixedPositionContainer_test, Capacity)
     ::testing::Test::RecordProperty("TEST_ID", "17669b2f-d53b-4ac9-8190-b1c32f8ec4ba");
     EXPECT_THAT(sut.capacity(), Eq(CAPACITY));
 }
+
+// BEGIN test copy constructor
+
+TEST_F(FixedPositionContainer_test, UsingCopyCtorEmptyContainerResultsInEmptyContainer)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "6c528ef3-9c2d-4eb2-93a9-2d998d0db380");
+
+    SutComplex copy_sut_complex{sut_complex};
+
+    EXPECT_THAT(copy_sut_complex.full(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.empty(), Eq(true));
+    EXPECT_THAT(copy_sut_complex.size(), Eq(0));
+}
+
+TEST_F(FixedPositionContainer_test, UsingCopyCtorSingleElementContainerPreservesElement)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "f3aaf452-77fa-4535-bf0b-37bedefc2bf6");
+
+    constexpr DataType EXPECTED_VALUE{42U};
+    constexpr SutComplex::IndexType EXPECTED_SIZE{1U};
+
+    sut_complex.emplace(EXPECTED_VALUE);
+    SutComplex copy_sut_complex{sut_complex};
+
+    EXPECT_THAT(copy_sut_complex.full(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.size(), Eq(EXPECTED_SIZE));
+    EXPECT_THAT(copy_sut_complex.begin()->value, Eq(EXPECTED_VALUE));
+
+    // actually call copyAssignment
+    EXPECT_THAT(stats.copyAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.moveAssignment, Eq(0));
+}
+
+TEST_F(FixedPositionContainer_test, UsingCopyCtorMultipleElementsContainerPreservesAllElements)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "6261f53e-8089-4b9b-9b2d-9da0016a2f1e");
+
+    constexpr SutComplex::IndexType EXPECTED_SIZE{4U};
+    std::vector<DataType> EXPECTED_VALUE = {0U, 1U, 2U, 3U};
+    for (SutComplex::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        sut_complex.emplace(EXPECTED_VALUE[i]);
+    }
+
+    SutComplex copy_sut_complex{sut_complex};
+
+    EXPECT_THAT(copy_sut_complex.full(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.size(), Eq(EXPECTED_SIZE));
+    for (Sut::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        EXPECT_THAT(copy_sut_complex.iter_from_index(i)->value, Eq(EXPECTED_VALUE[i]));
+        EXPECT_THAT(copy_sut_complex.iter_from_index(i), Ne(sut_complex.iter_from_index(i)));
+    }
+
+    // actually call copyAssignment
+    EXPECT_THAT(stats.copyAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.moveAssignment, Eq(0));
+}
+
+TEST_F(FixedPositionContainer_test, UsingCopyCtorFullCapacityContainerPreservesAllElements)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "028704df-b2f3-4133-9c16-b9d2c6a79916");
+
+    fillSutComplex();
+    constexpr SutComplex::IndexType EXPECTED_SIZE{CAPACITY};
+
+    SutComplex copy_sut_complex{sut_complex};
+
+    EXPECT_THAT(copy_sut_complex.full(), Eq(true));
+    EXPECT_THAT(copy_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.size(), Eq(CAPACITY));
+    for (Sut::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        EXPECT_THAT(copy_sut_complex.iter_from_index(i)->value, Eq(sut_complex.iter_from_index(i)->value));
+        EXPECT_THAT(copy_sut_complex.iter_from_index(i), Ne(sut_complex.iter_from_index(i)));
+    }
+
+    // actually call copyAssignment
+    EXPECT_THAT(stats.copyAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.moveAssignment, Eq(0));
+}
+
+TEST_F(FixedPositionContainer_test, UsingCopyCtorFromNonEmptyContainerCopyToEmptyContainer)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "f7e142f3-e236-46f7-82df-52624cb95094");
+
+    constexpr DataType EXPECTED_VALUE{42U};
+    constexpr SutComplex::IndexType EXPECTED_SIZE{1U};
+}
+
+// END test copy constructor
+
+// BEGIN test move constructor
+
+TEST_F(FixedPositionContainer_test, UsingMoveCtorFromEmptyContainerResultsInEmptyContainer)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "af8958fb-9a09-4987-b290-ce41abdc2354");
+
+    SutComplex move_sut_complex{std::move(sut_complex)};
+
+    EXPECT_THAT(move_sut_complex.full(), Eq(false));
+    EXPECT_THAT(move_sut_complex.empty(), Eq(true));
+    EXPECT_THAT(move_sut_complex.size(), Eq(0));
+
+    EXPECT_THAT(sut_complex.empty(), Eq(true));
+}
+
+TEST_F(FixedPositionContainer_test, UsingMoveCtorFromSingleElementContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "df6c1884-43c6-4d1e-b889-6cbf4b9ee726");
+
+    constexpr DataType EXPECTED_VALUE{42U};
+    constexpr SutComplex::IndexType EXPECTED_SIZE{1U};
+    sut_complex.emplace(EXPECTED_VALUE);
+
+    SutComplex move_sut_complex{std::move(sut_complex)};
+
+    EXPECT_THAT(move_sut_complex.full(), Eq(false));
+    EXPECT_THAT(move_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(move_sut_complex.size(), Eq(EXPECTED_SIZE));
+    EXPECT_THAT(move_sut_complex.begin()->value, Eq(EXPECTED_VALUE));
+
+    // actually call moveAssignment
+    EXPECT_THAT(stats.moveAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.copyAssignment, Eq(0));
+    // make sure clear() been called
+    EXPECT_THAT(stats.dTor, Eq(EXPECTED_SIZE));
+
+    // Note: It is sufficient to do it only once for "sut_complex"
+    EXPECT_THAT(sut_complex.full(), Eq(false));
+    EXPECT_THAT(sut_complex.empty(), Eq(true));
+    EXPECT_THAT(sut_complex.size(), Eq(0));
+}
+
+TEST_F(FixedPositionContainer_test, UsingMoveCtorFromMultipleElementsContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "b9d929ae-23c8-4b5b-ba82-e5af12cdace4");
+
+    std::vector<DataType> EXPECTED_VALUE{0U, 1U, 2U, 3U};
+    constexpr SutComplex::IndexType EXPECTED_SIZE{4U};
+    for (SutComplex::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        sut_complex.emplace(EXPECTED_VALUE[i]);
+    }
+
+    SutComplex move_sut_complex{std::move(sut_complex)};
+
+    EXPECT_THAT(move_sut_complex.full(), Eq(false));
+    EXPECT_THAT(move_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(move_sut_complex.size(), Eq(EXPECTED_SIZE));
+    for (SutComplex::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        EXPECT_THAT(move_sut_complex.iter_from_index(i)->value, Eq(EXPECTED_VALUE[i]));
+    }
+
+    // actually call moveAssignment
+    EXPECT_THAT(stats.moveAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.copyAssignment, Eq(0));
+    // make sure clear() been called
+    EXPECT_THAT(stats.dTor, Eq(EXPECTED_SIZE));
+
+    EXPECT_THAT(sut_complex.empty(), Eq(true));
+}
+
+TEST_F(FixedPositionContainer_test, UsingMoveCtorFromFullCapacityContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "8a9ca6d1-5ac3-4e31-9cb9-0476176531e1");
+
+    fillSutComplex();
+    constexpr SutComplex::IndexType EXPECTED_SIZE{CAPACITY};
+    std::vector<DataType> EXPECTED_VALUE;
+    for (const auto& item : sut_complex)
+    {
+        EXPECTED_VALUE.emplace_back(item.value);
+    }
+
+    SutComplex move_sut_complex{std::move(sut_complex)};
+
+    EXPECT_THAT(move_sut_complex.full(), Eq(true));
+    EXPECT_THAT(move_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(move_sut_complex.size(), Eq(EXPECTED_SIZE));
+    for (SutComplex::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        EXPECT_THAT(move_sut_complex.iter_from_index(i)->value, Eq(EXPECTED_VALUE[i]));
+    }
+
+    // actually call moveAssignment
+    EXPECT_THAT(stats.moveAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.copyAssignment, Eq(0));
+    // make sure clear() been called
+    EXPECT_THAT(stats.dTor, Eq(EXPECTED_SIZE));
+
+    EXPECT_THAT(sut_complex.empty(), Eq(true));
+}
+
+// END test move constructor
+
+// BEGIN test copy assignment
+
+TEST_F(FixedPositionContainer_test, UsingCopyAssignmentFromEmptyContainerResultsInEmptyContainer)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "013338e3-4330-49b4-8aa4-9b66517bb3bc");
+
+    SutComplex copy_sut_complex;
+    copy_sut_complex = sut_complex;
+
+    EXPECT_THAT(copy_sut_complex.full(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.empty(), Eq(true));
+    EXPECT_THAT(copy_sut_complex.size(), Eq(0));
+}
+
+TEST_F(FixedPositionContainer_test, UsingCopyAssignmentFromSingleElementContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "6cf9e9d1-91a9-4403-a25a-52b64dd523be");
+
+    constexpr DataType EXPECTED_VALUE{42U};
+    sut_complex.emplace(EXPECTED_VALUE);
+
+    SutComplex copy_sut_complex;
+    copy_sut_complex = sut_complex;
+
+    EXPECT_THAT(stats.copyAssignment, Eq(sut_complex.size()));
+    EXPECT_THAT(stats.moveAssignment, Eq(0));
+
+    EXPECT_THAT(copy_sut_complex.full(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.size(), Eq(sut_complex.size()));
+    EXPECT_THAT(copy_sut_complex.begin()->value, Eq(EXPECTED_VALUE));
+}
+
+TEST_F(FixedPositionContainer_test, UsingCopyAssignmentFromMultipleElementsContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "262ad71a-0ee2-4661-b2c8-a3cca9c1cf5e");
+
+    std::vector<DataType> EXPECTED_VALUE{0U, 1U, 2U, 3U};
+    for (SutComplex::IndexType i = 0; i < EXPECTED_VALUE.size(); ++i)
+    {
+        sut_complex.emplace(EXPECTED_VALUE[i]);
+    }
+
+    SutComplex copy_sut_complex;
+    copy_sut_complex = sut_complex;
+
+    EXPECT_THAT(stats.copyAssignment, Eq(sut_complex.size()));
+    EXPECT_THAT(stats.moveAssignment, Eq(0));
+
+    EXPECT_THAT(copy_sut_complex.full(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.size(), Eq(sut_complex.size()));
+    for (SutComplex::IndexType i = 0; i < sut_complex.size(); ++i)
+    {
+        EXPECT_THAT(copy_sut_complex.iter_from_index(i)->value, Eq(EXPECTED_VALUE[i]));
+        EXPECT_THAT(copy_sut_complex.iter_from_index(i), Ne(sut_complex.iter_from_index(i)));
+    }
+}
+
+TEST_F(FixedPositionContainer_test, UsingCopyAssignmentFromFullCapacityContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "b46d0be7-5977-467e-adc4-2e9adc554fdd");
+
+    fillSutComplex();
+    constexpr SutComplex::IndexType EXPECTED_SIZE{CAPACITY};
+    std::vector<DataType> EXPECTED_VALUE;
+    for (const auto& item : sut_complex)
+    {
+        EXPECTED_VALUE.emplace_back(item.value);
+    }
+
+    SutComplex copy_sut_complex;
+    copy_sut_complex = sut_complex;
+
+    EXPECT_THAT(stats.copyAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.moveAssignment, Eq(0));
+
+    EXPECT_THAT(copy_sut_complex.full(), Eq(true));
+    EXPECT_THAT(copy_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(copy_sut_complex.size(), Eq(EXPECTED_SIZE));
+    for (SutComplex::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        EXPECT_THAT(copy_sut_complex.iter_from_index(i)->value, Eq(EXPECTED_VALUE[i]));
+        EXPECT_THAT(copy_sut_complex.iter_from_index(i), Ne(sut_complex.iter_from_index(i)));
+    }
+}
+
+// END test copy assignment
+
+// BEGIN test move assignment
+
+TEST_F(FixedPositionContainer_test, UsingMoveAssignmentFromEmptyContainerResultsInEmptyContainer)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "711ced12-4b93-47d1-af37-cace03fac2c1");
+
+    SutComplex move_sut_complex;
+    move_sut_complex = std::move(sut_complex);
+
+    EXPECT_THAT(move_sut_complex.full(), Eq(false));
+    EXPECT_THAT(move_sut_complex.empty(), Eq(true));
+    EXPECT_THAT(move_sut_complex.size(), Eq(0));
+
+    EXPECT_THAT(sut_complex.empty(), Eq(true));
+}
+
+TEST_F(FixedPositionContainer_test, UsingMoveAssignmentFromSingleElementContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "a3902afc-5eba-4e10-8412-f09b7b5d17b8");
+
+    constexpr DataType EXPECTED_VALUE{42U};
+    constexpr SutComplex::IndexType EXPECTED_SIZE{1U};
+    sut_complex.emplace(EXPECTED_VALUE);
+
+    SutComplex move_sut_complex;
+    move_sut_complex = std::move(sut_complex);
+
+    EXPECT_THAT(move_sut_complex.full(), Eq(false));
+    EXPECT_THAT(move_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(move_sut_complex.size(), Eq(EXPECTED_SIZE));
+    EXPECT_THAT(move_sut_complex.begin()->value, Eq(EXPECTED_VALUE));
+
+    EXPECT_THAT(stats.moveAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.copyAssignment, Eq(0));
+    // make sure clear() been called
+    EXPECT_THAT(stats.dTor, Eq(EXPECTED_SIZE));
+
+    EXPECT_THAT(sut_complex.empty(), Eq(true));
+}
+
+TEST_F(FixedPositionContainer_test, UsingMoveAssignmentFromMultipleElementsContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "c44da583-1ed8-4c83-b5bb-dba5d64b21d9");
+
+    std::vector<DataType> EXPECTED_VALUE{0U, 1U, 2U, 3U};
+    constexpr SutComplex::IndexType EXPECTED_SIZE{4U};
+    for (SutComplex::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        sut_complex.emplace(EXPECTED_VALUE[i]);
+    }
+
+    SutComplex move_sut_complex;
+    move_sut_complex = std::move(sut_complex);
+
+    EXPECT_THAT(move_sut_complex.full(), Eq(false));
+    EXPECT_THAT(move_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(move_sut_complex.size(), Eq(EXPECTED_SIZE));
+    for (SutComplex::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        EXPECT_THAT(move_sut_complex.iter_from_index(i)->value, Eq(EXPECTED_VALUE[i]));
+    }
+
+    EXPECT_THAT(stats.moveAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.copyAssignment, Eq(0));
+    // make sure clear() been called
+    EXPECT_THAT(stats.dTor, Eq(EXPECTED_SIZE));
+
+    EXPECT_THAT(sut_complex.empty(), Eq(true));
+}
+
+TEST_F(FixedPositionContainer_test, UsingMoveAssignmentFromFullCapacityContainerClearsOriginal)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "3196b101-f03a-4029-abb8-77106f0b45d8");
+
+    fillSutComplex();
+    constexpr SutComplex::IndexType EXPECTED_SIZE{CAPACITY};
+    std::vector<DataType> EXPECTED_VALUE;
+    for (const auto& item : sut_complex)
+    {
+        EXPECTED_VALUE.emplace_back(item.value);
+    }
+
+    SutComplex move_sut_complex;
+    move_sut_complex = std::move(sut_complex);
+
+    EXPECT_THAT(move_sut_complex.full(), Eq(true));
+    EXPECT_THAT(move_sut_complex.empty(), Eq(false));
+    EXPECT_THAT(move_sut_complex.size(), Eq(EXPECTED_SIZE));
+    for (SutComplex::IndexType i = 0; i < EXPECTED_SIZE; ++i)
+    {
+        EXPECT_THAT(move_sut_complex.iter_from_index(i)->value, Eq(EXPECTED_VALUE[i]));
+    }
+
+    EXPECT_THAT(stats.moveAssignment, Eq(EXPECTED_SIZE));
+    EXPECT_THAT(stats.copyAssignment, Eq(0));
+    // make sure clear() been called
+    EXPECT_THAT(stats.dTor, Eq(EXPECTED_SIZE));
+
+    EXPECT_THAT(sut_complex.empty(), Eq(true));
+}
+
+// END test move assignment
 
 // BEGIN test empty
 

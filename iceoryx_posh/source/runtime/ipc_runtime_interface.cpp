@@ -16,12 +16,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iceoryx_posh/internal/runtime/ipc_runtime_interface.hpp"
-#include "iceoryx_dust/cxx/convert.hpp"
-#include "iceoryx_dust/cxx/std_string_support.hpp"
 #include "iceoryx_hoofs/posix_wrapper/posix_access_rights.hpp"
 #include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/version/version_info.hpp"
+#include "iox/detail/convert.hpp"
 #include "iox/into.hpp"
+#include "iox/std_string_support.hpp"
 
 #include <thread>
 
@@ -90,10 +90,10 @@ IpcRuntimeInterface::IpcRuntimeInterface(const RuntimeName_t& roudiName,
             IpcMessage sendBuffer;
             int pid = getpid();
             cxx::Expects(pid >= 0);
-            sendBuffer << IpcMessageTypeToString(IpcMessageType::REG) << m_runtimeName << cxx::convert::toString(pid)
-                       << cxx::convert::toString(posix::PosixUser::getUserOfCurrentProcess().getID())
-                       << cxx::convert::toString(transmissionTimestamp)
-                       << static_cast<cxx::Serialization>(version::VersionInfo::getCurrentVersion()).toString();
+            sendBuffer << IpcMessageTypeToString(IpcMessageType::REG) << m_runtimeName << convert::toString(pid)
+                       << convert::toString(posix::PosixUser::getUserOfCurrentProcess().getID())
+                       << convert::toString(transmissionTimestamp)
+                       << static_cast<Serialization>(version::VersionInfo::getCurrentVersion()).toString();
 
             bool successfullySent = m_RoudiIpcInterface.timedSend(sendBuffer, 100_ms);
 
@@ -143,13 +143,6 @@ IpcRuntimeInterface::IpcRuntimeInterface(const RuntimeName_t& roudiName,
         // nothing to do, move along
         break;
     }
-}
-
-bool IpcRuntimeInterface::sendKeepalive() noexcept
-{
-    return (m_sendKeepalive) ? m_RoudiIpcInterface.send(
-               {IpcMessageTypeToString(IpcMessageType::KEEPALIVE), into<std::string>(m_runtimeName)})
-                             : true;
 }
 
 UntypedRelativePointer::offset_t IpcRuntimeInterface::getSegmentManagerAddressOffset() const noexcept
@@ -242,15 +235,23 @@ IpcRuntimeInterface::RegAckResult IpcRuntimeInterface::waitForRegAck(int64_t tra
                 }
 
                 // read out the shared memory base address and save it
-                iox::cxx::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), m_shmTopicSize);
-                UntypedRelativePointer::offset_t offset{0U};
-                iox::cxx::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), offset);
-                m_segmentManagerAddressOffset.emplace(offset);
+                iox::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), m_shmTopicSize);
+                UntypedRelativePointer::offset_t segmentManagerOffset{UntypedRelativePointer::NULL_POINTER_OFFSET};
+                iox::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentManagerOffset);
+                m_segmentManagerAddressOffset.emplace(segmentManagerOffset);
 
                 int64_t receivedTimestamp{0U};
-                cxx::convert::fromString(receiveBuffer.getElementAtIndex(3U).c_str(), receivedTimestamp);
-                cxx::convert::fromString(receiveBuffer.getElementAtIndex(4U).c_str(), m_segmentId);
-                cxx::convert::fromString(receiveBuffer.getElementAtIndex(5U).c_str(), m_sendKeepalive);
+                iox::convert::fromString(receiveBuffer.getElementAtIndex(3U).c_str(), receivedTimestamp);
+                iox::convert::fromString(receiveBuffer.getElementAtIndex(4U).c_str(), m_segmentId);
+                UntypedRelativePointer::offset_t heartbeatOffset{UntypedRelativePointer::NULL_POINTER_OFFSET};
+                iox::convert::fromString(receiveBuffer.getElementAtIndex(5U).c_str(), heartbeatOffset);
+                /// @todo iox-#2055 this workaround is required sind the conversion of edge cases is broken
+                constexpr uint8_t IOX_2055_WORKAROUND{1};
+                if (heartbeatOffset != (UntypedRelativePointer::NULL_POINTER_OFFSET - IOX_2055_WORKAROUND))
+                {
+                    m_heartbeatAddressOffset = heartbeatOffset;
+                }
+
                 if (transmissionTimestamp == receivedTimestamp)
                 {
                     return RegAckResult::SUCCESS;
@@ -274,5 +275,11 @@ uint64_t IpcRuntimeInterface::getSegmentId() const noexcept
 {
     return m_segmentId;
 }
+
+optional<UntypedRelativePointer::offset_t> IpcRuntimeInterface::getHeartbeatAddressOffset() const noexcept
+{
+    return m_heartbeatAddressOffset;
+}
+
 } // namespace runtime
 } // namespace iox

@@ -17,7 +17,7 @@
 
 #include "iceoryx_posh/internal/runtime/posh_runtime_impl.hpp"
 
-#include "iceoryx_dust/cxx/convert.hpp"
+#include "iox/detail/convert.hpp"
 #include "iox/variant.hpp"
 
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
@@ -50,6 +50,20 @@ PoshRuntimeImpl::PoshRuntimeImpl(optional<const RuntimeName_t*> name, const Runt
         .mutexType(posix::MutexType::NORMAL)
         .create(m_appIpcRequestMutex)
         .expect("Failed to create Mutex");
+
+    auto heartbeatAddressOffset = m_ipcChannelInterface.getHeartbeatAddressOffset();
+    if (heartbeatAddressOffset.has_value())
+    {
+        m_heartbeat = RelativePointer<Heartbeat>::getPtr(segment_id_t{m_ipcChannelInterface.getSegmentId()},
+                                                         heartbeatAddressOffset.value());
+    }
+
+    static_assert(PROCESS_KEEP_ALIVE_INTERVAL > roudi::DISCOVERY_INTERVAL, "Keep alive interval too small");
+    m_keepAliveTask.emplace(concurrent::PeriodicTaskAutoStart,
+                            PROCESS_KEEP_ALIVE_INTERVAL,
+                            "KeepAlive",
+                            *this,
+                            &PoshRuntimeImpl::sendKeepAliveAndHandleShutdownPreparation);
 }
 
 PoshRuntimeImpl::~PoshRuntimeImpl() noexcept
@@ -106,8 +120,8 @@ PoshRuntimeImpl::getMiddlewarePublisher(const capro::ServiceDescription& service
 
     IpcMessage sendBuffer;
     sendBuffer << IpcMessageTypeToString(IpcMessageType::CREATE_PUBLISHER) << m_appName
-               << static_cast<cxx::Serialization>(service).toString() << publisherOptions.serialize().toString()
-               << static_cast<cxx::Serialization>(portConfigInfo).toString();
+               << static_cast<Serialization>(service).toString() << publisherOptions.serialize().toString()
+               << static_cast<Serialization>(portConfigInfo).toString();
 
     auto maybePublisher = requestPublisherFromRoudi(sendBuffer);
     if (maybePublisher.has_error())
@@ -174,9 +188,9 @@ PoshRuntimeImpl::requestPublisherFromRoudi(const IpcMessage& sendBuffer) noexcep
 
         {
             segment_id_underlying_t segmentId{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
+            convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
             UntypedRelativePointer::offset_t offset{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
+            convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
             auto ptr = UntypedRelativePointer::getPtr(segment_id_t{segmentId}, offset);
             return ok(reinterpret_cast<PublisherPortUserType::MemberType_t*>(ptr));
         }
@@ -235,8 +249,8 @@ PoshRuntimeImpl::getMiddlewareSubscriber(const capro::ServiceDescription& servic
 
     IpcMessage sendBuffer;
     sendBuffer << IpcMessageTypeToString(IpcMessageType::CREATE_SUBSCRIBER) << m_appName
-               << static_cast<cxx::Serialization>(service).toString() << options.serialize().toString()
-               << static_cast<cxx::Serialization>(portConfigInfo).toString();
+               << static_cast<Serialization>(service).toString() << options.serialize().toString()
+               << static_cast<Serialization>(portConfigInfo).toString();
 
     auto maybeSubscriber = requestSubscriberFromRoudi(sendBuffer);
 
@@ -286,9 +300,9 @@ PoshRuntimeImpl::requestSubscriberFromRoudi(const IpcMessage& sendBuffer) noexce
         if (stringToIpcMessageType(IpcMessage.c_str()) == IpcMessageType::CREATE_SUBSCRIBER_ACK)
         {
             segment_id_underlying_t segmentId{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
+            convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
             UntypedRelativePointer::offset_t offset{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
+            convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
             auto ptr = UntypedRelativePointer::getPtr(segment_id_t{segmentId}, offset);
             return ok(reinterpret_cast<SubscriberPortUserType::MemberType_t*>(ptr));
         }
@@ -333,8 +347,8 @@ popo::ClientPortUser::MemberType_t* PoshRuntimeImpl::getMiddlewareClient(const c
 
     IpcMessage sendBuffer;
     sendBuffer << IpcMessageTypeToString(IpcMessageType::CREATE_CLIENT) << m_appName
-               << static_cast<cxx::Serialization>(service).toString() << options.serialize().toString()
-               << static_cast<cxx::Serialization>(portConfigInfo).toString();
+               << static_cast<Serialization>(service).toString() << options.serialize().toString()
+               << static_cast<Serialization>(portConfigInfo).toString();
 
     auto maybeClient = requestClientFromRoudi(sendBuffer);
     if (maybeClient.has_error())
@@ -394,9 +408,9 @@ PoshRuntimeImpl::requestClientFromRoudi(const IpcMessage& sendBuffer) noexcept
         if (stringToIpcMessageType(IpcMessage.c_str()) == IpcMessageType::CREATE_CLIENT_ACK)
         {
             segment_id_underlying_t segmentId{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
+            convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
             UntypedRelativePointer::offset_t offset{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
+            convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
             auto ptr = UntypedRelativePointer::getPtr(segment_id_t{segmentId}, offset);
             return ok(reinterpret_cast<popo::ClientPortUser::MemberType_t*>(ptr));
         }
@@ -441,8 +455,8 @@ popo::ServerPortUser::MemberType_t* PoshRuntimeImpl::getMiddlewareServer(const c
 
     IpcMessage sendBuffer;
     sendBuffer << IpcMessageTypeToString(IpcMessageType::CREATE_SERVER) << m_appName
-               << static_cast<cxx::Serialization>(service).toString() << options.serialize().toString()
-               << static_cast<cxx::Serialization>(portConfigInfo).toString();
+               << static_cast<Serialization>(service).toString() << options.serialize().toString()
+               << static_cast<Serialization>(portConfigInfo).toString();
 
     auto maybeServer = requestServerFromRoudi(sendBuffer);
     if (maybeServer.has_error())
@@ -502,9 +516,9 @@ PoshRuntimeImpl::requestServerFromRoudi(const IpcMessage& sendBuffer) noexcept
         if (stringToIpcMessageType(IpcMessage.c_str()) == IpcMessageType::CREATE_SERVER_ACK)
         {
             segment_id_underlying_t segmentId{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
+            convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
             UntypedRelativePointer::offset_t offset{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
+            convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
             auto ptr = UntypedRelativePointer::getPtr(segment_id_t{segmentId}, offset);
             return ok(reinterpret_cast<popo::ServerPortUser::MemberType_t*>(ptr));
         }
@@ -546,9 +560,9 @@ popo::InterfacePortData* PoshRuntimeImpl::getMiddlewareInterface(const capro::In
         if (stringToIpcMessageType(IpcMessage.c_str()) == IpcMessageType::CREATE_INTERFACE_ACK)
         {
             segment_id_underlying_t segmentId{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
+            convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
             UntypedRelativePointer::offset_t offset{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
+            convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
             auto ptr = UntypedRelativePointer::getPtr(segment_id_t{segmentId}, offset);
             return reinterpret_cast<popo::InterfacePortData*>(ptr);
         }
@@ -563,7 +577,7 @@ NodeData* PoshRuntimeImpl::createNode(const NodeProperty& nodeProperty) noexcept
 {
     IpcMessage sendBuffer;
     sendBuffer << IpcMessageTypeToString(IpcMessageType::CREATE_NODE) << m_appName
-               << static_cast<cxx::Serialization>(nodeProperty).toString();
+               << static_cast<Serialization>(nodeProperty).toString();
 
     IpcMessage receiveBuffer;
 
@@ -580,9 +594,9 @@ NodeData* PoshRuntimeImpl::createNode(const NodeProperty& nodeProperty) noexcept
         if (stringToIpcMessageType(IpcMessage.c_str()) == IpcMessageType::CREATE_NODE_ACK)
         {
             segment_id_underlying_t segmentId{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
+            convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
             UntypedRelativePointer::offset_t offset{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
+            convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
             auto ptr = UntypedRelativePointer::getPtr(segment_id_t{segmentId}, offset);
             return reinterpret_cast<NodeData*>(ptr);
         }
@@ -609,9 +623,9 @@ PoshRuntimeImpl::requestConditionVariableFromRoudi(const IpcMessage& sendBuffer)
         if (stringToIpcMessageType(IpcMessage.c_str()) == IpcMessageType::CREATE_CONDITION_VARIABLE_ACK)
         {
             segment_id_underlying_t segmentId{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
+            convert::fromString(receiveBuffer.getElementAtIndex(2U).c_str(), segmentId);
             UntypedRelativePointer::offset_t offset{0U};
-            cxx::convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
+            convert::fromString(receiveBuffer.getElementAtIndex(1U).c_str(), offset);
             auto ptr = UntypedRelativePointer::getPtr(segment_id_t{segmentId}, offset);
             return ok(reinterpret_cast<popo::ConditionVariableData*>(ptr));
         }
@@ -677,10 +691,7 @@ bool PoshRuntimeImpl::sendRequestToRouDi(const IpcMessage& msg, IpcMessage& answ
 // this is the callback for the m_keepAliveTimer
 void PoshRuntimeImpl::sendKeepAliveAndHandleShutdownPreparation() noexcept
 {
-    if (!m_ipcChannelInterface.sendKeepalive())
-    {
-        IOX_LOG(WARN, "Error in sending keep alive");
-    }
+    m_heartbeat.and_then([](auto& heartbeat) { heartbeat->beat(); });
 
     // this is not the nicest solution, but we cannot send this in the signal handler where m_shutdownRequested is
     // usually set; luckily the runtime already has a thread running and therefore this thread is used to unblock the
