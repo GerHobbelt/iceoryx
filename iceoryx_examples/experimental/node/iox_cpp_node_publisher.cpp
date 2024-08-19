@@ -1,4 +1,4 @@
-// Copyright (c) 2023 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
+// Copyright (c) 2024 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 #include "topic_data.hpp"
 
 #include "iox/optional.hpp"
-#include "iox/posh/experimental/runtime.hpp"
+#include "iox/posh/experimental/node.hpp"
 #include "iox/signal_watcher.hpp"
 
 #include <iostream>
 
-constexpr char APP_NAME[] = "iox-cpp-non-static-runtime-publisher";
+constexpr char APP_NAME[] = "iox-cpp-node-publisher";
 
 int main()
 {
@@ -31,23 +31,22 @@ int main()
     double value = 0.0;
     while (!iox::hasTerminationRequested())
     {
-        // open a new scope to destroy the runtime before the sleep
-        // the 'reset' method of the optional cannot be used since there would still be the publisher who needs to
-        // access the shared memory on destruction -> get rid of the optional and make the runtime movable
+        // open a new scope to destroy the node before the sleep
         {
-            iox::optional<iox::posh::experimental::Runtime> runtime;
-            if (iox::posh::experimental::RuntimeBuilder(APP_NAME).create(runtime).has_error())
+            auto node_result = iox::posh::experimental::NodeBuilder(APP_NAME)
+                                   .roudi_registration_timeout(iox::units::Duration::fromSeconds(1))
+                                   .create();
+            if (node_result.has_error())
             {
-                std::cout << "Could not create the runtime!" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                std::cout << "Could not create the node!" << std::endl;
                 continue;
             }
 
-            auto publisher = runtime->publisher({"Radar", "FrontLeft", "Object"})
-                                 .create<RadarObject>()
-                                 .expect("Getting a publisher");
+            auto node = std::move(node_result.value());
+            auto publisher =
+                node.publisher({"Radar", "FrontLeft", "Object"}).create<RadarObject>().expect("Getting a publisher");
 
-            publisher.loan()
+            publisher->loan()
                 .and_then([&](auto& sample) {
                     sample->x = value;
                     sample->y = value;

@@ -25,12 +25,13 @@
 #include "iox/optional.hpp"
 #include "iox/smart_lock.hpp"
 
+namespace iox::posh::experimental
+{
+class Node;
+}
+
 namespace iox
 {
-namespace posh::experimental
-{
-class Runtime;
-}
 namespace runtime
 {
 enum class RuntimeLocation
@@ -43,11 +44,12 @@ enum class RuntimeLocation
 class PoshRuntimeImpl : public PoshRuntime
 {
   public:
+    virtual ~PoshRuntimeImpl() noexcept;
+
     PoshRuntimeImpl(const PoshRuntimeImpl&) = delete;
     PoshRuntimeImpl& operator=(const PoshRuntimeImpl&) = delete;
-    PoshRuntimeImpl(PoshRuntimeImpl&&) = delete;
-    PoshRuntimeImpl& operator=(PoshRuntimeImpl&&) = delete;
-    virtual ~PoshRuntimeImpl() noexcept;
+    PoshRuntimeImpl(PoshRuntimeImpl&&) noexcept = delete;
+    PoshRuntimeImpl& operator=(PoshRuntimeImpl&&) noexcept = delete;
 
     /// @copydoc PoshRuntime::getMiddlewarePublisher
     PublisherPortUserType::MemberType_t*
@@ -89,7 +91,7 @@ class PoshRuntimeImpl : public PoshRuntime
   protected:
     friend class PoshRuntime;
     friend class roudi_env::RuntimeTestInterface;
-    friend class posh::experimental::Runtime;
+    friend class posh::experimental::Node;
 
     // Protected constructor for IPC setup
     PoshRuntimeImpl(optional<const RuntimeName_t*> name,

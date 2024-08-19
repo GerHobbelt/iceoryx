@@ -23,23 +23,13 @@ namespace iox
 {
 namespace runtime
 {
-expected<IpcInterfaceCreator, IpcInterfaceCreator::Error>
-IpcInterfaceCreator::create(const RuntimeName_t& runtimeName,
-                            const ResourceType resourceType,
-                            const uint64_t maxMessages,
-                            const uint64_t messageSize) noexcept
+expected<IpcInterfaceCreator, IpcInterfaceCreatorError> IpcInterfaceCreator::create(const RuntimeName_t& runtimeName,
+                                                                                    const ResourceType resourceType,
+                                                                                    const uint64_t maxMessages,
+                                                                                    const uint64_t messageSize) noexcept
 {
-    auto interfaceName =
-        ipcChannelNameToInterfaceName(runtimeName, resourceType)
-            .or_else([&runtimeName] {
-                IOX_LOG(FATAL,
-                        "The runtime with the name '"
-                            << runtimeName.size()
-                            << "' would exceed the maximum allowed size when used with the 'iox1_#_' prefix!");
-                IOX_PANIC("The runtime name exceeds the max size");
-            })
-            .value();
-
+    auto interfaceName = ipcChannelNameToInterfaceName(runtimeName, resourceType);
+    ;
     auto fileLock =
         FileLockBuilder().name(interfaceName).permission(iox::perms::owner_read | iox::perms::owner_write).create();
 
@@ -48,9 +38,9 @@ IpcInterfaceCreator::create(const RuntimeName_t& runtimeName,
         switch (fileLock.error())
         {
         case FileLockError::LOCKED_BY_OTHER_PROCESS:
-            return err(Error::INTERFACE_IN_USE);
+            return err(IpcInterfaceCreatorError::INTERFACE_IN_USE);
         default:
-            return err(Error::OBTAINING_LOCK_FAILED);
+            return err(IpcInterfaceCreatorError::OBTAINING_LOCK_FAILED);
         }
     }
 
