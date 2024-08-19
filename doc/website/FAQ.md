@@ -41,6 +41,16 @@ A possible alternative is
   * If 256 is not enough, increase the maximum value `IOX_MAX_CHUNKS_HELD_PER_SUBSCRIBER_SIMULTANEOUSLY`
   via [the CMake switch](advanced/configuration-guide.md)
 
+## Missing samples with a Listener
+
+In case the subscriber is used in combination with a listener, some samples might just wait in receiver queue to be taken.
+The `Listener` uses events, which are faster than states of the `WaitSet` but this also means that if the publisher e.g.
+fires 5 events while the subscriber is executing the `onSampleReceivedCallback` it will be triggered only once after it
+leaves the callback. If you do not take care of taking all the data out of the queue, they will just stay there and fill
+up the queue. The default queue size is 256 samples. This means the samples need to be taken out in a loop in the
+`onSampleReceivedCallback` until `take` reports an empty queue. Alternatively the `WaitSet` can be used instead of the `Listener`.
+The `WaitSet` supports states as well as events and if used with states it will fire as long as there are data in the queue.
+
 ## Solving the error `MEPOO__MEMPOOL_GETCHUNK_POOL_IS_RUNNING_OUT_OF_CHUNKS`
 
 Possible solutions are one of the following:
@@ -149,3 +159,30 @@ To avoid undefined behavior of iceoryx posh it is recommended to terminate RouDi
 processes with SIGINT or SIGTERM. In RouDi, we have integrated a sighandler that catches the signals and gives RouDi
 the chance to exit and clean-up everything. This also applies for processes. Therefore, we recommend adding a signalhandler
 to your process (see [this example](../../iceoryx_examples/icedelivery/iox_publisher_untyped.cpp)).
+
+## How to use iceoryx as external dependency with bazel
+
+Define iceoryx repository information in your [WORKSPACE](https://bazel.build/concepts/build-ref#workspace)
+then calling bazel macro from [load_repositories.bzl](https://github.com/eclipse-iceoryx/iceoryx/blob/master/bazel/load_repositories.bzl)
+and [setup_repositories.bzl](https://github.com/eclipse-iceoryx/iceoryx/blob/master/bazel/setup_repositories.bzl) for loading transitive dependencies.
+
+```
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+IOX_COMMIT = "....."
+
+http_archive(
+    name = "eclipse_iceoryx",
+    sha256 = <sha256 sum of z>,
+    strip_prefix = "iceoryx-" + IOX_COMMIT,
+    url = "https://github.com/eclipse-iceoryx/iceoryx/archive/" + IOX_COMMIT + ".zip",
+)
+
+# load iceoryx transitive dependencies
+
+load("@eclipse_iceoryx//bazel:load_repositories.bzl", "load_repositories")
+load("@eclipse_iceoryx//bazel:setup_repositories.bzl", "setup_repositories")
+load_repositories()
+setup_repositories()
+
+```
