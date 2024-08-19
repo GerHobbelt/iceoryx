@@ -22,10 +22,10 @@ namespace iox
 {
 namespace roudi
 {
-IceOryxRouDiMemoryManager::IceOryxRouDiMemoryManager(const RouDiConfig_t& roudiConfig) noexcept
+IceOryxRouDiMemoryManager::IceOryxRouDiMemoryManager(const IceoryxConfig& config) noexcept
     : m_fileLock(
         std::move(FileLockBuilder()
-                      .name(concatenate(iceoryxResourcePrefix(DEFAULT_UNIQUE_ROUDI_ID, ResourceType::ICEORYX_DEFINED),
+                      .name(concatenate(iceoryxResourcePrefix(config.uniqueRouDiId, ResourceType::ICEORYX_DEFINED),
                                         ROUDI_LOCK_NAME))
                       .permission(iox::perms::owner_read | iox::perms::owner_write)
                       .create()
@@ -42,7 +42,8 @@ IceOryxRouDiMemoryManager::IceOryxRouDiMemoryManager(const RouDiConfig_t& roudiC
                           }
                       })
                       .value()))
-    , m_defaultMemory(roudiConfig)
+    , m_portPoolBlock(config.uniqueRouDiId)
+    , m_defaultMemory(config)
 {
     m_defaultMemory.m_managementShm.addMemoryBlock(&m_portPoolBlock).or_else([](auto) {
         IOX_REPORT_FATAL(PoshError::ICEORYX_ROUDI_MEMORY_MANAGER__FAILED_TO_ADD_PORTPOOL_MEMORY_BLOCK);

@@ -25,6 +25,7 @@
 #include "iceoryx_posh/roudi_env/roudi_env_node_builder.hpp"
 #include "test.hpp"
 
+#include <cstdlib>
 #include <optional>
 
 namespace
@@ -103,6 +104,111 @@ TEST(Node_test, CreatingNodeWithInvalidNameLeadsToError)
         .create()
         .and_then([](const auto&) { GTEST_FAIL() << "Creating a 'Node' with '/' in name should fail"; })
         .or_else([](const auto error) { EXPECT_THAT(error, Eq(NodeBuilderError::IPC_CHANNEL_CREATION_FAILED)); });
+}
+
+TEST(Node_test, CreatingNodeWithRouDiIdFromEnvFailsIfRouDiIdIsNotSet)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "b1268403-2b76-4713-a4f6-5f62a9ce9e57");
+
+    IOX_POSIX_CALL(unsetenv)
+    ("IOX_ROUDI_ID").failureReturnValue(-1).evaluate().expect("Unsetting environment variable works!");
+    auto node_result = RouDiEnvNodeBuilder("foo").roudi_id_from_env().create();
+
+    ASSERT_TRUE(node_result.has_error());
+    EXPECT_THAT(node_result.error(), Eq(NodeBuilderError::INVALID_OR_NO_ROUDI_ID));
+}
+
+TEST(Node_test, CreatingNodeWithRouDiIdFromEnvFailsIfRouDiIdIsInvalid)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "07bc4bf6-cb06-40cb-b3d4-761e95e82e4b");
+
+    constexpr int32_t OVERWRITE_ENV_VARIABLE{1};
+    IOX_POSIX_CALL(setenv)
+    ("IOX_ROUDI_ID", "1234567", OVERWRITE_ENV_VARIABLE)
+        .failureReturnValue(-1)
+        .evaluate()
+        .expect("Setting environment variable works!");
+    auto node_result = RouDiEnvNodeBuilder("foo").roudi_id_from_env().create();
+
+    ASSERT_TRUE(node_result.has_error());
+    EXPECT_THAT(node_result.error(), Eq(NodeBuilderError::INVALID_OR_NO_ROUDI_ID));
+}
+
+TEST(Node_test, CreatingNodeWithRouDiIdFromEnvWorksIfRouDiIdIsSet)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "dcf02c88-8c7a-4327-8ba2-0f71dc7b0ff1");
+
+    RouDiEnv roudi{42};
+
+    constexpr int32_t OVERWRITE_ENV_VARIABLE{1};
+    IOX_POSIX_CALL(setenv)
+    ("IOX_ROUDI_ID", "42", OVERWRITE_ENV_VARIABLE)
+        .failureReturnValue(-1)
+        .evaluate()
+        .expect("Setting environment variable works!");
+    auto node_result = RouDiEnvNodeBuilder("foo").roudi_id_from_env().create();
+
+    EXPECT_FALSE(node_result.has_error());
+}
+
+TEST(Node_test, CreatingNodeWithRouDiIdFromEnvOrAlternativeValueWorksIfRouDiIdIsSet)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "ba16d5cc-46b8-4450-8c77-16081a52f38c");
+
+    RouDiEnv roudi{42};
+
+    constexpr int32_t OVERWRITE_ENV_VARIABLE{1};
+    IOX_POSIX_CALL(setenv)
+    ("IOX_ROUDI_ID", "42", OVERWRITE_ENV_VARIABLE)
+        .failureReturnValue(-1)
+        .evaluate()
+        .expect("Setting environment variable works!");
+    auto node_result = RouDiEnvNodeBuilder("foo").roudi_id_from_env_or(13).create();
+
+    EXPECT_FALSE(node_result.has_error());
+}
+
+TEST(Node_test, CreatingNodeWithRouDiIdFromEnvOrAlternativeValueWorksIfRouDiIdIsNotSet)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "b071843a-a821-43b4-ac1a-e76ccafd35e0");
+
+    RouDiEnv roudi{13};
+
+    IOX_POSIX_CALL(unsetenv)
+    ("IOX_ROUDI_ID").failureReturnValue(-1).evaluate().expect("Unsetting environment variable works!");
+    auto node_result = RouDiEnvNodeBuilder("foo").roudi_id_from_env_or(13).create();
+
+    EXPECT_FALSE(node_result.has_error());
+}
+
+TEST(Node_test, CreatingNodeWithRouDiIdFromEnvOrDefaultWorksIfRouDiIdIsSet)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "35f422ec-3723-4c8f-93ae-ce1c8dfaca76");
+
+    RouDiEnv roudi{42};
+
+    constexpr int32_t OVERWRITE_ENV_VARIABLE{1};
+    IOX_POSIX_CALL(setenv)
+    ("IOX_ROUDI_ID", "42", OVERWRITE_ENV_VARIABLE)
+        .failureReturnValue(-1)
+        .evaluate()
+        .expect("Setting environment variable works!");
+    auto node_result = RouDiEnvNodeBuilder("foo").roudi_id_from_env_or_default().create();
+
+    EXPECT_FALSE(node_result.has_error());
+}
+
+TEST(Node_test, CreatingNodeWithRouDiIdFromEnvOrDefaultWorksIfRouDiIdIsNotSet)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "363dfb49-75fa-4486-b8b1-0f31c16bf37c");
+
+    RouDiEnv roudi{roudi::DEFAULT_UNIQUE_ROUDI_ID};
+
+    IOX_POSIX_CALL(unsetenv)
+    ("IOX_ROUDI_ID").failureReturnValue(-1).evaluate().expect("Unsetting environment variable works!");
+    auto node_result = RouDiEnvNodeBuilder("foo").roudi_id_from_env_or_default().create();
+
+    EXPECT_FALSE(node_result.has_error());
 }
 
 TEST(Node_test, ReRegisteringNodeWithRunningRouDiWorks)
@@ -224,26 +330,6 @@ TEST(Node_test, CreatingUntypedPublisherWithUserHeaderWorks)
     EXPECT_TRUE((std::is_same_v<decltype(publisher), iox::unique_ptr<iox::posh::experimental::UntypedPublisher>>));
 }
 
-TEST(Node_test, ExhaustingPublisherLeadsToError)
-{
-    ::testing::Test::RecordProperty("TEST_ID", "d24c47b2-4ca7-40fd-9735-53e17ae9a870");
-
-    RouDiEnv roudi;
-
-    auto node = RouDiEnvNodeBuilder("hypnotoad").create().expect("Creating a node should not fail!");
-
-    iox::vector<iox::unique_ptr<UntypedPublisher>, iox::MAX_PUBLISHERS> pub;
-
-    for (uint64_t i = 0; i < iox::MAX_PUBLISHERS - iox::NUMBER_OF_INTERNAL_PUBLISHERS; ++i)
-    {
-        pub.emplace_back(node.publisher({"all", "glory", "hypnotoad"}).create().expect("Getting publisher"));
-    }
-
-    auto publisher_result = node.publisher({"all", "glory", "hypnotoad"}).create();
-    ASSERT_TRUE(publisher_result.has_error());
-    EXPECT_THAT(publisher_result.error(), Eq(PublisherBuilderError::OUT_OF_RESOURCES));
-}
-
 TEST(Node_test, CreatingTypedSubscriberWithoutUserHeaderWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "e14f3c82-d758-43cc-bd89-dfdf0ed71480");
@@ -294,26 +380,6 @@ TEST(Node_test, CreatingUntypedSubscriberWorks)
     EXPECT_TRUE((std::is_same_v<decltype(subscriber), iox::unique_ptr<iox::posh::experimental::UntypedSubscriber>>));
 }
 
-TEST(Node_test, ExhaustingSubscriberLeadsToError)
-{
-    ::testing::Test::RecordProperty("TEST_ID", "2caf6bb4-1c70-443a-be3a-706660f052f9");
-
-    RouDiEnv roudi;
-
-    auto node = RouDiEnvNodeBuilder("hypnotoad").create().expect("Creating a node should not fail!");
-
-    iox::vector<iox::unique_ptr<UntypedSubscriber>, iox::MAX_SUBSCRIBERS> sub;
-
-    for (uint64_t i = 0; i < iox::MAX_SUBSCRIBERS; ++i)
-    {
-        sub.emplace_back(node.subscriber({"all", "glory", "hypnotoad"}).create().expect("Getting subscriber"));
-    }
-
-    auto subscriber_result = node.subscriber({"all", "glory", "hypnotoad"}).create();
-    ASSERT_TRUE(subscriber_result.has_error());
-    EXPECT_THAT(subscriber_result.error(), Eq(SubscriberBuilderError::OUT_OF_RESOURCES));
-}
-
 TEST(Node_test, CreatingWaitSetWithDefaultCapacityWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "ccbef3ca-87b5-4d76-955e-171c5f1b5abd");
@@ -347,20 +413,41 @@ TEST(Node_test, CreatingWaitSetWithCustomCapacityWorks)
     EXPECT_TRUE((std::is_same_v<decltype(ws), iox::unique_ptr<iox::posh::experimental::WaitSet<CAPACITY>>>));
 }
 
-TEST(Node_test, ExhaustingWaitSetLeadsToError)
+TEST(Node_test, ExhaustingPublisherSubscriberAndWaitSetLeadsToError)
 {
     ::testing::Test::RecordProperty("TEST_ID", "794e5db8-8d08-428b-af21-e3934a29ea8f");
+
+    const ServiceDescription service_description{"all", "glory", "hypnotoad"};
 
     RouDiEnv roudi;
 
     auto node = RouDiEnvNodeBuilder("hypnotoad").create().expect("Creating a node should not fail!");
 
-    iox::vector<iox::unique_ptr<WaitSet<>>, iox::MAX_NUMBER_OF_CONDITION_VARIABLES> ws;
+    iox::vector<iox::unique_ptr<UntypedPublisher>, iox::MAX_PUBLISHERS> pub;
+    for (uint64_t i = 0; i < iox::MAX_PUBLISHERS - iox::NUMBER_OF_INTERNAL_PUBLISHERS; ++i)
+    {
+        pub.emplace_back(node.publisher(service_description).create().expect("Getting publisher"));
+    }
 
+    iox::vector<iox::unique_ptr<UntypedSubscriber>, iox::MAX_SUBSCRIBERS> sub;
     for (uint64_t i = 0; i < iox::MAX_SUBSCRIBERS; ++i)
+    {
+        sub.emplace_back(node.subscriber(service_description).create().expect("Getting subscriber"));
+    }
+
+    iox::vector<iox::unique_ptr<WaitSet<>>, iox::MAX_NUMBER_OF_CONDITION_VARIABLES> ws;
+    for (uint64_t i = 0; i < iox::MAX_NUMBER_OF_CONDITION_VARIABLES; ++i)
     {
         ws.emplace_back(node.wait_set().create().expect("Getting waitset"));
     }
+
+    auto publisher_result = node.publisher(service_description).create();
+    ASSERT_TRUE(publisher_result.has_error());
+    EXPECT_THAT(publisher_result.error(), Eq(PublisherBuilderError::OUT_OF_RESOURCES));
+
+    auto subscriber_result = node.subscriber(service_description).create();
+    ASSERT_TRUE(subscriber_result.has_error());
+    EXPECT_THAT(subscriber_result.error(), Eq(SubscriberBuilderError::OUT_OF_RESOURCES));
 
     auto ws_result = node.wait_set().create();
     ASSERT_TRUE(ws_result.has_error());
@@ -375,14 +462,78 @@ TEST(Node_test, PublisherAndSubscriberAreConnected)
 
     auto node = RouDiEnvNodeBuilder("hypnotoad").create().expect("Creating a node should not fail!");
 
-    auto publisher = node.publisher({"all", "glory", "hypnotoad"}).create<uint8_t>().expect("Getting publisher");
-    auto subscriber = node.subscriber({"all", "glory", "hypnotoad"}).create<uint8_t>().expect("Getting subscriber");
+    auto publisher = node.publisher({"all", "glory", "hypnotoad"}).create<uint64_t>().expect("Getting publisher");
+    auto subscriber = node.subscriber({"all", "glory", "hypnotoad"}).create<uint64_t>().expect("Getting subscriber");
 
-    constexpr uint8_t DATA{42};
+    constexpr uint64_t DATA{42};
     publisher->publishCopyOf(DATA).or_else([](const auto) { GTEST_FAIL() << "Expected to send data"; });
     subscriber->take().and_then([&](const auto& sample) { EXPECT_THAT(*sample, Eq(DATA)); }).or_else([](const auto) {
         GTEST_FAIL() << "Expected to receive data";
     });
+}
+
+TEST(Node_test, NodeAndEndpointsAreContinuouslyRecreated)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "24d93901-0bd5-4458-bb53-7d40e4fb2964");
+
+    RouDiEnv roudi;
+
+    for (uint64_t i = 0; i < 10; ++i)
+    {
+        auto node = RouDiEnvNodeBuilder("hypnotoad").create().expect("Creating a node should not fail!");
+
+        auto publisher = node.publisher({"all", "glory", "hypnotoad"}).create<uint64_t>().expect("Getting publisher");
+        auto subscriber =
+            node.subscriber({"all", "glory", "hypnotoad"}).create<uint64_t>().expect("Getting subscriber");
+
+        constexpr uint64_t DATA{42};
+        publisher->publishCopyOf(DATA + i).or_else([](const auto) { GTEST_FAIL() << "Expected to send data"; });
+        subscriber->take()
+            .and_then([&](const auto& sample) { EXPECT_THAT(*sample, Eq(DATA + i)); })
+            .or_else([](const auto) { GTEST_FAIL() << "Expected to receive data"; });
+    }
+}
+
+TEST(Node_test, MultipleNodeAndEndpointsAreRegisteredWithSeparateRouDiRunningInParallel)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "1e527815-28d1-4a99-a9a3-cc4084018cf3");
+
+    NodeName_t node_name{"hypnotoad"};
+    ServiceDescription service_description{"all", "glory", "hypnotoad"};
+
+    constexpr uint16_t roudi_id_a{13};
+    constexpr uint16_t roudi_id_b{42};
+
+    RouDiEnv roudi_a{roudi_id_a};
+    RouDiEnv roudi_b{roudi_id_b};
+
+    auto node_a =
+        RouDiEnvNodeBuilder(node_name).roudi_id(roudi_id_a).create().expect("Creating a node should not fail!");
+    auto node_b =
+        RouDiEnvNodeBuilder(node_name).roudi_id(roudi_id_b).create().expect("Creating a node should not fail!");
+
+    auto publisher_a = node_a.publisher(service_description).create<uint16_t>().expect("Getting publisher");
+    auto publisher_b = node_b.publisher(service_description).create<uint16_t>().expect("Getting publisher");
+
+    auto subscriber_a = node_a.subscriber(service_description).create<uint16_t>().expect("Getting subscriber");
+    auto subscriber_b = node_b.subscriber(service_description).create<uint16_t>().expect("Getting subscriber");
+
+    publisher_a->publishCopyOf(roudi_id_a).or_else([](const auto) { GTEST_FAIL() << "Expected to send data"; });
+    publisher_b->publishCopyOf(roudi_id_b).or_else([](const auto) { GTEST_FAIL() << "Expected to send data"; });
+
+    subscriber_a->take()
+        .and_then([&](const auto& sample) { EXPECT_THAT(*sample, Eq(roudi_id_a)); })
+        .or_else([](const auto) { GTEST_FAIL() << "Expected to receive data"; });
+    subscriber_a->take()
+        .and_then([&](const auto& sample) { GTEST_FAIL() << "Expected to receive no data but got: " << *sample; })
+        .or_else([](const auto) { GTEST_SUCCEED() << "Successfully received no data"; });
+
+    subscriber_b->take()
+        .and_then([&](const auto& sample) { EXPECT_THAT(*sample, Eq(roudi_id_b)); })
+        .or_else([](const auto) { GTEST_FAIL() << "Expected to receive data"; });
+    subscriber_b->take()
+        .and_then([&](const auto& sample) { GTEST_FAIL() << "Expected to receive no data but got: " << *sample; })
+        .or_else([](const auto) { GTEST_SUCCEED() << "Successfully received no data"; });
 }
 
 } // namespace
