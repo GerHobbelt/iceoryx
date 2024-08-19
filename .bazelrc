@@ -1,4 +1,12 @@
-build --cxxopt="-std=c++17"
+build --noenable_bzlmod
+
+build --enable_platform_specific_config
+build:linux --cxxopt="-std=c++17"
+build:macos --cxxopt="-std=c++17"
+build:freebsd --cxxopt="-std=c++17"
+build:macos --cxxopt="-std=c++17"
+build:qnx --cxxopt="-std=c++17"
+build:windows --cxxopt="/std:c++17"
 
 # For using clang
 build:clang --action_env=BAZEL_COMPILER=clang
