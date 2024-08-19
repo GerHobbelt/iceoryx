@@ -82,9 +82,6 @@ class PoshRuntimeImpl : public PoshRuntime
     /// @copydoc PoshRuntime::getMiddlewareConditionVariable
     popo::ConditionVariableData* getMiddlewareConditionVariable() noexcept override;
 
-    /// @copydoc PoshRuntime::createNode
-    NodeData* createNode(const NodeProperty& nodeProperty) noexcept override;
-
     /// @copydoc PoshRuntime::sendRequestToRouDi
     bool sendRequestToRouDi(const IpcMessage& msg, IpcMessage& answer) noexcept override;
 
@@ -95,13 +92,11 @@ class PoshRuntimeImpl : public PoshRuntime
 
     // Protected constructor for IPC setup
     PoshRuntimeImpl(optional<const RuntimeName_t*> name,
-                    const uint16_t uniqueRouDiId = roudi::DEFAULT_UNIQUE_ROUDI_ID,
+                    const DomainId domainId = DEFAULT_DOMAIN_ID,
                     const RuntimeLocation location = RuntimeLocation::SEPARATE_PROCESS_FROM_ROUDI) noexcept;
 
     PoshRuntimeImpl(optional<const RuntimeName_t*> name,
-                    const uint16_t uniqueRouDiId,
-                    const RuntimeLocation location,
-                    IpcRuntimeInterface&& ipcRuntimeInterface) noexcept;
+                    std::pair<IpcRuntimeInterface, optional<SharedMemoryUser>>&& interfaces) noexcept;
 
   private:
     expected<PublisherPortUserType::MemberType_t*, IpcMessageErrorType>

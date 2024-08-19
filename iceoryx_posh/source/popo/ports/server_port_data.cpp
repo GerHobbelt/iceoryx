@@ -31,11 +31,11 @@ constexpr uint64_t ServerPortData::HISTORY_REQUEST_OF_ZERO;
 
 ServerPortData::ServerPortData(const capro::ServiceDescription& serviceDescription,
                                const RuntimeName_t& runtimeName,
-                               const uint16_t uniqueRouDiId,
+                               const roudi::UniqueRouDiId uniqueRouDiId,
                                const ServerOptions& serverOptions,
                                mepoo::MemoryManager* const memoryManager,
                                const mepoo::MemoryInfo& memoryInfo) noexcept
-    : BasePortData(serviceDescription, runtimeName, serverOptions.nodeName, uniqueRouDiId)
+    : BasePortData(serviceDescription, runtimeName, uniqueRouDiId)
     , m_chunkSenderData(memoryManager, serverOptions.clientTooSlowPolicy, HISTORY_REQUEST_OF_ZERO, memoryInfo)
     , m_chunkReceiverData(
           getRequestQueueType(serverOptions.requestQueueFullPolicy), serverOptions.requestQueueFullPolicy, memoryInfo)

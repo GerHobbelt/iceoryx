@@ -20,7 +20,9 @@
 #include "iceoryx_posh/capro/service_description.hpp"
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
 #include "iceoryx_posh/internal/runtime/ipc_runtime_interface.hpp"
+#include "iceoryx_posh/internal/runtime/shared_memory_user.hpp"
 #include "iceoryx_posh/runtime/posh_runtime.hpp"
+#include "iox/assertions.hpp"
 #include "iox/builder.hpp"
 #include "iox/expected.hpp"
 #include "iox/optional.hpp"
@@ -37,10 +39,13 @@ class Node;
 
 enum class NodeBuilderError
 {
-    INVALID_OR_NO_ROUDI_ID,
+    INVALID_OR_NO_DOMAIN_ID,
     IPC_CHANNEL_CREATION_FAILED,
     TIMEOUT,
     REGISTRATION_FAILED,
+    SHM_MAPPING_ERROR,
+    RELATIVE_POINTER_MAPPING_ERROR,
+    TOO_MANY_SHM_SEGMENTS,
 };
 
 /// @brief A builder for a 'Node' which is th entry point to create publisher, subscriber, wait sets, etc.
@@ -60,37 +65,37 @@ class NodeBuilder
     IOX_BUILDER_PARAMETER(bool, shares_address_space_with_roudi, false)
 
   public:
-    /// @brief Determines to which RouDi instance to register with
-    /// @param[in] value to be used as RouDi ID
-    NodeBuilder&& roudi_id(const uint16_t value) && noexcept;
+    /// @brief Determines which domain to use to register to a RouDi instance
+    /// @param[in] domain_id to be used as domain ID
+    NodeBuilder&& domain_id(const DomainId domainId) && noexcept;
 
-    /// @brief Determines to which RouDi instance to register with by using the one specified by 'IOX_ROUDI_ID'. If
-    /// the environment variable is not set or invalid, the creation of the 'Node' will fail.
+    /// @brief Determines which domain to use to register to a RouDi instance by using the one specified by
+    /// 'IOX_DOMAIN_ID'. If the environment variable is not set or invalid, the creation of the 'Node' will fail.
     /// @note The function uses 'getenv' which is not thread safe and can result in undefined behavior when it is called
     /// from multiple threads or the env variable is changed while the function holds a pointer to the data. For this
     /// reason the function should only be used in the startup phase of the application and only in the main thread.
-    NodeBuilder&& roudi_id_from_env() && noexcept;
+    NodeBuilder&& domain_id_from_env() && noexcept;
 
-    /// @brief Determines to which RouDi instance to register with by using the one specified by 'IOX_ROUDI_ID' or
-    /// the one by 'value' if the environment variable is not set or invalid.
-    /// @param[in] value to be used if the 'IOX_ROUDI_ID' environment variable is not set or invalid
+    /// @brief Determines which domain to use to register to a RouDi instance by using the one specified by
+    /// 'IOX_DOMAIN_ID' or the one by 'value' if the environment variable is not set or invalid.
+    /// @param[in] domain_id to be used as domain ID if the 'IOX_DOMAIN_ID' environment variable is not set or invalid
     /// @note The function uses 'getenv' which is not thread safe and can result in undefined behavior when it is called
     /// from multiple threads or the env variable is changed while the function holds a pointer to the data. For this
     /// reason the function should only be used in the startup phase of the application and only in the main thread.
-    NodeBuilder&& roudi_id_from_env_or(const uint16_t value) && noexcept;
+    NodeBuilder&& domain_id_from_env_or(const DomainId domainId) && noexcept;
 
-    /// @brief Determines to which RouDi instance to register with by using the one specified by 'IOX_ROUDI_ID' or
-    /// the the default RouDi ID if the environment variable is not set
+    /// @brief Determines which domain to use to register to a RouDi instance using the one specified by
+    /// 'IOX_DOMAIN_ID' or the the default Domain ID if the environment variable is not set
     /// @note The function uses 'getenv' which is not thread safe and can result in undefined behavior when it is called
     /// from multiple threads or the env variable is changed while the function holds a pointer to the data. For this
     /// reason the function should only be used in the startup phase of the application and only in the main thread.
-    NodeBuilder&& roudi_id_from_env_or_default() && noexcept;
+    NodeBuilder&& domain_id_from_env_or_default() && noexcept;
 
     expected<Node, NodeBuilderError> create() noexcept;
 
   private:
     NodeName_t m_name;
-    optional<uint16_t> m_roudi_id{roudi::DEFAULT_UNIQUE_ROUDI_ID};
+    optional<DomainId> m_domain_id{DEFAULT_DOMAIN_ID};
 };
 
 /// @brief Entry point to create publisher, subscriber, wait sets, etc.
@@ -111,9 +116,8 @@ class Node
   private:
     friend class NodeBuilder;
     Node(const NodeName_t& name,
-         const uint16_t uniqueRouDiId,
-         const runtime::RuntimeLocation location,
-         runtime::IpcRuntimeInterface&& runtime_interface) noexcept;
+         runtime::IpcRuntimeInterface&& runtime_interface,
+         optional<runtime::SharedMemoryUser>&&) noexcept;
 
   private:
     unique_ptr<runtime::PoshRuntime> m_runtime;
@@ -124,7 +128,7 @@ class Node
 namespace iox
 {
 template <>
-constexpr posh::experimental::NodeBuilderError
+inline constexpr posh::experimental::NodeBuilderError
 from<runtime::IpcRuntimeInterfaceError, posh::experimental::NodeBuilderError>(
     runtime::IpcRuntimeInterfaceError e) noexcept
 {
@@ -142,7 +146,29 @@ from<runtime::IpcRuntimeInterfaceError, posh::experimental::NodeBuilderError>(
         return NodeBuilderError::REGISTRATION_FAILED;
     }
 
-    // just to prevent a warning regarding not returning from a non-void function
+    // just to prevent a warning regarding not returning from a non-void function; IOX_UNREACHABLE does not work since
+    // this is a constexpr
+    return NodeBuilderError::REGISTRATION_FAILED;
+}
+
+template <>
+inline constexpr posh::experimental::NodeBuilderError
+from<runtime::SharedMemoryUserError, posh::experimental::NodeBuilderError>(runtime::SharedMemoryUserError e) noexcept
+{
+    using namespace posh::experimental;
+    using namespace runtime;
+    switch (e)
+    {
+    case SharedMemoryUserError::SHM_MAPPING_ERROR:
+        return NodeBuilderError::SHM_MAPPING_ERROR;
+    case SharedMemoryUserError::RELATIVE_POINTER_MAPPING_ERROR:
+        return NodeBuilderError::RELATIVE_POINTER_MAPPING_ERROR;
+    case SharedMemoryUserError::TOO_MANY_SHM_SEGMENTS:
+        return NodeBuilderError::TOO_MANY_SHM_SEGMENTS;
+    }
+
+    // just to prevent a warning regarding not returning from a non-void function; IOX_UNREACHABLE does not work since
+    // this is a constexpr
     return NodeBuilderError::REGISTRATION_FAILED;
 }
 } // namespace iox

@@ -24,7 +24,6 @@
 #include "iceoryx_posh/internal/popo/ports/publisher_port_data.hpp"
 #include "iceoryx_posh/internal/popo/ports/server_port_data.hpp"
 #include "iceoryx_posh/internal/popo/ports/subscriber_port_data.hpp"
-#include "iceoryx_posh/internal/runtime/node_data.hpp"
 #include "iox/fixed_position_container.hpp"
 #include "iox/optional.hpp"
 #include "iox/vector.hpp"
@@ -35,16 +34,13 @@ namespace roudi
 {
 struct PortPoolData
 {
-    PortPoolData(const uint16_t uniqueRouDiId) noexcept
+    PortPoolData(const roudi::UniqueRouDiId uniqueRouDiId) noexcept
         : m_uniqueRouDiId(uniqueRouDiId)
     {
     }
 
     using InterfaceContainer = FixedPositionContainer<popo::InterfacePortData, MAX_INTERFACE_NUMBER>;
     InterfaceContainer m_interfacePortMembers;
-
-    using NodeContainer = FixedPositionContainer<runtime::NodeData, MAX_NODE_NUMBER>;
-    NodeContainer m_nodeMembers;
 
     using CondVarContainer = FixedPositionContainer<popo::ConditionVariableData, MAX_NUMBER_OF_CONDITION_VARIABLES>;
     CondVarContainer m_conditionVariableMembers;
@@ -61,7 +57,7 @@ struct PortPoolData
     using ClientContainer = FixedPositionContainer<iox::popo::ClientPortData, MAX_CLIENTS>;
     ClientContainer m_clientPortMembers;
 
-    const uint16_t m_uniqueRouDiId;
+    const roudi::UniqueRouDiId m_uniqueRouDiId;
 };
 
 } // namespace roudi

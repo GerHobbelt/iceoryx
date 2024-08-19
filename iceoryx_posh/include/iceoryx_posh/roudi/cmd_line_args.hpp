@@ -39,7 +39,9 @@ inline iox::log::LogStream& operator<<(iox::log::LogStream& logstream, const Cmd
     logstream << "Log level: " << cmdLineArgs.roudiConfig.logLevel << "\n";
     logstream << "Monitoring mode: " << cmdLineArgs.roudiConfig.monitoringMode << "\n";
     logstream << "Compatibility check level: " << cmdLineArgs.roudiConfig.compatibilityCheckLevel << "\n";
-    logstream << "Unique RouDi ID: " << cmdLineArgs.roudiConfig.uniqueRouDiId << "\n";
+    logstream << "Domain ID: " << static_cast<DomainId::value_type>(cmdLineArgs.roudiConfig.domainId) << "\n";
+    logstream << "Unique RouDi ID: "
+              << static_cast<roudi::UniqueRouDiId::value_type>(cmdLineArgs.roudiConfig.uniqueRouDiId) << "\n";
     logstream << "Process termination delay: " << cmdLineArgs.roudiConfig.processTerminationDelay.toSeconds() << " s\n";
     logstream << "Process kill delay: " << cmdLineArgs.roudiConfig.processKillDelay.toSeconds() << " s\n";
     if (!cmdLineArgs.configFilePath.empty())
