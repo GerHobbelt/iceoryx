@@ -64,6 +64,7 @@
 - Add support for `iox::string` in `NamedPipe` and created `named_pipe.inl` [#1693](https://github.com/eclipse-iceoryx/iceoryx/issues/1693)
 - Add an `iox1` prefix to all resources created by `iceoryx_posh` and `RouDi` [#2185](https://github.com/eclipse-iceoryx/iceoryx/issues/2185)
 - Make iceoryx resource prefix a compile time option [#2272](https://github.com/eclipse-iceoryx/iceoryx/issues/2272)
+- Improve introspection-client interface by adding the number of ports in parentheses [#2299](https://github.com/eclipse-iceoryx/iceoryx/issues/2299)
 
 **Bugfixes:**
 
@@ -131,6 +132,7 @@
 - Fix span_iterator constructor to prevent assertion when iterating over spans [#2216](https://github.com/eclipse-iceoryx/iceoryx/issues/2216)
 - Fix span span constructor assert when using begin/end constructor [#2253](https://github.com/eclipse-iceoryx/iceoryx/issues/2253)
 - Listener examples need to take all samples in the callback [#2251](https://github.com/eclipse-iceoryx/iceoryx/issues/2251)
+- 'iox::string' tests can exceed the translation unit compilation timeout [#2278](https://github.com/eclipse-iceoryx/iceoryx/issues/2278)
 
 **Refactoring:**
 
@@ -217,6 +219,7 @@
 - Split `iceoryx_hoofs` into logical modules [#1391](https://github.com/eclipse-iceoryx/iceoryx/issues/1391)
 - Create a flat include structure for `iceoryx_hoofs` [#1593](https://github.com/eclipse-iceoryx/iceoryx/issues/1593)
 - Handle 'strerror_r' idiosyncrasies in the platform layer [#1616](https://github.com/eclipse-iceoryx/iceoryx/issues/1616)
+- Fix new clang-tidy-18 warnings [#2274](https://github.com/eclipse-iceoryx/iceoryx/issues/2274)
 
 **Workflow:**
 
