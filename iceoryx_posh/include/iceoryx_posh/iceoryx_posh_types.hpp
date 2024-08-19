@@ -1,7 +1,7 @@
 // Copyright (c) 2019 - 2020 by Robert Bosch GmbH. All rights reserved.
 // Copyright (c) 2020 - 2022 by Apex.AI Inc. All rights reserved.
 // Copyright (c) 2022 by NXP. All rights reserved.
-// Copyright (c) 2024 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
+// Copyright (c) 2024 by ekxide IO GmbH. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ constexpr uint32_t MAX_RESPONSE_QUEUE_CAPACITY = build::IOX_MAX_RESPONSE_QUEUE_C
 // Server
 constexpr uint32_t MAX_SERVERS = build::IOX_MAX_PUBLISHERS;
 constexpr uint32_t MAX_CLIENTS_PER_SERVER = build::IOX_MAX_CLIENTS_PER_SERVER;
-constexpr uint32_t MAX_REQUESTS_PROCESSED_SIMULTANEOUSLY = 4U;
+constexpr uint32_t MAX_REQUESTS_PROCESSED_SIMULTANEOUSLY = build::IOX_MAX_REQUESTS_PROCESSED_SIMULTANEOUSLY;
 constexpr uint32_t MAX_RESPONSES_ALLOCATED_SIMULTANEOUSLY = MAX_REQUESTS_PROCESSED_SIMULTANEOUSLY;
 constexpr uint32_t MAX_REQUEST_QUEUE_CAPACITY = build::IOX_MAX_REQUEST_QUEUE_CAPACITY;
 // Waitset
