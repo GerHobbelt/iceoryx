@@ -360,9 +360,9 @@ class MyLogger : public iox::log::Logger
 
   private:
     void createLogMessageHeader(
-        const char* file IOX_MAYBE_UNUSED,
-        const int line IOX_MAYBE_UNUSED,
-        const char* function IOX_MAYBE_UNUSED,
+        const char* file [[maybe_unused]],
+        const int line [[maybe_unused]],
+        const char* function [[maybe_unused]],
         iox::log::LogLevel logLevel) noexcept override
     {
         switch(logLevel) {
@@ -425,4 +425,4 @@ int main()
   `Logger::customize().logLevelFromEnvOr(LogLevel::WARN).init()`
 - wrap `__FILE__`, `__LINE__` and `__FUNCTION__` into a `source_location` struct
   - where should this struct be placed
-  - could also be used by `Expects`, `Ensures`
+  - could also be used by `IOX_EXPECTS`, `IOX_ENSURES`

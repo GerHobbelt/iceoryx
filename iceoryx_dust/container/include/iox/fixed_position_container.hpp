@@ -19,6 +19,7 @@
 
 #include "iceoryx_hoofs/cxx/requires.hpp"
 #include "iox/algorithm.hpp"
+#include "iox/detail/fixed_position_container_helper.hpp"
 #include "iox/uninitialized_array.hpp"
 
 #include <cstdint>
@@ -126,55 +127,55 @@ class FixedPositionContainer final
 
     /// @brief Checks if the container is empty
     /// @return 'true' if the container is empty, 'false' otherwise
-    IOX_NO_DISCARD bool empty() const noexcept;
+    [[nodiscard]] bool empty() const noexcept;
 
     /// @brief Checks if the container is full
     /// @return 'true' if the container is full, 'false' otherwise
-    IOX_NO_DISCARD bool full() const noexcept;
+    [[nodiscard]] bool full() const noexcept;
 
     /// @brief Get the number of used slots in the container
     /// @return the number of used slots
-    IOX_NO_DISCARD uint64_t size() const noexcept;
+    [[nodiscard]] uint64_t size() const noexcept;
 
     /// @brief Get the capacity of the container
     /// @return the number of available slots
-    IOX_NO_DISCARD constexpr uint64_t capacity() const noexcept;
+    [[nodiscard]] constexpr uint64_t capacity() const noexcept;
 
     /// @brief Get the iterator to the element pointed to by the index
     /// @param[in] index of the element the for the iterator
     /// @return iterator pointing to the element at index or end iterator if index was out of bounds or index pointed to
     /// an empty slot
-    IOX_NO_DISCARD Iterator iter_from_index(const IndexType index);
+    [[nodiscard]] Iterator iter_from_index(const IndexType index);
 
     /// @brief Get the const iterator to the element pointed to by the index
     /// @param[in] index of the element the for the iterator
     /// @return iterator pointing to the element at index or end iterator if index was out of bounds or index pointed to
     /// an empty slot
-    IOX_NO_DISCARD ConstIterator iter_from_index(const IndexType index) const;
+    [[nodiscard]] ConstIterator iter_from_index(const IndexType index) const;
 
     /// @brief Get an iterator pointing to the beginning of the container
     /// @return iterator pointing to the beginning of the container
-    IOX_NO_DISCARD Iterator begin() noexcept;
+    [[nodiscard]] Iterator begin() noexcept;
 
     /// @brief Get a const iterator pointing to the beginning of the container
     /// @return const iterator pointing to the beginning of the container
-    IOX_NO_DISCARD ConstIterator begin() const noexcept;
+    [[nodiscard]] ConstIterator begin() const noexcept;
 
     /// @brief Get a const iterator pointing to the beginning of the container
     /// @return const iterator pointing to the beginning of the container
-    IOX_NO_DISCARD ConstIterator cbegin() const noexcept;
+    [[nodiscard]] ConstIterator cbegin() const noexcept;
 
     /// @brief Get an iterator pointing to the end of the container
     /// @return iterator pointing to the end of the container
-    IOX_NO_DISCARD Iterator end() noexcept;
+    [[nodiscard]] Iterator end() noexcept;
 
     /// @brief Get a const iterator pointing to the end of the container
     /// @return const iterator pointing to the end of the container
-    IOX_NO_DISCARD ConstIterator end() const noexcept;
+    [[nodiscard]] ConstIterator end() const noexcept;
 
     /// @brief Get a const iterator pointing to the end of the container
     /// @return const iterator pointing to the end of the container
-    IOX_NO_DISCARD ConstIterator cend() const noexcept;
+    [[nodiscard]] ConstIterator cend() const noexcept;
 
   private:
     enum class SlotStatus : uint8_t
@@ -193,9 +194,6 @@ class FixedPositionContainer final
         using Value = typename std::conditional<ITER_MUTABILITY == IterMutability::ITER_MUT, T, const T>::type;
 
         friend class FixedPositionContainer;
-
-        template <IterMutability>
-        friend class IteratorBase;
 
         /// @brief Construct a const iterator from an iterator
         // NOLINTJUSTIFICATION conversion from non const iterator to const iterator follows the STL behavior
@@ -239,11 +237,11 @@ class FixedPositionContainer final
         /// @attention aborts if the iterator
         ///              - is an 'end' iterator
         ///              - the slot the iterator point to is not in use
-        IOX_NO_DISCARD Value& operator*() const
+        [[nodiscard]] Value& operator*() const
         {
-            iox::cxx::EnsuresWithMsg(m_index <= Index::LAST, "Access with invalid index!");
-            iox::cxx::EnsuresWithMsg(m_container.get().m_status[m_index] == SlotStatus::USED,
-                                     "Invalid access! Slot not in use!");
+            IOX_ENSURES_WITH_MSG(m_index <= Index::LAST, "Access with invalid index!");
+            IOX_ENSURES_WITH_MSG(m_container.get().m_status[m_index] == SlotStatus::USED,
+                                 "Invalid access! Slot not in use!");
             return m_container.get().m_data[m_index];
         }
 
@@ -252,11 +250,11 @@ class FixedPositionContainer final
         /// @attention aborts if the iterator
         ///              - is an 'end' iterator
         ///              - the slot the iterator point to is not in use
-        IOX_NO_DISCARD Value* operator->() const
+        [[nodiscard]] Value* operator->() const
         {
-            iox::cxx::EnsuresWithMsg(m_index <= Index::LAST, "Access with invalid index!");
-            iox::cxx::EnsuresWithMsg(m_container.get().m_status[m_index] == SlotStatus::USED,
-                                     "Invalid access! Slot not in use!");
+            IOX_ENSURES_WITH_MSG(m_index <= Index::LAST, "Access with invalid index!");
+            IOX_ENSURES_WITH_MSG(m_container.get().m_status[m_index] == SlotStatus::USED,
+                                 "Invalid access! Slot not in use!");
             return &m_container.get().m_data[m_index];
         }
 
@@ -265,18 +263,18 @@ class FixedPositionContainer final
         /// @attention aborts if the iterator
         ///              - is an 'end' iterator
         ///              - the slot the iterator point to is not in use
-        IOX_NO_DISCARD Value* to_ptr() const
+        [[nodiscard]] Value* to_ptr() const
         {
-            iox::cxx::EnsuresWithMsg(m_index <= Index::LAST, "Access with invalid index!");
-            iox::cxx::EnsuresWithMsg(m_container.get().m_status[m_index] == SlotStatus::USED,
-                                     "Invalid access! Slot not in use!");
+            IOX_ENSURES_WITH_MSG(m_index <= Index::LAST, "Access with invalid index!");
+            IOX_ENSURES_WITH_MSG(m_container.get().m_status[m_index] == SlotStatus::USED,
+                                 "Invalid access! Slot not in use!");
             return &m_container.get().m_data[m_index];
         }
 
         /// @brief Get the index of the element the iterator points to
         /// @return index of the element the iterator points to
         /// @attention this can point out of the container in case of the 'end' iterator
-        IOX_NO_DISCARD IndexType to_index() const
+        [[nodiscard]] IndexType to_index() const
         {
             return m_index;
         }
@@ -284,7 +282,7 @@ class FixedPositionContainer final
         /// @brief Check if the iterator origins from the provided container
         /// @param[in] container to determine the origin of the iterator
         /// @return 'true' if the iterator origins from the provide container, 'false' otherwise
-        IOX_NO_DISCARD bool origins_from(const Container& container) const
+        [[nodiscard]] bool origins_from(const Container& container) const
         {
             return &m_container.get() == &container;
         }
@@ -292,7 +290,7 @@ class FixedPositionContainer final
         /// @brief Compares iterators for equality
         /// @return 'true' if iterators are the same, 'false' otherwise
         template <IterMutability RHS_TYPE>
-        IOX_NO_DISCARD bool operator==(const IteratorBase<RHS_TYPE>& rhs) const
+        [[nodiscard]] bool operator==(const IteratorBase<RHS_TYPE>& rhs) const
         {
             return origins_from(rhs.m_container.get()) && (m_index == rhs.m_index);
         }
@@ -300,7 +298,7 @@ class FixedPositionContainer final
         /// @brief Compares iterators for non-equality
         /// @return 'true' if iterators are not the same, 'false' otherwise
         template <IterMutability RHS_TYPE>
-        IOX_NO_DISCARD bool operator!=(const IteratorBase<RHS_TYPE>& rhs) const
+        [[nodiscard]] bool operator!=(const IteratorBase<RHS_TYPE>& rhs) const
         {
             return !(*this == rhs);
         }
@@ -318,15 +316,16 @@ class FixedPositionContainer final
     };
 
   private:
+    template <detail::MoveAndCopyOperations Opt, typename RhsType>
+    void copy_and_move_impl(RhsType&& rhs) noexcept;
+
+  private:
     UninitializedArray<T, CAPACITY> m_data;
     UninitializedArray<SlotStatus, CAPACITY> m_status;
     UninitializedArray<IndexType, CAPACITY> m_next;
     IndexType m_size{0};
     IndexType m_begin_free{Index::FIRST};
     IndexType m_begin_used{Index::INVALID};
-
-    template <typename RhsType>
-    void init(RhsType&& rhs) noexcept;
 };
 
 } // namespace iox

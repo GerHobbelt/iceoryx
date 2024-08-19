@@ -67,7 +67,7 @@ optional<capro::CaproMessage> ClientPortRouDi::tryGetCaProMessage() noexcept
         }
         break;
     case ConnectionState::WAIT_FOR_OFFER:
-        IOX_FALLTHROUGH;
+        [[fallthrough]];
     case ConnectionState::CONNECTED:
         if (!currentConnectRequest)
         {
@@ -150,11 +150,11 @@ ClientPortRouDi::handleCaProMessageForStateConnectRequested(const capro::CaproMe
     switch (caProMessage.m_type)
     {
     case capro::CaproMessageType::ACK:
-        cxx::Expects(caProMessage.m_chunkQueueData != nullptr && "Invalid request queue passed to client");
-        cxx::Expects(!m_chunkSender
-                          .tryAddQueue(static_cast<ServerChunkQueueData_t*>(caProMessage.m_chunkQueueData),
-                                       caProMessage.m_historyCapacity)
-                          .has_error());
+        IOX_EXPECTS_WITH_MSG(caProMessage.m_chunkQueueData != nullptr, "Invalid request queue passed to client");
+        IOX_EXPECTS(!m_chunkSender
+                         .tryAddQueue(static_cast<ServerChunkQueueData_t*>(caProMessage.m_chunkQueueData),
+                                      caProMessage.m_historyCapacity)
+                         .has_error());
 
         getMembers()->m_connectionState.store(ConnectionState::CONNECTED, std::memory_order_relaxed);
         return nullopt;
@@ -233,7 +233,7 @@ ClientPortRouDi::handleCaProMessageForStateDisconnectRequested(const capro::Capr
     switch (caProMessage.m_type)
     {
     case capro::CaproMessageType::ACK:
-        IOX_FALLTHROUGH;
+        [[fallthrough]];
     case capro::CaproMessageType::NACK:
         getMembers()->m_connectionState.store(ConnectionState::NOT_CONNECTED, std::memory_order_relaxed);
         return nullopt;

@@ -74,9 +74,9 @@ inline bool PortIntrospection<PublisherPort, SubscriberPort>::registerPublisherP
 template <typename PublisherPort, typename SubscriberPort>
 inline void PortIntrospection<PublisherPort, SubscriberPort>::run() noexcept
 {
-    cxx::Expects(m_publisherPort.has_value());
-    cxx::Expects(m_publisherPortThroughput.has_value());
-    cxx::Expects(m_publisherPortSubscriberPortsData.has_value());
+    IOX_EXPECTS(m_publisherPort.has_value());
+    IOX_EXPECTS(m_publisherPortThroughput.has_value());
+    IOX_EXPECTS(m_publisherPortSubscriberPortsData.has_value());
 
     // this is a field, there needs to be a sample before activate is called
     sendPortData();
@@ -592,8 +592,9 @@ PortIntrospection<PublisherPort, SubscriberPort>::PortData::prepareTopic(PortInt
 }
 
 template <typename PublisherPort, typename SubscriberPort>
-inline void PortIntrospection<PublisherPort, SubscriberPort>::PortData::prepareTopic(
-    PortThroughputIntrospectionTopic& topic IOX_MAYBE_UNUSED) noexcept
+inline void
+PortIntrospection<PublisherPort, SubscriberPort>::PortData::prepareTopic(PortThroughputIntrospectionTopic& topic
+                                                                         [[maybe_unused]]) noexcept
 {
     /// @todo iox-#402 re-add port throughput
 }

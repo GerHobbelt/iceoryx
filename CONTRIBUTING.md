@@ -104,7 +104,7 @@ codebase follows these rules, things are work in progress.
     without heap)
 2) **No exceptions are allowed**, all function and methods need to have `noexcept` in their signature
 3) **No undefined behavior**, zero-cost abstract is not feasible in high safety environments
-4) **Use C++14**
+4) **Use C++17**
 5) **[Rule of Five](https://en.cppreference.com/w/cpp/language/rule_of_three)**, if there is a non-default
     destructor needed, the rule of five has to be applied
 6) **Keep the [STL](https://en.wikipedia.org/wiki/Standard_Template_Library) dependencies to a minimum**,
@@ -112,7 +112,7 @@ codebase follows these rules, things are work in progress.
     which are not compatible with the STL (e.g. `iox::cxx::vector::emplace_back()` does return a bool); see
     [section](CONTRIBUTING.md#external-dependencies) below
 7) **Always use `iox::log::Logger`**, instead of `printf()`
-8) **Always use `iox::ErrorHandler` or `iox::cxx::Expects`/`iox::cxx::Ensures`**, when an error occurs that cannot or
+8) **Always use `iox::ErrorHandler` or `IOX_EXPECTS`/`IOX_ENSURES`**, when an error occurs that cannot or
     shall not be propagated via an `iox::expected`
 9) **Not more than two-level nested namespaces**, three-level nested namespace can be used sparsely
 

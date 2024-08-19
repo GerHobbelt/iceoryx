@@ -1,5 +1,6 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
 // Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2023 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,12 +51,12 @@ MemPool::MemPool(const greater_or_equal<uint32_t, CHUNK_MEMORY_ALIGNMENT> chunkS
     {
         auto allocationResult = chunkMemoryAllocator.allocate(static_cast<uint64_t>(m_numberOfChunks) * m_chunkSize,
                                                               CHUNK_MEMORY_ALIGNMENT);
-        cxx::Expects(allocationResult.has_value());
+        IOX_EXPECTS(allocationResult.has_value());
         m_rawMemory = static_cast<uint8_t*>(allocationResult.value());
 
         allocationResult =
             managementAllocator.allocate(freeList_t::requiredIndexMemorySize(m_numberOfChunks), CHUNK_MEMORY_ALIGNMENT);
-        cxx::Expects(allocationResult.has_value());
+        IOX_EXPECTS(allocationResult.has_value());
         auto* memoryLoFFLi = allocationResult.value();
         m_freeIndices.init(static_cast<concurrent::LoFFLi::Index_t*>(memoryLoFFLi), m_numberOfChunks);
     }
@@ -83,8 +84,8 @@ void MemPool::adjustMinFree() noexcept
 
 void* MemPool::getChunk() noexcept
 {
-    uint32_t l_index{0U};
-    if (!m_freeIndices.pop(l_index))
+    uint32_t index{0U};
+    if (!m_freeIndices.pop(index))
     {
         IOX_LOG(WARN,
                 "Mempool [m_chunkSize = " << m_chunkSize << ", numberOfChunks = " << m_numberOfChunks
@@ -97,18 +98,32 @@ void* MemPool::getChunk() noexcept
     m_usedChunks.fetch_add(1U, std::memory_order_relaxed);
     adjustMinFree();
 
-    return m_rawMemory.get() + l_index * m_chunkSize;
+    return indexToPointer(index, m_chunkSize, m_rawMemory.get());
+}
+
+void* MemPool::indexToPointer(uint32_t index, uint32_t chunkSize, void* const rawMemoryBase) noexcept
+{
+    const auto offset = static_cast<uint64_t>(index) * chunkSize;
+    return static_cast<void*>(static_cast<uint8_t*>(rawMemoryBase) + offset);
+}
+
+uint32_t
+MemPool::pointerToIndex(const void* const chunk, const uint32_t chunkSize, const void* const rawMemoryBase) noexcept
+{
+    const auto offset =
+        static_cast<uint64_t>(static_cast<const uint8_t*>(chunk) - static_cast<const uint8_t*>(rawMemoryBase));
+    IOX_EXPECTS(offset % chunkSize == 0);
+
+    const auto index = static_cast<uint32_t>(offset / chunkSize);
+    return index;
 }
 
 void MemPool::freeChunk(const void* chunk) noexcept
 {
-    cxx::Expects(m_rawMemory.get() <= chunk
-                 && chunk <= m_rawMemory.get() + (static_cast<uint64_t>(m_chunkSize) * (m_numberOfChunks - 1U)));
+    const auto offsetToLastChunk = static_cast<uint64_t>(m_chunkSize) * (m_numberOfChunks - 1U);
+    IOX_EXPECTS(m_rawMemory.get() <= chunk && chunk <= static_cast<uint8_t*>(m_rawMemory.get()) + offsetToLastChunk);
 
-    auto offset = static_cast<const uint8_t*>(chunk) - m_rawMemory.get();
-    cxx::Expects(offset % m_chunkSize == 0);
-
-    uint32_t index = static_cast<uint32_t>(offset / m_chunkSize);
+    const auto index = pointerToIndex(chunk, m_chunkSize, m_rawMemory.get());
 
     if (!m_freeIndices.push(index))
     {

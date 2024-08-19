@@ -18,6 +18,7 @@
 #ifndef IOX_DUST_CONTAINER_DETAIL_FIXED_POSITION_CONTAINER_INL
 #define IOX_DUST_CONTAINER_DETAIL_FIXED_POSITION_CONTAINER_INL
 
+#include "iox/detail/fixed_position_container_helper.hpp"
 #include "iox/fixed_position_container.hpp"
 
 namespace iox
@@ -55,13 +56,13 @@ inline FixedPositionContainer<T, CAPACITY>::~FixedPositionContainer() noexcept
 template <typename T, uint64_t CAPACITY>
 inline FixedPositionContainer<T, CAPACITY>::FixedPositionContainer(const FixedPositionContainer& rhs) noexcept
 {
-    *this = rhs;
+    copy_and_move_impl<detail::MoveAndCopyOperations::CopyConstructor>(rhs);
 }
 
 template <typename T, uint64_t CAPACITY>
 inline FixedPositionContainer<T, CAPACITY>::FixedPositionContainer(FixedPositionContainer&& rhs) noexcept
 {
-    *this = std::move(rhs);
+    copy_and_move_impl<detail::MoveAndCopyOperations::MoveConstructor>(std::move(rhs));
 }
 
 template <typename T, uint64_t CAPACITY>
@@ -70,7 +71,7 @@ FixedPositionContainer<T, CAPACITY>::operator=(const FixedPositionContainer& rhs
 {
     if (this != &rhs)
     {
-        init(rhs);
+        copy_and_move_impl<detail::MoveAndCopyOperations::CopyAssignment>(rhs);
     }
     return *this;
 }
@@ -81,51 +82,59 @@ FixedPositionContainer<T, CAPACITY>::operator=(FixedPositionContainer&& rhs) noe
 {
     if (this != &rhs)
     {
-        init(std::move(rhs));
-
-        // clear rhs
-        rhs.clear();
+        copy_and_move_impl<detail::MoveAndCopyOperations::MoveAssignment>(std::move(rhs));
     }
     return *this;
 }
 
 template <typename T, uint64_t CAPACITY>
-template <typename RhsType>
-inline void FixedPositionContainer<T, CAPACITY>::init(RhsType&& rhs) noexcept
+template <detail::MoveAndCopyOperations Opt, typename RhsType>
+inline void FixedPositionContainer<T, CAPACITY>::copy_and_move_impl(RhsType&& rhs) noexcept
 {
-    static_assert(std::is_rvalue_reference<decltype(rhs)>::value
-                      || (std::is_lvalue_reference<decltype(rhs)>::value
-                          && std::is_const<std::remove_reference_t<decltype(rhs)>>::value),
-                  "RhsType must be const lvalue reference or rvalue reference");
+    // alias helper struct
+    using Helper = detail::MoveAndCopyHelper<Opt>;
 
-    IndexType i = Index::FIRST;
+    constexpr bool is_ctor = Helper::is_ctor();
+    constexpr bool is_move = Helper::is_move();
+
+    // status array is not yet initialized for constructor creation
+    if constexpr (is_ctor)
+    {
+        for (IndexType i = 0; i < CAPACITY; ++i)
+        {
+            m_status[i] = SlotStatus::FREE;
+        }
+    }
+
+    IndexType i{Index::FIRST};
     auto rhs_it = (std::forward<RhsType>(rhs)).begin();
-    bool is_move = std::is_rvalue_reference<RhsType&&>::value;
 
-    // transfer src data to destination
     for (; rhs_it.to_index() != Index::INVALID; ++i, ++rhs_it)
     {
         if (m_status[i] == SlotStatus::USED)
         {
-            if (is_move)
+            // When the slot is in the 'USED' state, it is safe to proceed with either construction (ctor) or assignment
+            // operation. Therefore, creation can be carried out according to the option specified by Opt.
+            if constexpr (is_move)
             {
-                m_data[i] = std::move(*rhs_it);
+                Helper::transfer(m_data[i], std::move(*rhs_it));
             }
             else
             {
-                m_data[i] = *rhs_it;
+                Helper::transfer(m_data[i], *rhs_it);
             }
         }
         else
         {
-            // use ctor to avoid UB for non-initialized free slots
-            if (is_move)
+            // When the slot is in the 'FREE' state, it is unsafe to proceed with assignment operation.
+            // Therefore, we need to force helper to use ctor create to make sure that the 'FREE' slots get initialized.
+            if constexpr (is_move)
             {
-                new (&m_data[i]) T(std::move(*rhs_it));
+                Helper::ctor_create(m_data[i], std::move(*rhs_it));
             }
             else
             {
-                new (&m_data[i]) T(*rhs_it);
+                Helper::ctor_create(m_data[i], *rhs_it);
             }
         }
 
@@ -133,26 +142,36 @@ inline void FixedPositionContainer<T, CAPACITY>::init(RhsType&& rhs) noexcept
         m_next[i] = static_cast<IndexType>(i + 1U);
     }
 
-    // correct next
-    m_next[i] = Index::INVALID;
-
-    // erase rest USED element in rhs, also update m_next for free slots
-    for (; i < Index::INVALID; ++i)
+    // reset rest
+    for (; i < CAPACITY; ++i)
     {
         if (m_status[i] == SlotStatus::USED)
         {
-            erase(i);
+            m_data[i].~T();
         }
-        else
-        {
-            m_next[i] = static_cast<IndexType>(i + 1U);
-        }
+
+        m_status[i] = SlotStatus::FREE;
+
+        IndexType next = static_cast<IndexType>(i + 1U);
+        m_next[i] = next;
     }
 
-    // member update
+    // correct m_next
+    m_next[Index::LAST] = Index::INVALID;
+    if (!rhs.empty())
+    {
+        m_next[rhs.m_size - 1] = Index::INVALID;
+    }
+
     m_begin_free = static_cast<IndexType>(rhs.m_size);
-    m_begin_used = Index::FIRST;
+    m_begin_used = rhs.empty() ? Index::INVALID : Index::FIRST;
     m_size = rhs.m_size;
+
+    // reset rhs if is_move is true
+    if constexpr (is_move)
+    {
+        rhs.clear();
+    }
 }
 
 template <typename T, uint64_t CAPACITY>
@@ -282,7 +301,7 @@ FixedPositionContainer<T, CAPACITY>::emplace(Targs&&... args) noexcept
     }
     else
     {
-        iox::cxx::EnsuresWithMsg(index != 0, "Corruption detected!");
+        IOX_ENSURES_WITH_MSG(index != 0, "Corruption detected!");
         for (IndexType i = static_cast<IndexType>(index - 1U);; --i)
         {
             if (m_status[i] == SlotStatus::USED)
@@ -291,7 +310,7 @@ FixedPositionContainer<T, CAPACITY>::emplace(Targs&&... args) noexcept
                 m_next[i] = index;
                 break;
             }
-            iox::cxx::EnsuresWithMsg(i != 0, "Corruption detected!");
+            IOX_ENSURES_WITH_MSG(i != 0, "Corruption detected!");
         }
     }
 
@@ -302,10 +321,9 @@ template <typename T, uint64_t CAPACITY>
 inline typename FixedPositionContainer<T, CAPACITY>::Iterator
 FixedPositionContainer<T, CAPACITY>::erase(const IndexType index) noexcept
 {
-    iox::cxx::ExpectsWithMsg(index <= Index::LAST, "Index out of range");
+    IOX_EXPECTS_WITH_MSG(index <= Index::LAST, "Index out of range");
 
-    iox::cxx::EnsuresWithMsg(m_status[index] == SlotStatus::USED,
-                             "Trying to erase from index pointing to an empty slot!");
+    IOX_ENSURES_WITH_MSG(m_status[index] == SlotStatus::USED, "Trying to erase from index pointing to an empty slot!");
 
     const auto it = Iterator{m_next[index], *this};
 
@@ -438,7 +456,7 @@ FixedPositionContainer<T, CAPACITY>::erase(const IndexType index) noexcept
         return it;
     }
 
-    iox::cxx::EnsuresWithMsg(index != 0, "Corruption detected! Index cannot be 0 at this location!");
+    IOX_ENSURES_WITH_MSG(index != 0, "Corruption detected! Index cannot be 0 at this location!");
     for (IndexType i = static_cast<IndexType>(index - 1U); !is_removed_from_used_list || !is_added_to_free_list; --i)
     {
         if (!is_removed_from_used_list && m_status[i] == SlotStatus::USED)
@@ -459,8 +477,8 @@ FixedPositionContainer<T, CAPACITY>::erase(const IndexType index) noexcept
             break;
         }
     }
-    iox::cxx::EnsuresWithMsg(is_removed_from_used_list && is_added_to_free_list,
-                             "Corruption detected! The container is in a corrupt state!");
+    IOX_ENSURES_WITH_MSG(is_removed_from_used_list && is_added_to_free_list,
+                         "Corruption detected! The container is in a corrupt state!");
 
     return it;
 }
@@ -469,15 +487,15 @@ template <typename T, uint64_t CAPACITY>
 inline typename FixedPositionContainer<T, CAPACITY>::Iterator
 FixedPositionContainer<T, CAPACITY>::erase(const T* ptr) noexcept
 {
-    iox::cxx::ExpectsWithMsg(ptr != nullptr, "Pointer is a nullptr!");
+    IOX_EXPECTS_WITH_MSG(ptr != nullptr, "Pointer is a nullptr!");
 
     const T* const firstElement = &m_data[0];
-    iox::cxx::ExpectsWithMsg(ptr >= firstElement, "Pointer pointing out of the container!");
+    IOX_EXPECTS_WITH_MSG(ptr >= firstElement, "Pointer pointing out of the container!");
 
     const auto index = static_cast<IndexType>(ptr - firstElement);
-    iox::cxx::ExpectsWithMsg(index <= Index::LAST, "Pointer pointing out of the container!");
+    IOX_EXPECTS_WITH_MSG(index <= Index::LAST, "Pointer pointing out of the container!");
 
-    iox::cxx::ExpectsWithMsg(ptr == &m_data[index], "Pointer is not aligned to an element in the container!");
+    IOX_EXPECTS_WITH_MSG(ptr == &m_data[index], "Pointer is not aligned to an element in the container!");
 
     // NOTE: if the implementation changes from simply forwarding to 'erase(IndexType)' tests need to be written
     return erase(index);
@@ -487,7 +505,7 @@ template <typename T, uint64_t CAPACITY>
 inline typename FixedPositionContainer<T, CAPACITY>::Iterator
 FixedPositionContainer<T, CAPACITY>::erase(Iterator it) noexcept
 {
-    iox::cxx::ExpectsWithMsg(it.origins_from(*this), "Iterator belongs to a different container!");
+    IOX_EXPECTS_WITH_MSG(it.origins_from(*this), "Iterator belongs to a different container!");
 
     // NOTE: if the implementation changes from simply forwarding to 'erase(IndexType)' tests need to be written
     return erase(it.to_index());
@@ -497,7 +515,7 @@ template <typename T, uint64_t CAPACITY>
 inline typename FixedPositionContainer<T, CAPACITY>::ConstIterator
 FixedPositionContainer<T, CAPACITY>::erase(ConstIterator it) noexcept
 {
-    iox::cxx::ExpectsWithMsg(it.origins_from(*this), "Iterator belongs to a different container!");
+    IOX_EXPECTS_WITH_MSG(it.origins_from(*this), "Iterator belongs to a different container!");
 
     // NOTE: if the implementation changes from simply forwarding to 'erase(IndexType)' tests need to be written
     return erase(it.to_index());
