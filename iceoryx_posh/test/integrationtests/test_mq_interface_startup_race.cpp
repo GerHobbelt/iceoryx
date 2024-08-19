@@ -18,11 +18,11 @@
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
 #include "test.hpp"
 
-#include "iceoryx_hoofs/posix_wrapper/posix_call.hpp"
 #include "iceoryx_posh/internal/runtime/ipc_message.hpp"
 #include "iceoryx_posh/internal/runtime/ipc_runtime_interface.hpp"
 #include "iox/duration.hpp"
 #include "iox/message_queue.hpp"
+#include "iox/posix_call.hpp"
 #include "iox/std_string_support.hpp"
 
 
@@ -35,7 +35,6 @@ namespace
 using namespace ::testing;
 using namespace iox;
 using namespace iox::units;
-using namespace iox::posix;
 using namespace iox::units::duration_literals;
 
 using iox::runtime::IpcInterfaceBase;
@@ -63,7 +62,7 @@ class CMqInterfaceStartupRace_test : public Test
     {
         platform::IoxIpcChannelType::Builder_t()
             .name(roudi::IPC_CHANNEL_ROUDI_NAME)
-            .channelSide(IpcChannelSide::SERVER)
+            .channelSide(PosixIpcChannelSide::SERVER)
             .create()
             .and_then([this](auto& channel) { this->m_roudiQueue.emplace(std::move(channel)); });
         ASSERT_THAT(m_roudiQueue.has_value(), true);
@@ -107,7 +106,7 @@ class CMqInterfaceStartupRace_test : public Test
         {
             platform::IoxIpcChannelType::Builder_t()
                 .name(MqAppName)
-                .channelSide(IpcChannelSide::CLIENT)
+                .channelSide(PosixIpcChannelSide::CLIENT)
                 .create()
                 .and_then([this](auto& channel) { this->m_appQueue.emplace(std::move(channel)); });
         }
@@ -144,14 +143,15 @@ TEST_F(CMqInterfaceStartupRace_test, ObsoleteRouDiMq)
         checkRegRequest(msg);
 
         // simulate the restart of RouDi with the mqueue cleanup
-        posix::posixCall(system)(DeleteRouDiMessageQueue).failureReturnValue(-1).evaluate().or_else([](auto& r) {
+        IOX_POSIX_CALL(system)
+        (DeleteRouDiMessageQueue).failureReturnValue(-1).evaluate().or_else([](auto& r) {
             std::cerr << "system call failed with error: " << r.getHumanReadableErrnum();
             exit(EXIT_FAILURE);
         });
 
         auto m_roudiQueue2 = platform::IoxIpcChannelType::Builder_t()
                                  .name(roudi::IPC_CHANNEL_ROUDI_NAME)
-                                 .channelSide(IpcChannelSide::SERVER)
+                                 .channelSide(PosixIpcChannelSide::SERVER)
                                  .create();
 
         // check if the app retries to register at RouDi
@@ -195,14 +195,15 @@ TEST_F(CMqInterfaceStartupRace_test, ObsoleteRouDiMqWithFullMq)
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
         // simulate the restart of RouDi with the mqueue cleanup
-        posix::posixCall(system)(DeleteRouDiMessageQueue).failureReturnValue(-1).evaluate().or_else([](auto& r) {
+        IOX_POSIX_CALL(system)
+        (DeleteRouDiMessageQueue).failureReturnValue(-1).evaluate().or_else([](auto& r) {
             std::cerr << "system call failed with error: " << r.getHumanReadableErrnum();
             exit(EXIT_FAILURE);
         });
 
         auto newRoudi = platform::IoxIpcChannelType::Builder_t()
                             .name(roudi::IPC_CHANNEL_ROUDI_NAME)
-                            .channelSide(IpcChannelSide::SERVER)
+                            .channelSide(PosixIpcChannelSide::SERVER)
                             .create();
 
         // check if the app retries to register at RouDi

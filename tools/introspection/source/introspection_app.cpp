@@ -102,15 +102,16 @@ void IntrospectionApp::parseCmdLineArguments(int argc,
         case 't':
         {
             uint64_t newUpdatePeriodMs;
-            if (convert::fromString(optarg, newUpdatePeriodMs))
-            {
-                iox::units::Duration rate = iox::units::Duration::fromMilliseconds(newUpdatePeriodMs);
-                updatePeriodMs = bounded(rate, MIN_UPDATE_PERIOD, MAX_UPDATE_PERIOD);
-            }
-            else
+            auto result = convert::from_string<uint64_t>(optarg);
+            if (!result.has_value())
             {
                 std::cout << "Invalid argument for 't'! Will be ignored!";
+                break;
             }
+
+            newUpdatePeriodMs = result.value();
+            iox::units::Duration rate = iox::units::Duration::fromMilliseconds(newUpdatePeriodMs);
+            updatePeriodMs = bounded(rate, MIN_UPDATE_PERIOD, MAX_UPDATE_PERIOD);
             break;
         }
 
@@ -228,16 +229,14 @@ void IntrospectionApp::waitForUserInput(int32_t timeoutMs)
     fileDesc.fd = STDIN_FILENO;
     fileDesc.events = POLLIN;
     constexpr size_t nFileDesc = 1u;
-    iox::posix::posixCall(poll)(&fileDesc, nFileDesc, timeoutMs)
-        .failureReturnValue(-1)
-        .evaluate()
-        .and_then([&](auto eventCount) {
-            if (static_cast<size_t>(eventCount.value) == nFileDesc && fileDesc.revents == POLLIN)
-            {
-                this->updateDisplayYX();
-                this->refreshTerminal();
-            }
-        });
+    IOX_POSIX_CALL(poll)
+    (&fileDesc, nFileDesc, timeoutMs).failureReturnValue(-1).evaluate().and_then([&](auto eventCount) {
+        if (static_cast<size_t>(eventCount.value) == nFileDesc && fileDesc.revents == POLLIN)
+        {
+            this->updateDisplayYX();
+            this->refreshTerminal();
+        }
+    });
 }
 
 void IntrospectionApp::prettyPrint(const std::string& str, const PrettyOptions pr)
@@ -792,8 +791,8 @@ void IntrospectionApp::runIntrospection(const iox::units::Duration updatePeriod,
         }
     }
 
-    iox::posix::posixCall(getchar)().failureReturnValue(EOF).evaluate().expect(
-        "unable to exit the introspection client since getchar failed");
+    IOX_POSIX_CALL(getchar)
+    ().failureReturnValue(EOF).evaluate().expect("unable to exit the introspection client since getchar failed");
     closeTerminal();
 }
 

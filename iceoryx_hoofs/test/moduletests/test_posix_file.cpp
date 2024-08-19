@@ -14,13 +14,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "iceoryx_hoofs/posix_wrapper/thread.hpp"
 #include "iceoryx_hoofs/testing/barrier.hpp"
 #include "iceoryx_platform/platform_settings.hpp"
 #include "iox/duration.hpp"
 #include "iox/file.hpp"
 #include "iox/file_path.hpp"
+#include "iox/filesystem.hpp"
 #include "iox/path.hpp"
+#include "iox/thread.hpp"
 #include "test.hpp"
 
 #include <array>
@@ -29,7 +30,6 @@
 namespace
 {
 using namespace ::testing;
-using namespace iox::posix;
 using namespace iox::cxx;
 using namespace iox;
 using namespace iox::units;
@@ -93,7 +93,7 @@ TEST_F(File_test, PurgeAndCreateRemovesExistingFile)
         auto sut = FileBuilder()
                        .open_mode(OpenMode::PURGE_AND_CREATE)
                        .permissions(perms::owner_write | perms::owner_read)
-                       .access_mode(posix::AccessMode::READ_WRITE)
+                       .access_mode(AccessMode::READ_WRITE)
                        .create(m_sut_file_path);
         EXPECT_FALSE(sut.has_error());
 
@@ -220,7 +220,7 @@ TEST_F(File_test, ReadAndWriteToFileWorks)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_write | perms::owner_read)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -243,7 +243,7 @@ TEST_F(File_test, ReadingOfAWriteOnlyFileFails)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_write)
-                   .access_mode(posix::AccessMode::WRITE_ONLY)
+                   .access_mode(AccessMode::WRITE_ONLY)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -262,7 +262,7 @@ TEST_F(File_test, ReadingWithSmallerBufferSizeWorks)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_write | perms::owner_read)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -286,7 +286,7 @@ TEST_F(File_test, ReadingWithLargerBufferSizeWorks)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_write | perms::owner_read)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -310,7 +310,7 @@ TEST_F(File_test, ReadingWithOffsetWorks)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_write | perms::owner_read)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -334,7 +334,7 @@ TEST_F(File_test, ReadingWithOutOfBoundsOffsetReadsNothing)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_write | perms::owner_read)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -358,7 +358,7 @@ TEST_F(File_test, WritingIntoAReadOnlyFileFails)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_read)
-                   .access_mode(posix::AccessMode::READ_ONLY)
+                   .access_mode(AccessMode::READ_ONLY)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -376,7 +376,7 @@ TEST_F(File_test, WriteAtOverridesContent)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_read | perms::owner_write)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -404,7 +404,7 @@ TEST_F(File_test, WriteWithOutOfBoundsOffsetAddsZerosInBetween)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_read | perms::owner_write)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -432,7 +432,7 @@ TEST_F(File_test, MoveConstructedFileWorks)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_read | perms::owner_write)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -459,7 +459,7 @@ TEST_F(File_test, MoveAssignedFileWorks)
     auto sut = FileBuilder()
                    .open_mode(OpenMode::PURGE_AND_CREATE)
                    .permissions(perms::owner_read | perms::owner_write)
-                   .access_mode(posix::AccessMode::READ_WRITE)
+                   .access_mode(AccessMode::READ_WRITE)
                    .create(m_sut_file_path);
     ASSERT_FALSE(sut.has_error());
 
@@ -471,7 +471,7 @@ TEST_F(File_test, MoveAssignedFileWorks)
     auto sut3 = FileBuilder()
                     .open_mode(OpenMode::OPEN_EXISTING)
                     .permissions(perms::owner_read)
-                    .access_mode(posix::AccessMode::READ_ONLY)
+                    .access_mode(AccessMode::READ_ONLY)
                     .create(m_sut_file_path);
     ASSERT_FALSE(sut3.has_error());
 

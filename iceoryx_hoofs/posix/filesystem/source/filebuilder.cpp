@@ -15,18 +15,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iox/file.hpp"
-#include "iceoryx_hoofs/posix_wrapper/posix_call.hpp"
 #include "iceoryx_platform/errno.hpp"
 #include "iceoryx_platform/fcntl.hpp"
 #include "iceoryx_platform/stdio.hpp"
 #include "iox/attributes.hpp"
 #include "iox/filesystem.hpp"
+#include "iox/posix_call.hpp"
 
 namespace iox
 {
 expected<File, FileCreationError> FileBuilder::create(const FilePath& name) noexcept
 {
-    if (m_open_mode == posix::OpenMode::PURGE_AND_CREATE)
+    if (m_open_mode == OpenMode::PURGE_AND_CREATE)
     {
         if (File::remove(name).has_error())
         {
@@ -43,9 +43,9 @@ expected<File, FileCreationError> FileBuilder::create(const FilePath& name) noex
 // NOLINTBEGIN(readability-function-size,readability-function-cognitive-complexity)
 expected<File, FileCreationError> FileBuilder::open(const FilePath& name) noexcept
 {
-    auto result = posix::posixCall(iox_open)(name.as_string().c_str(),
-                                             posix::convertToOflags(m_access_mode, m_open_mode),
-                                             static_cast<iox_mode_t>(m_permissions.value()))
+    auto result = IOX_POSIX_CALL(iox_open)(name.as_string().c_str(),
+                                           convertToOflags(m_access_mode, m_open_mode),
+                                           static_cast<iox_mode_t>(m_permissions.value()))
                       .failureReturnValue(-1)
                       .evaluate();
 
@@ -59,7 +59,7 @@ expected<File, FileCreationError> FileBuilder::open(const FilePath& name) noexce
             return err(FileCreationError::PermissionDenied);
         }
 
-        if (m_access_mode == posix::AccessMode::READ_ONLY || m_access_mode == posix::AccessMode::READ_WRITE)
+        if (m_access_mode == AccessMode::READ_ONLY || m_access_mode == AccessMode::READ_WRITE)
         {
             if ((perms->value() & perms::owner_read.value()) == 0)
             {
@@ -68,7 +68,7 @@ expected<File, FileCreationError> FileBuilder::open(const FilePath& name) noexce
             }
         }
 
-        if (m_access_mode == posix::AccessMode::WRITE_ONLY || m_access_mode == posix::AccessMode::READ_WRITE)
+        if (m_access_mode == AccessMode::WRITE_ONLY || m_access_mode == AccessMode::READ_WRITE)
         {
             if ((perms->value() & perms::owner_write.value()) == 0)
             {
@@ -125,7 +125,7 @@ expected<File, FileCreationError> FileBuilder::open(const FilePath& name) noexce
 }
 // NOLINTEND(readability-function-size,readability-function-cognitive-complexity)
 
-File::File(const int file_descriptor, const posix::AccessMode access_mode) noexcept
+File::File(const int file_descriptor, const AccessMode access_mode) noexcept
     : m_file_descriptor{file_descriptor}
     , m_access_mode{access_mode}
 {
@@ -163,7 +163,7 @@ void File::close_fd() noexcept
         return;
     }
 
-    auto result = posix::posixCall(iox_close)(m_file_descriptor).failureReturnValue(-1).evaluate();
+    auto result = IOX_POSIX_CALL(iox_close)(m_file_descriptor).failureReturnValue(-1).evaluate();
     m_file_descriptor = INVALID_FILE_DESCRIPTOR;
 
     if (!result.has_error())
@@ -194,7 +194,7 @@ void File::close_fd() noexcept
 
 expected<bool, FileAccessError> File::does_exist(const FilePath& file) noexcept
 {
-    auto result = posix::posixCall(iox_access)(file.as_string().c_str(), F_OK).failureReturnValue(-1).evaluate();
+    auto result = IOX_POSIX_CALL(iox_access)(file.as_string().c_str(), F_OK).failureReturnValue(-1).evaluate();
 
     if (!result.has_error())
     {
@@ -227,7 +227,7 @@ expected<bool, FileAccessError> File::does_exist(const FilePath& file) noexcept
 
 expected<bool, FileRemoveError> File::remove(const FilePath& file) noexcept
 {
-    auto result = posix::posixCall(iox_remove)(file.as_string().c_str())
+    auto result = IOX_POSIX_CALL(iox_remove)(file.as_string().c_str())
                       .failureReturnValue(-1)
                       .suppressErrorMessagesForErrnos(ENOENT)
                       .evaluate();
@@ -272,7 +272,7 @@ expected<bool, FileRemoveError> File::remove(const FilePath& file) noexcept
 
 expected<void, FileOffsetError> File::set_offset(const uint64_t offset) const noexcept
 {
-    auto result = posix::posixCall(iox_lseek)(m_file_descriptor, static_cast<iox_off_t>(offset), IOX_SEEK_SET)
+    auto result = IOX_POSIX_CALL(iox_lseek)(m_file_descriptor, static_cast<iox_off_t>(offset), IOX_SEEK_SET)
                       .failureReturnValue(-1)
                       .evaluate();
 
@@ -317,7 +317,7 @@ expected<uint64_t, FileReadError> File::read(uint8_t* const buffer, const uint64
 expected<uint64_t, FileReadError>
 File::read_at(const uint64_t offset, uint8_t* const buffer, const uint64_t buffer_len) const noexcept
 {
-    if (m_access_mode == posix::AccessMode::WRITE_ONLY)
+    if (m_access_mode == AccessMode::WRITE_ONLY)
     {
         IOX_LOG(ERROR, "Unable to read from file since it is opened for writing only.");
         return err(FileReadError::NotOpenedForReading);
@@ -329,7 +329,7 @@ File::read_at(const uint64_t offset, uint8_t* const buffer, const uint64_t buffe
         return err(FileReadError::OffsetFailure);
     }
 
-    auto result = posix::posixCall(iox_read)(m_file_descriptor, buffer, buffer_len).failureReturnValue(-1).evaluate();
+    auto result = IOX_POSIX_CALL(iox_read)(m_file_descriptor, buffer, buffer_len).failureReturnValue(-1).evaluate();
 
     if (!result.has_error())
     {
@@ -371,7 +371,7 @@ expected<uint64_t, FileWriteError> File::write(const uint8_t* const buffer, cons
 expected<uint64_t, FileWriteError>
 File::write_at(const uint64_t offset, const uint8_t* const buffer, const uint64_t buffer_len) const noexcept
 {
-    if (m_access_mode == posix::AccessMode::READ_ONLY)
+    if (m_access_mode == AccessMode::READ_ONLY)
     {
         IOX_LOG(ERROR, "Unable to write to file since it is opened for reading only.");
         return err(FileWriteError::NotOpenedForWriting);
@@ -383,7 +383,7 @@ File::write_at(const uint64_t offset, const uint8_t* const buffer, const uint64_
         return err(FileWriteError::OffsetFailure);
     }
 
-    auto result = posix::posixCall(iox_write)(m_file_descriptor, buffer, buffer_len).failureReturnValue(-1).evaluate();
+    auto result = IOX_POSIX_CALL(iox_write)(m_file_descriptor, buffer, buffer_len).failureReturnValue(-1).evaluate();
 
     if (!result.has_error())
     {

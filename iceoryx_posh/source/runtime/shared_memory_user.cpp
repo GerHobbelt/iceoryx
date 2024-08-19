@@ -16,10 +16,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iceoryx_posh/internal/runtime/shared_memory_user.hpp"
-#include "iceoryx_hoofs/posix_wrapper/posix_access_rights.hpp"
 #include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/internal/mepoo/segment_manager.hpp"
 #include "iox/logging.hpp"
+#include "iox/posix_user.hpp"
 
 namespace iox
 {
@@ -31,11 +31,11 @@ SharedMemoryUser::SharedMemoryUser(const size_t topicSize,
                                    const uint64_t segmentId,
                                    const UntypedRelativePointer::offset_t segmentManagerAddressOffset) noexcept
 {
-    posix::SharedMemoryObjectBuilder()
+    PosixSharedMemoryObjectBuilder()
         .name(roudi::SHM_NAME)
         .memorySizeInBytes(topicSize)
-        .accessMode(posix::AccessMode::READ_WRITE)
-        .openMode(posix::OpenMode::OPEN_EXISTING)
+        .accessMode(AccessMode::READ_WRITE)
+        .openMode(OpenMode::OPEN_EXISTING)
         .permissions(SHM_SEGMENT_PERMISSIONS)
         .create()
         .and_then([this, segmentId, segmentManagerAddressOffset](auto& sharedMemoryObject) {
@@ -68,15 +68,15 @@ void SharedMemoryUser::openDataSegments(const uint64_t segmentId,
     auto* ptr = UntypedRelativePointer::getPtr(segment_id_t{segmentId}, segmentManagerAddressOffset);
     auto* segmentManager = static_cast<mepoo::SegmentManager<>*>(ptr);
 
-    auto segmentMapping = segmentManager->getSegmentMappings(posix::PosixUser::getUserOfCurrentProcess());
+    auto segmentMapping = segmentManager->getSegmentMappings(PosixUser::getUserOfCurrentProcess());
     for (const auto& segment : segmentMapping)
     {
-        auto accessMode = segment.m_isWritable ? posix::AccessMode::READ_WRITE : posix::AccessMode::READ_ONLY;
-        posix::SharedMemoryObjectBuilder()
+        auto accessMode = segment.m_isWritable ? AccessMode::READ_WRITE : AccessMode::READ_ONLY;
+        PosixSharedMemoryObjectBuilder()
             .name(segment.m_sharedMemoryName)
             .memorySizeInBytes(segment.m_size)
             .accessMode(accessMode)
-            .openMode(posix::OpenMode::OPEN_EXISTING)
+            .openMode(OpenMode::OPEN_EXISTING)
             .permissions(SHM_SEGMENT_PERMISSIONS)
             .create()
             .and_then([this, &segment](auto& sharedMemoryObject) {

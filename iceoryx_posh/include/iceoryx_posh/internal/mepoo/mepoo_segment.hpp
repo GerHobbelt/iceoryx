@@ -1,5 +1,6 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
 // Copyright (c) 2021 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2023 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,53 +18,53 @@
 #ifndef IOX_POSH_MEPOO_MEPOO_SEGMENT_HPP
 #define IOX_POSH_MEPOO_MEPOO_SEGMENT_HPP
 
-#include "iceoryx_hoofs/internal/posix_wrapper/access_control.hpp"
-#include "iceoryx_hoofs/internal/posix_wrapper/shared_memory_object.hpp"
-#include "iceoryx_hoofs/posix_wrapper/posix_access_rights.hpp"
 #include "iceoryx_posh/internal/mepoo/memory_manager.hpp"
 #include "iceoryx_posh/mepoo/memory_info.hpp"
 #include "iceoryx_posh/mepoo/mepoo_config.hpp"
 #include "iox/bump_allocator.hpp"
+#include "iox/detail/posix_acl.hpp"
 #include "iox/filesystem.hpp"
+#include "iox/posix_group.hpp"
+#include "iox/posix_shared_memory_object.hpp"
 
 namespace iox
 {
 namespace mepoo
 {
-template <typename SharedMemoryObjectType = posix::SharedMemoryObject, typename MemoryManagerType = MemoryManager>
+template <typename SharedMemoryObjectType = PosixSharedMemoryObject, typename MemoryManagerType = MemoryManager>
 class MePooSegment
 {
   public:
     MePooSegment(const MePooConfig& mempoolConfig,
                  BumpAllocator& managementAllocator,
-                 const posix::PosixGroup& readerGroup,
-                 const posix::PosixGroup& writerGroup,
+                 const PosixGroup& readerGroup,
+                 const PosixGroup& writerGroup,
                  const iox::mepoo::MemoryInfo& memoryInfo = iox::mepoo::MemoryInfo()) noexcept;
 
-    posix::PosixGroup getWriterGroup() const noexcept;
-    posix::PosixGroup getReaderGroup() const noexcept;
-    const SharedMemoryObjectType& getSharedMemoryObject() const noexcept;
+    PosixGroup getWriterGroup() const noexcept;
+    PosixGroup getReaderGroup() const noexcept;
+
     MemoryManagerType& getMemoryManager() noexcept;
 
     uint64_t getSegmentId() const noexcept;
 
-  protected:
-    SharedMemoryObjectType createSharedMemoryObject(const MePooConfig& mempoolConfig,
-                                                    const posix::PosixGroup& writerGroup) noexcept;
+    uint64_t getSegmentSize() const noexcept;
 
   protected:
+    SharedMemoryObjectType createSharedMemoryObject(const MePooConfig& mempoolConfig,
+                                                    const PosixGroup& writerGroup) noexcept;
+
+  protected:
+    PosixGroup m_readerGroup;
+    PosixGroup m_writerGroup;
+    uint64_t m_segmentId{0};
+    uint64_t m_segmentSize{0};
+    iox::mepoo::MemoryInfo m_memoryInfo;
     SharedMemoryObjectType m_sharedMemoryObject;
     MemoryManagerType m_memoryManager;
-    posix::PosixGroup m_readerGroup;
-    posix::PosixGroup m_writerGroup;
-    uint64_t m_segmentId;
-    iox::mepoo::MemoryInfo m_memoryInfo;
 
     static constexpr access_rights SEGMENT_PERMISSIONS =
         perms::owner_read | perms::owner_write | perms::group_read | perms::group_write;
-
-  private:
-    void setSegmentId(const uint64_t segmentId) noexcept;
 };
 } // namespace mepoo
 } // namespace iox

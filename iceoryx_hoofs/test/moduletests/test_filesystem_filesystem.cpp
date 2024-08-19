@@ -16,6 +16,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iceoryx_hoofs/testing/mocks/logger_mock.hpp"
+#include "iceoryx_platform/fcntl.hpp"
+#include "iceoryx_platform/mman.hpp"
 #include "iox/filesystem.hpp"
 #include "test.hpp"
 
@@ -28,6 +30,9 @@ using namespace iox;
 using namespace iox::internal;
 
 using iox::testing::Logger_Mock;
+
+
+// BEGIN file and directory path tests
 
 constexpr uint64_t FILE_PATH_LENGTH = 128U;
 
@@ -591,14 +596,125 @@ TEST(filesystem_test_isValidPathEntry, StringWithRelativeComponentsIsInvalidWhen
                                   iox::RelativePathComponents::REJECT));
 }
 
+// END file and directory path tests
+
+
+// BEGIN AccessMode and OpenMode tests
+
+constexpr AccessMode INVALID_ACCESS_MODE = static_cast<AccessMode>(std::numeric_limits<uint64_t>::max());
+constexpr OpenMode INVALID_OPEN_MODE = static_cast<OpenMode>(std::numeric_limits<uint64_t>::max());
+
+TEST(TypesTest, ConvertToOflagFromAccessModeWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "9eb74e8c-7498-4400-9248-92aa6bd15142");
+    EXPECT_THAT(convertToOflags(AccessMode::READ_ONLY), Eq(O_RDONLY));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_WRITE), Eq(O_RDWR));
+    EXPECT_THAT(convertToOflags(AccessMode::WRITE_ONLY), Eq(O_WRONLY));
+    EXPECT_THAT(convertToOflags(INVALID_ACCESS_MODE), Eq(0U));
+}
+
+TEST(TypesTest, ConvertToProtflagFromAccessModeWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "7a5c699e-16e6-471f-80b6-a325644e60d3");
+    EXPECT_THAT(convertToProtFlags(AccessMode::READ_ONLY), Eq(PROT_READ));
+    EXPECT_THAT(convertToProtFlags(AccessMode::READ_WRITE), Eq(PROT_READ | PROT_WRITE));
+    EXPECT_THAT(convertToProtFlags(AccessMode::WRITE_ONLY), Eq(PROT_WRITE));
+    EXPECT_THAT(convertToProtFlags(INVALID_ACCESS_MODE), Eq(PROT_NONE));
+}
+
+TEST(TypesTest, ConvertToOflagFromOpenModeWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "95fa55c9-2d64-4296-8bbb-41ff3c9dac3f");
+    // used for test purposes; operands have positive values and result is within integer range
+    // NOLINTBEGIN(hicpp-signed-bitwise)
+    EXPECT_THAT(convertToOflags(OpenMode::EXCLUSIVE_CREATE), Eq(O_CREAT | O_EXCL));
+    EXPECT_THAT(convertToOflags(OpenMode::PURGE_AND_CREATE), Eq(O_CREAT | O_EXCL));
+    // NOLINTEND(hicpp-signed-bitwise)
+    EXPECT_THAT(convertToOflags(OpenMode::OPEN_OR_CREATE), Eq(O_CREAT));
+    EXPECT_THAT(convertToOflags(OpenMode::OPEN_EXISTING), Eq(0));
+    EXPECT_THAT(convertToOflags(INVALID_OPEN_MODE), Eq(0));
+}
+
+TEST(TypesTest, ConvertToOflagFromAccessAndOpenModeWorks)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "4ea6823c-2ecd-48a5-bcea-0ea0585bee72");
+    // used for test purposes; operands have positive values and result is within integer range
+    // NOLINTBEGIN(hicpp-signed-bitwise)
+    EXPECT_THAT(convertToOflags(AccessMode::READ_ONLY, OpenMode::EXCLUSIVE_CREATE), Eq(O_RDONLY | O_CREAT | O_EXCL));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_ONLY, OpenMode::PURGE_AND_CREATE), Eq(O_RDONLY | O_CREAT | O_EXCL));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_ONLY, OpenMode::OPEN_OR_CREATE), Eq(O_RDONLY | O_CREAT));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_ONLY, OpenMode::OPEN_EXISTING), Eq(O_RDONLY));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_ONLY, INVALID_OPEN_MODE), Eq(O_RDONLY));
+
+    EXPECT_THAT(convertToOflags(AccessMode::READ_WRITE, OpenMode::EXCLUSIVE_CREATE), Eq(O_RDWR | O_CREAT | O_EXCL));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_WRITE, OpenMode::PURGE_AND_CREATE), Eq(O_RDWR | O_CREAT | O_EXCL));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_WRITE, OpenMode::OPEN_OR_CREATE), Eq(O_RDWR | O_CREAT));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_WRITE, OpenMode::OPEN_EXISTING), Eq(O_RDWR));
+    EXPECT_THAT(convertToOflags(AccessMode::READ_WRITE, INVALID_OPEN_MODE), Eq(O_RDWR));
+
+    EXPECT_THAT(convertToOflags(AccessMode::WRITE_ONLY, OpenMode::EXCLUSIVE_CREATE), Eq(O_WRONLY | O_CREAT | O_EXCL));
+    EXPECT_THAT(convertToOflags(AccessMode::WRITE_ONLY, OpenMode::PURGE_AND_CREATE), Eq(O_WRONLY | O_CREAT | O_EXCL));
+    EXPECT_THAT(convertToOflags(AccessMode::WRITE_ONLY, OpenMode::OPEN_OR_CREATE), Eq(O_WRONLY | O_CREAT));
+    EXPECT_THAT(convertToOflags(AccessMode::WRITE_ONLY, OpenMode::OPEN_EXISTING), Eq(O_WRONLY));
+    EXPECT_THAT(convertToOflags(AccessMode::WRITE_ONLY, INVALID_OPEN_MODE), Eq(O_WRONLY));
+
+    EXPECT_THAT(convertToOflags(INVALID_ACCESS_MODE, OpenMode::EXCLUSIVE_CREATE), Eq(O_CREAT | O_EXCL));
+    EXPECT_THAT(convertToOflags(INVALID_ACCESS_MODE, OpenMode::PURGE_AND_CREATE), Eq(O_CREAT | O_EXCL));
+    // NOLINTEND(hicpp-signed-bitwise)
+    EXPECT_THAT(convertToOflags(INVALID_ACCESS_MODE, OpenMode::OPEN_OR_CREATE), Eq(O_CREAT));
+    EXPECT_THAT(convertToOflags(INVALID_ACCESS_MODE, OpenMode::OPEN_EXISTING), Eq(0));
+    EXPECT_THAT(convertToOflags(INVALID_ACCESS_MODE, INVALID_OPEN_MODE), Eq(0));
+}
+
+TEST(TypesTest, OpenModeAsStringLiteral)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "830756de-b3c9-4285-b42a-e0c6c5a315a9");
+    EXPECT_THAT(asStringLiteral(OpenMode::EXCLUSIVE_CREATE), StrEq("OpenMode::EXCLUSIVE_CREATE"));
+    EXPECT_THAT(asStringLiteral(OpenMode::PURGE_AND_CREATE), StrEq("OpenMode::PURGE_AND_CREATE"));
+    EXPECT_THAT(asStringLiteral(OpenMode::OPEN_OR_CREATE), StrEq("OpenMode::OPEN_OR_CREATE"));
+    EXPECT_THAT(asStringLiteral(OpenMode::OPEN_EXISTING), StrEq("OpenMode::OPEN_EXISTING"));
+    EXPECT_THAT(asStringLiteral(INVALID_OPEN_MODE), StrEq("OpenMode::UNDEFINED_VALUE"));
+}
+
+TEST(TypesTest, AccessModeAsStringLiteral)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "c5a09ee7-df2c-4a28-929c-7de743f1e423");
+    EXPECT_THAT(asStringLiteral(AccessMode::READ_ONLY), StrEq("AccessMode::READ_ONLY"));
+    EXPECT_THAT(asStringLiteral(AccessMode::READ_WRITE), StrEq("AccessMode::READ_WRITE"));
+    EXPECT_THAT(asStringLiteral(AccessMode::WRITE_ONLY), StrEq("AccessMode::WRITE_ONLY"));
+    EXPECT_THAT(asStringLiteral(INVALID_ACCESS_MODE), StrEq("AccessMode::UNDEFINED_VALUE"));
+}
+
+// END AccessMode and OpenMode tests
+
+
+// BEGIN access_rights tests
+
+TEST(filesystem_test, accessRightsFromValueSanitizedWorksForValueInRangeOfPermsMask)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "5a6c2ece-9cd7-4779-ad0b-16372aebd407");
+    constexpr auto TEST_VALUE = access_rights::detail::OWNER_READ;
+
+    EXPECT_THAT(access_rights::from_value_sanitized(TEST_VALUE).value(), Eq(TEST_VALUE));
+}
+
+TEST(filesystem_test, accessRightsFromValueSanitizedWorksForValueOutOfRangeOfPermsMask)
+{
+    ::testing::Test::RecordProperty("TEST_ID", "8a291709-a75c-4afa-96d8-d57a0d40696c");
+    constexpr auto TEST_VALUE_SANITIZED = access_rights::detail::OWNER_WRITE;
+    constexpr auto TEST_VALUE = TEST_VALUE_SANITIZED | static_cast<access_rights::value_type>(010000);
+
+    EXPECT_THAT(access_rights::from_value_sanitized(TEST_VALUE).value(), Eq(TEST_VALUE_SANITIZED));
+}
+
 TEST(filesystem_test, permsBinaryOrEqualToBinaryOrOfUnderlyingType)
 {
     ::testing::Test::RecordProperty("TEST_ID", "0b72fcec-c2b3-4a45-801f-542ff3195a2f");
     constexpr access_rights TEST_VALUE_LHS = perms::others_write;
     constexpr access_rights TEST_VALUE_RHS = perms::group_all;
 
-    constexpr auto BASE_VALUE_LHS = TEST_VALUE_LHS.value();
-    constexpr auto BASE_VALUE_RHS = TEST_VALUE_RHS.value();
+    constexpr auto BASE_VALUE_LHS = iox::access_rights::detail::OTHERS_WRITE;
+    constexpr auto BASE_VALUE_RHS = iox::access_rights::detail::GROUP_ALL;
 
     EXPECT_THAT((TEST_VALUE_LHS | TEST_VALUE_RHS).value(), Eq(BASE_VALUE_LHS | BASE_VALUE_RHS));
 }
@@ -609,8 +725,8 @@ TEST(filesystem_test, permsBinaryAndEqualToBinaryAndOfUnderlyingType)
     constexpr access_rights TEST_VALUE_LHS = perms::others_read;
     constexpr access_rights TEST_VALUE_RHS = perms::mask;
 
-    constexpr auto BASE_VALUE_LHS = TEST_VALUE_LHS.value();
-    constexpr auto BASE_VALUE_RHS = TEST_VALUE_RHS.value();
+    constexpr auto BASE_VALUE_LHS = iox::access_rights::detail::OTHERS_READ;
+    constexpr auto BASE_VALUE_RHS = iox::access_rights::detail::MASK;
 
     EXPECT_THAT((TEST_VALUE_LHS & TEST_VALUE_RHS).value(), Eq(BASE_VALUE_LHS & BASE_VALUE_RHS));
 }
@@ -621,8 +737,8 @@ TEST(filesystem_test, permsBinaryExclusiveOrEqualToBinaryExclusiveOrOfUnderlying
     constexpr access_rights TEST_VALUE_LHS = perms::set_gid;
     constexpr access_rights TEST_VALUE_RHS = perms::set_uid;
 
-    constexpr auto BASE_VALUE_LHS = TEST_VALUE_LHS.value();
-    constexpr auto BASE_VALUE_RHS = TEST_VALUE_RHS.value();
+    constexpr auto BASE_VALUE_LHS = iox::access_rights::detail::SET_GID;
+    constexpr auto BASE_VALUE_RHS = iox::access_rights::detail::SET_UID;
 
     EXPECT_THAT((TEST_VALUE_LHS ^ TEST_VALUE_RHS).value(), Eq(BASE_VALUE_LHS ^ BASE_VALUE_RHS));
 }
@@ -632,8 +748,8 @@ TEST(filesystem_test, permsBinaryComplementEqualToBinaryComplementOfUnderlyingTy
     ::testing::Test::RecordProperty("TEST_ID", "c313cf42-4cf0-4836-95ff-129111a707b0");
     constexpr access_rights TEST_VALUE = perms::owner_read;
 
-    constexpr access_rights::value_type BASE_VALUE = 0x0100;
-    constexpr access_rights::value_type EXPECTED_VALUE = 0xFEFF;
+    constexpr auto BASE_VALUE = iox::access_rights::detail::OWNER_READ;
+    constexpr auto EXPECTED_VALUE = static_cast<access_rights::value_type>(~BASE_VALUE);
 
     ASSERT_THAT(TEST_VALUE.value(), Eq(BASE_VALUE));
 
@@ -646,8 +762,8 @@ TEST(filesystem_test, permsBinaryOrAssignmentEqualToBinaryOrAssignmentOfUnderlyi
     constexpr access_rights TEST_VALUE = perms::sticky_bit;
     constexpr access_rights TEST_VALUE_RHS = perms::group_read;
 
-    auto sutBaseValue = TEST_VALUE.value();
-    constexpr auto BASE_VALUE_RHS = TEST_VALUE_RHS.value();
+    auto sutBaseValue = iox::access_rights::detail::STICKY_BIT;
+    constexpr auto BASE_VALUE_RHS = iox::access_rights::detail::GROUP_READ;
 
     access_rights sut = TEST_VALUE;
 
@@ -660,8 +776,8 @@ TEST(filesystem_test, permsBinaryAndAssignmentEqualToBinaryAndAssignmentOfUnderl
     constexpr access_rights TEST_VALUE = perms::others_exec;
     constexpr access_rights TEST_VALUE_RHS = perms::others_all;
 
-    auto sutBaseValue = TEST_VALUE.value();
-    constexpr auto BASE_VALUE_RHS = TEST_VALUE_RHS.value();
+    auto sutBaseValue = iox::access_rights::detail::OTHERS_EXEC;
+    constexpr auto BASE_VALUE_RHS = iox::access_rights::detail::OTHERS_ALL;
 
     access_rights sut = TEST_VALUE;
 
@@ -674,8 +790,8 @@ TEST(filesystem_test, permsBinaryExclusiveOrAssignmentEqualToBinaryExclusiveOrAs
     constexpr access_rights TEST_VALUE = perms::none;
     constexpr access_rights TEST_VALUE_RHS = perms::owner_all;
 
-    auto sutBaseValue = TEST_VALUE.value();
-    constexpr auto BASE_VALUE_RHS = TEST_VALUE_RHS.value();
+    auto sutBaseValue = iox::access_rights::detail::NONE;
+    constexpr auto BASE_VALUE_RHS = iox::access_rights::detail::OWNER_ALL;
 
     access_rights sut = TEST_VALUE;
 
@@ -734,5 +850,7 @@ TEST(filesystem_test, streamOperatorPrintsCorrectlyWhenSetToUnknown)
     ASSERT_THAT(loggerMock.logs.size(), Eq(1U));
     EXPECT_THAT(loggerMock.logs[0].message, Eq("unknown permissions"));
 }
+
+// END access_rights tests
 
 } // namespace

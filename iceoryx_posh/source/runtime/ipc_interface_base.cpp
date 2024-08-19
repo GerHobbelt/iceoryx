@@ -29,8 +29,15 @@ namespace runtime
 IpcMessageType stringToIpcMessageType(const char* str) noexcept
 {
     std::underlying_type<IpcMessageType>::type msg;
-    bool noError = convert::stringIsNumber(str, convert::NumberType::INTEGER);
-    noError &= noError ? (convert::fromString(str, msg)) : false;
+    auto result = convert::from_string<std::underlying_type<IpcMessageType>::type>(str);
+    bool noError{false};
+
+    if (result.has_value())
+    {
+        noError = true;
+        msg = result.value();
+    }
+
     noError &= noError ? !(static_cast<std::underlying_type<IpcMessageType>::type>(IpcMessageType::BEGIN) >= msg
                            || static_cast<std::underlying_type<IpcMessageType>::type>(IpcMessageType::END) <= msg)
                        : false;
@@ -45,8 +52,15 @@ std::string IpcMessageTypeToString(const IpcMessageType msg) noexcept
 IpcMessageErrorType stringToIpcMessageErrorType(const char* str) noexcept
 {
     std::underlying_type<IpcMessageErrorType>::type msg;
-    bool noError = convert::stringIsNumber(str, convert::NumberType::INTEGER);
-    noError &= noError ? (convert::fromString(str, msg)) : false;
+    auto result = convert::from_string<std::underlying_type<IpcMessageType>::type>(str);
+    bool noError{false};
+
+    if (result.has_value())
+    {
+        noError = true;
+        msg = result.value();
+    }
+
     noError &= noError
                    ? !(static_cast<std::underlying_type<IpcMessageErrorType>::type>(IpcMessageErrorType::BEGIN) >= msg
                        || static_cast<std::underlying_type<IpcMessageErrorType>::type>(IpcMessageErrorType::END) <= msg)
@@ -140,8 +154,8 @@ bool IpcInterface<IpcChannelType>::send(const IpcMessage& msg) const noexcept
         return false;
     }
 
-    auto logLengthError = [&msg](posix::IpcChannelError& error) {
-        if (error == posix::IpcChannelError::MESSAGE_TOO_LONG)
+    auto logLengthError = [&msg](PosixIpcChannelError& error) {
+        if (error == PosixIpcChannelError::MESSAGE_TOO_LONG)
         {
             const uint64_t messageSize = msg.getMessage().size() + platform::IoxIpcChannelType::NULL_TERMINATOR_SIZE;
             IOX_LOG(ERROR, "msg size of " << messageSize << " bigger than configured max message size");
@@ -167,8 +181,8 @@ bool IpcInterface<IpcChannelType>::timedSend(const IpcMessage& msg, units::Durat
         return false;
     }
 
-    auto logLengthError = [&msg](posix::IpcChannelError& error) {
-        if (error == posix::IpcChannelError::MESSAGE_TOO_LONG)
+    auto logLengthError = [&msg](PosixIpcChannelError& error) {
+        if (error == PosixIpcChannelError::MESSAGE_TOO_LONG)
         {
             const uint64_t messageSize = msg.getMessage().size() + platform::IoxIpcChannelType::NULL_TERMINATOR_SIZE;
             IOX_LOG(ERROR, "msg size of " << messageSize << " bigger than configured max message size");
@@ -190,7 +204,7 @@ bool IpcInterface<IpcChannelType>::isInitialized() const noexcept
 }
 
 template <typename IpcChannelType>
-bool IpcInterface<IpcChannelType>::openIpcChannel(const posix::IpcChannelSide channelSide) noexcept
+bool IpcInterface<IpcChannelType>::openIpcChannel(const PosixIpcChannelSide channelSide) noexcept
 {
     m_channelSide = channelSide;
 
@@ -203,7 +217,7 @@ bool IpcInterface<IpcChannelType>::openIpcChannel(const posix::IpcChannelSide ch
         .create()
         .and_then([this](auto& ipcChannel) { this->m_ipcChannel.emplace(std::move(ipcChannel)); })
         .or_else([this](auto& err) {
-            if (this->m_channelSide == posix::IpcChannelSide::SERVER)
+            if (this->m_channelSide == PosixIpcChannelSide::SERVER)
             {
                 IOX_LOG(ERROR,
                         "Unable to create ipc channel '" << this->m_runtimeName
@@ -236,7 +250,7 @@ bool IpcInterface<IpcChannelType>::ipcChannelMapsToFile() noexcept
 }
 
 template <>
-bool IpcInterface<posix::UnixDomainSocket>::ipcChannelMapsToFile() noexcept
+bool IpcInterface<UnixDomainSocket>::ipcChannelMapsToFile() noexcept
 {
     return true;
 }
@@ -262,7 +276,7 @@ void IpcInterface<IpcChannelType>::cleanupOutdatedIpcChannel(const RuntimeName_t
     }
 }
 
-template class IpcInterface<posix::UnixDomainSocket>;
+template class IpcInterface<UnixDomainSocket>;
 template class IpcInterface<NamedPipe>;
 template class IpcInterface<MessageQueue>;
 

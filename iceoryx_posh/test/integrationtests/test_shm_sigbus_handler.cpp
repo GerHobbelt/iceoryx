@@ -16,7 +16,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #if !defined(__APPLE__)
-#include "iceoryx_hoofs/posix_wrapper/posix_access_rights.hpp"
 #include "iceoryx_posh/iceoryx_posh_config.hpp"
 #include "iceoryx_posh/internal/roudi/memory/mempool_collection_memory_block.hpp"
 #include "iceoryx_posh/mepoo/mepoo_config.hpp"
@@ -42,7 +41,7 @@ TEST(ShmCreatorDeathTest, AllocatingTooMuchMemoryLeadsToExitWithSIGBUS)
         badconfig.addMemPool({1 << 30, 100});
         iox::roudi::MemPoolCollectionMemoryBlock badmempools(badconfig);
         iox::roudi::PosixShmMemoryProvider badShmProvider(
-            TEST_SHM_NAME, iox::posix::AccessMode::READ_WRITE, iox::posix::OpenMode::PURGE_AND_CREATE);
+            TEST_SHM_NAME, iox::AccessMode::READ_WRITE, iox::OpenMode::PURGE_AND_CREATE);
         ASSERT_FALSE(badShmProvider.addMemoryBlock(&badmempools).has_error());
 
         GTEST_FLAG(death_test_style) = "threadsafe";
@@ -55,7 +54,7 @@ TEST(ShmCreatorDeathTest, AllocatingTooMuchMemoryLeadsToExitWithSIGBUS)
     goodconfig.addMemPool({1024, 1});
     iox::roudi::MemPoolCollectionMemoryBlock goodmempools(goodconfig);
     iox::roudi::PosixShmMemoryProvider goodShmProvider(
-        TEST_SHM_NAME, iox::posix::AccessMode::READ_WRITE, iox::posix::OpenMode::PURGE_AND_CREATE);
+        TEST_SHM_NAME, iox::AccessMode::READ_WRITE, iox::OpenMode::PURGE_AND_CREATE);
     ASSERT_FALSE(goodShmProvider.addMemoryBlock(&goodmempools).has_error());
     ASSERT_FALSE(goodShmProvider.create().has_error());
 }

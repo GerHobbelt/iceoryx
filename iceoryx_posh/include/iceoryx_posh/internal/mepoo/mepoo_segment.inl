@@ -1,5 +1,6 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
 // Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2023 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,26 +37,26 @@ template <typename SharedMemoryObjectType, typename MemoryManagerType>
 inline MePooSegment<SharedMemoryObjectType, MemoryManagerType>::MePooSegment(
     const MePooConfig& mempoolConfig,
     BumpAllocator& managementAllocator,
-    const posix::PosixGroup& readerGroup,
-    const posix::PosixGroup& writerGroup,
+    const PosixGroup& readerGroup,
+    const PosixGroup& writerGroup,
     const iox::mepoo::MemoryInfo& memoryInfo) noexcept
-    : m_sharedMemoryObject(std::move(createSharedMemoryObject(mempoolConfig, writerGroup)))
-    , m_readerGroup(readerGroup)
+    : m_readerGroup(readerGroup)
     , m_writerGroup(writerGroup)
     , m_memoryInfo(memoryInfo)
+    , m_sharedMemoryObject(createSharedMemoryObject(mempoolConfig, writerGroup))
 {
-    using namespace posix;
-    AccessController accessController;
+    using namespace detail;
+    PosixAcl acl;
     if (!(readerGroup == writerGroup))
     {
-        accessController.addGroupPermission(AccessController::Permission::READ, readerGroup.getName());
+        acl.addGroupPermission(PosixAcl::Permission::READ, readerGroup.getName());
     }
-    accessController.addGroupPermission(AccessController::Permission::READWRITE, writerGroup.getName());
-    accessController.addPermissionEntry(AccessController::Category::USER, AccessController::Permission::READWRITE);
-    accessController.addPermissionEntry(AccessController::Category::GROUP, AccessController::Permission::READWRITE);
-    accessController.addPermissionEntry(AccessController::Category::OTHERS, AccessController::Permission::NONE);
+    acl.addGroupPermission(PosixAcl::Permission::READWRITE, writerGroup.getName());
+    acl.addPermissionEntry(PosixAcl::Category::USER, PosixAcl::Permission::READWRITE);
+    acl.addPermissionEntry(PosixAcl::Category::GROUP, PosixAcl::Permission::READWRITE);
+    acl.addPermissionEntry(PosixAcl::Category::OTHERS, PosixAcl::Permission::NONE);
 
-    if (!accessController.writePermissionsToFile(m_sharedMemoryObject.getFileHandle()))
+    if (!acl.writePermissionsToFile(m_sharedMemoryObject.getFileHandle()))
     {
         errorHandler(PoshError::MEPOO__SEGMENT_COULD_NOT_APPLY_POSIX_RIGHTS_TO_SHARED_MEMORY);
     }
@@ -67,14 +68,14 @@ inline MePooSegment<SharedMemoryObjectType, MemoryManagerType>::MePooSegment(
 
 template <typename SharedMemoryObjectType, typename MemoryManagerType>
 inline SharedMemoryObjectType MePooSegment<SharedMemoryObjectType, MemoryManagerType>::createSharedMemoryObject(
-    const MePooConfig& mempoolConfig, const posix::PosixGroup& writerGroup) noexcept
+    const MePooConfig& mempoolConfig, const PosixGroup& writerGroup) noexcept
 {
     return std::move(
         typename SharedMemoryObjectType::Builder()
             .name(writerGroup.getName())
             .memorySizeInBytes(MemoryManager::requiredChunkMemorySize(mempoolConfig))
-            .accessMode(posix::AccessMode::READ_WRITE)
-            .openMode(posix::OpenMode::PURGE_AND_CREATE)
+            .accessMode(AccessMode::READ_WRITE)
+            .openMode(OpenMode::PURGE_AND_CREATE)
             .permissions(SEGMENT_PERMISSIONS)
             .create()
             .and_then([this](auto& sharedMemoryObject) {
@@ -85,26 +86,26 @@ inline SharedMemoryObjectType MePooSegment<SharedMemoryObjectType, MemoryManager
                 {
                     errorHandler(PoshError::MEPOO__SEGMENT_INSUFFICIENT_SEGMENT_IDS);
                 }
-                this->setSegmentId(static_cast<uint64_t>(maybeSegmentId.value()));
+                this->m_segmentId = static_cast<uint64_t>(maybeSegmentId.value());
+                this->m_segmentSize = sharedMemoryObject.get_size().expect("Failed to get SHM size.");
 
                 IOX_LOG(DEBUG,
-                        "Roudi registered payload data segment "
-                            << iox::log::hex(sharedMemoryObject.getBaseAddress()) << " with size "
-                            << sharedMemoryObject.get_size().expect("Failed to get SHM size.") << " to id "
-                            << m_segmentId);
+                        "Roudi registered payload data segment " << iox::log::hex(sharedMemoryObject.getBaseAddress())
+                                                                 << " with size " << m_segmentSize << " to id "
+                                                                 << m_segmentId);
             })
             .or_else([](auto&) { errorHandler(PoshError::MEPOO__SEGMENT_UNABLE_TO_CREATE_SHARED_MEMORY_OBJECT); })
             .value());
 }
 
 template <typename SharedMemoryObjectType, typename MemoryManagerType>
-inline posix::PosixGroup MePooSegment<SharedMemoryObjectType, MemoryManagerType>::getWriterGroup() const noexcept
+inline PosixGroup MePooSegment<SharedMemoryObjectType, MemoryManagerType>::getWriterGroup() const noexcept
 {
     return m_writerGroup;
 }
 
 template <typename SharedMemoryObjectType, typename MemoryManagerType>
-inline posix::PosixGroup MePooSegment<SharedMemoryObjectType, MemoryManagerType>::getReaderGroup() const noexcept
+inline PosixGroup MePooSegment<SharedMemoryObjectType, MemoryManagerType>::getReaderGroup() const noexcept
 {
     return m_readerGroup;
 }
@@ -116,22 +117,15 @@ inline MemoryManagerType& MePooSegment<SharedMemoryObjectType, MemoryManagerType
 }
 
 template <typename SharedMemoryObjectType, typename MemoryManagerType>
-inline const SharedMemoryObjectType&
-MePooSegment<SharedMemoryObjectType, MemoryManagerType>::getSharedMemoryObject() const noexcept
-{
-    return m_sharedMemoryObject;
-}
-
-template <typename SharedMemoryObjectType, typename MemoryManagerType>
 inline uint64_t MePooSegment<SharedMemoryObjectType, MemoryManagerType>::getSegmentId() const noexcept
 {
     return m_segmentId;
 }
 
 template <typename SharedMemoryObjectType, typename MemoryManagerType>
-inline void MePooSegment<SharedMemoryObjectType, MemoryManagerType>::setSegmentId(const uint64_t segmentId) noexcept
+inline uint64_t MePooSegment<SharedMemoryObjectType, MemoryManagerType>::getSegmentSize() const noexcept
 {
-    m_segmentId = segmentId;
+    return m_segmentSize;
 }
 
 } // namespace mepoo

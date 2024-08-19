@@ -1,5 +1,6 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
 // Copyright (c) 2021 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2023 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,15 +41,15 @@ inline SegmentManager<SegmentType>::SegmentManager(const SegmentConfig& segmentC
 template <typename SegmentType>
 inline void SegmentManager<SegmentType>::createSegment(const SegmentConfig::SegmentEntry& segmentEntry) noexcept
 {
-    auto readerGroup = iox::posix::PosixGroup(segmentEntry.m_readerGroup);
-    auto writerGroup = iox::posix::PosixGroup(segmentEntry.m_writerGroup);
+    auto readerGroup = PosixGroup(segmentEntry.m_readerGroup);
+    auto writerGroup = PosixGroup(segmentEntry.m_writerGroup);
     m_segmentContainer.emplace_back(
         segmentEntry.m_mempoolConfig, *m_managementAllocator, readerGroup, writerGroup, segmentEntry.m_memoryInfo);
 }
 
 template <typename SegmentType>
 inline typename SegmentManager<SegmentType>::SegmentMappingContainer
-SegmentManager<SegmentType>::getSegmentMappings(const posix::PosixUser& user) noexcept
+SegmentManager<SegmentType>::getSegmentMappings(const PosixUser& user) noexcept
 {
     // get all the groups the user is in
     auto groupContainer = user.getGroups();
@@ -68,11 +69,7 @@ SegmentManager<SegmentType>::getSegmentMappings(const posix::PosixUser& user) no
                 if (!foundInWriterGroup)
                 {
                     mappingContainer.emplace_back(
-                        segment.getWriterGroup().getName(),
-                        segment.getSharedMemoryObject().getBaseAddress(),
-                        segment.getSharedMemoryObject().get_size().expect("failed to get SHM size"),
-                        true,
-                        segment.getSegmentId());
+                        segment.getWriterGroup().getName(), segment.getSegmentSize(), true, segment.getSegmentId());
                     foundInWriterGroup = true;
                 }
                 else
@@ -91,15 +88,11 @@ SegmentManager<SegmentType>::getSegmentMappings(const posix::PosixUser& user) no
             // only add segments which are not yet added as writer
             if (segment.getReaderGroup() == groupID
                 && std::find_if(mappingContainer.begin(), mappingContainer.end(), [&](const SegmentMapping& mapping) {
-                       return mapping.m_startAddress == segment.getSharedMemoryObject().getBaseAddress();
+                       return mapping.m_segmentId == segment.getSegmentId();
                    }) == mappingContainer.end())
             {
                 mappingContainer.emplace_back(
-                    segment.getWriterGroup().getName(),
-                    segment.getSharedMemoryObject().getBaseAddress(),
-                    segment.getSharedMemoryObject().get_size().expect("Failed to get SHM size."),
-                    false,
-                    segment.getSegmentId());
+                    segment.getWriterGroup().getName(), segment.getSegmentSize(), false, segment.getSegmentId());
             }
         }
     }
@@ -109,7 +102,7 @@ SegmentManager<SegmentType>::getSegmentMappings(const posix::PosixUser& user) no
 
 template <typename SegmentType>
 inline typename SegmentManager<SegmentType>::SegmentUserInformation
-SegmentManager<SegmentType>::getSegmentInformationWithWriteAccessForUser(const posix::PosixUser& user) noexcept
+SegmentManager<SegmentType>::getSegmentInformationWithWriteAccessForUser(const PosixUser& user) noexcept
 {
     auto groupContainer = user.getGroups();
 

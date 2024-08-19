@@ -84,8 +84,6 @@ iox_prepare_test_binaries_for_cache_template: &IOX_PREPARE_TEST_BINARIES_FOR_CAC
   - mv build/hoofs/test/hoofs_mocktests iox-tests-bin
   - mv build/hoofs/test/hoofs_moduletests iox-tests-bin
   - mv build/hoofs/test/hoofs_integrationtests iox-tests-bin
-  - mv build/dust/test/dust_moduletests iox-tests-bin
-  - mv build/dust/test/dust_integrationtests iox-tests-bin
   - mv build/posh/test/posh_moduletests iox-tests-bin
   - mv build/posh/test/posh_integrationtests iox-tests-bin
   - mv build/binding_c/test/binding_c_moduletests iox-tests-bin
@@ -95,8 +93,6 @@ iox_run_tests_template: &IOX_RUN_TESTS
   - ./hoofs_mocktests
   - ./hoofs_moduletests
   - ./hoofs_integrationtests
-  - ./dust_moduletests
-  - ./dust_integrationtests
   - ./posh_moduletests
   - ./posh_integrationtests
   - ./binding_c_moduletests
@@ -189,6 +185,7 @@ arch_linux_x64_gcc_8_3_aka_qnx_canary_test_task:
 #
 
 arch_linux_x64_build_task:
+  only_if: false # deactivated for now due to limited compute credits
   depends_on: preflight_check
   container:
     dockerfile: tools/ci/docker/archlinux-base-devel
@@ -204,6 +201,7 @@ arch_linux_x64_build_task:
     <<: *IOX_PREPARE_TEST_BINARIES_FOR_CACHE
 
 arch_linux_x64_test_task:
+  only_if: false # deactivated for now due to limited compute credits
   depends_on: arch_linux_x64_build
   container:
     dockerfile: tools/ci/docker/archlinux-base-devel
@@ -256,6 +254,7 @@ freebsd_x64_test_task:
 #
 
 macos_aarch64_build_task:
+  only_if: false # deactivated for now due to limited compute credits
   depends_on: preflight_check
   macos_instance:
     image: ghcr.io/cirruslabs/macos-ventura-base:latest
@@ -273,6 +272,7 @@ macos_aarch64_build_task:
     <<: *IOX_PREPARE_TEST_BINARIES_FOR_CACHE
 
 macos_aarch64_test_task:
+  only_if: false # deactivated for now due to limited compute credits
   depends_on: macos_aarch64_build
   macos_instance:
     image: ghcr.io/cirruslabs/macos-ventura-base:latest

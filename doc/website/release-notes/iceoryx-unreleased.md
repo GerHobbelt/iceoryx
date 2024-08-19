@@ -55,6 +55,7 @@
 - Switch to C++17 on all platforms [#2066](https://github.com/eclipse-iceoryx/iceoryx/issues/2066)
 - Implement `unsafe_raw_access` in `iox::string` and add `BufferInfo` struct [#1431](https://github.com/eclipse-iceoryx/iceoryx/issues/1431)
 - Add the introspection to the ROS release [\#2099](https://github.com/eclipse-iceoryx/iceoryx/issues/2099)
+- Fast POD data in `iox::vector` [#2082](https://github.com/eclipse-iceoryx/iceoryx/issues/2082)
 
 **Bugfixes:**
 
@@ -108,6 +109,9 @@
 - FixedPositionContainer fails to compile on QNX QCC [#2084](https://github.com/eclipse-iceoryx/iceoryx/issues/2084)
 - Chunk fails to be released when more than 4 GiB of chunks have been allocated [#2087](https://github.com/eclipse-iceoryx/iceoryx/issues/2087)
 - Fix clang-tidy errors from full-scan nightly build [#2060](https://github.com/eclipse-iceoryx/iceoryx/issues/2060)
+- Add public functions to create an 'access_rights' object from integer values [#2108](https://github.com/eclipse-iceoryx/iceoryx/issues/2108)
+- Fix `historyRequest` may be larger than `queueCapacity` during creating a subscriber [#2121](https://github.com/eclipse-iceoryx/iceoryx/issues/2121)
+- Unable to acquire file status due to an unknown failure [#2023](https://github.com/eclipse-iceoryx/iceoryx/issues/2023)
 
 **Refactoring:**
 
@@ -143,6 +147,7 @@
 - `SignalHandler` returns an `iox::expected` in `registerSignalHandler` [\#1196](https://github.com/eclipse-iceoryx/iceoryx/issues/1196)
 - Remove the unused `PosixRights` struct [\#1556](https://github.com/eclipse-iceoryx/iceoryx/issues/1556)
 - Move quality level 2 classes to new package `iceoryx_dust` [\#590](https://github.com/eclipse-iceoryx/iceoryx/issues/590)
+    - moved back to `hoofs`
 - Remove unused classes from `iceoryx_hoofs` [\#590](https://github.com/eclipse-iceoryx/iceoryx/issues/590)
   - `cxx::PoorMansHeap`
   - Other `internal` classes
@@ -164,18 +169,23 @@
 - Replace uses of `std::cout`, `std::cerr` with the iceoryx logger [\#1756](https://github.com/eclipse-iceoryx/iceoryx/issues/1756)
 - Move `IOX_NO_DISCARD`, `IOX_FALLTHROUGH` and `IOX_MAYBE_UNUSED` to `iceoryx_platform` [\#1726](https://github.com/eclipse-iceoryx/iceoryx/issues/1726)
 - Move `cxx::static_storage` from `iceoryx_hoofs` to `iceoryx_dust` [\#1732](https://github.com/eclipse-iceoryx/iceoryx/issues/1732)
+    - moved back to `hoofs`
 - Remove `algorithm::uniqueMergeSortedContainers` from `algorithm.hpp`
 - Move `std::string` conversion function to `iceoryx_dust` [\#1612](https://github.com/eclipse-iceoryx/iceoryx/issues/1612)
+    - moved back to `hoofs`
 - The posix call `unlink` is directly used in `UnixDomainSocket` [\#1622](https://github.com/eclipse-iceoryx/iceoryx/issues/1622)
 - Wrap all C calls in posixCall in IntrospectionApp [\#1692](https://github.com/eclipse-iceoryx/iceoryx/issues/1692)
 - Move `std::chrono` dependency to `iceoryx_dust` [\#536](https://github.com/eclipse-iceoryx/iceoryx/issues/536)
+    - moved back to `hoofs`
 - Move `std::string` dependency from `iox::string` to `std_string_support.hpp` in `iceoryx_dust` [\#1612](https://github.com/eclipse-iceoryx/iceoryx/issues/1612)
+    - moved back to `hoofs`
 - Better align `iox::expected` with `std::expected` [\#1969](https://github.com/eclipse-iceoryx/iceoryx/issues/1969)
 - Use logger for "RouDi is ready for clients" message [\#1994](https://github.com/eclipse-iceoryx/iceoryx/issues/1994)
 - Speed up posh tests [#1030](https://github.com/eclipse-iceoryx/iceoryx/issues/1030)
 - Roudi Environment independent from Googletest [#1533](https://github.com/eclipse-iceoryx/iceoryx/issues/1533)
 - Move test class for ctor and assignment operators to hoofs testing [#2041](https://github.com/eclipse-iceoryx/iceoryx/issues/2041)
 - Refactor `FixedPositionContainer` and move to `dust` [#2044](https://github.com/eclipse-iceoryx/iceoryx/issues/2044)
+    - final location is `hoofs`
 - Cleanup or Remove ObjectPool [#66](https://github.com/eclipse-iceoryx/iceoryx/issues/66)
 - Improve process is alive detection [#1361](https://github.com/eclipse-iceoryx/iceoryx/issues/1361)
     - only partially
@@ -183,6 +193,7 @@
 - Removed IOX_INTERNAL_MAX_NUMBER_OF_NOTIFIERS and made IOX_MAX_NUMBER_OF_NOTIFIERS configurable again [#2083](https://github.com/eclipse-iceoryx/iceoryx/issues/2083)
 - Setting IOX_NO_DISCARD in QNX [#638](https://github.com/eclipse-iceoryx/iceoryx/issues/638)
 - Replace `iox::byte_t` with std::byte [#1900](https://github.com/eclipse-iceoryx/iceoryx/issues/1900)
+- Merge `iceoryx_dust` back to `iceoryx_hoofs` [#2130](https://github.com/eclipse-iceoryx/iceoryx/issues/2130)
 
 **Workflow:**
 
@@ -228,10 +239,10 @@
     auto semaphore = iox::posix::Semaphore::create(iox::posix::CreateUnnamedSingleProcessSemaphore, 0);
 
     // after
-    #include "iceoryx_hoofs/posix_wrapper/unnamed_semaphore.hpp"
+    #include "iox/unnamed_semaphore.hpp"
 
-    iox::optional<iox::posix::UnnamedSemaphore> semaphore;
-    auto result = iox::posix::UnnamedSemaphoreBuilder()
+    iox::optional<iox::UnnamedSemaphore> semaphore;
+    auto result = iox::UnnamedSemaphoreBuilder()
                     .initialValue(0U)
                     .isInterProcessCapable(true)
                     .create(semaphore);
@@ -248,12 +259,12 @@
                                                S_IRUSR | S_IWUSR,
                                                    0);
     // after
-    #include "iceoryx_hoofs/posix_wrapper/named_semaphore.hpp"
+    #include "iox/named_semaphore.hpp"
 
-    iox::optional<iox::posix::NamedSemaphore> semaphore;
-    auto result = iox::posix::NamedSemaphoreBuilder()
+    iox::optional<iox::NamedSemaphore> semaphore;
+    auto result = iox::NamedSemaphoreBuilder()
                     .name("mySemaphoreName")
-                    .openMode(iox::posix::OpenMode::OPEN_OR_CREATE)
+                    .openMode(iox::OpenMode::OPEN_OR_CREATE)
                     .permissions(iox::perms::owner_all)
                     .initialValue(0U)
                     .create(semaphore);
@@ -328,11 +339,11 @@
                         .expect("Oh no I couldn't create the lock file");
 
     // after
-    auto fileLock = iox::posix::FileLockBuilder().name("lockFileName")
-                                                 .path("/Now/I/Can/Add/A/Path")
-                                                 .permission(iox::perms::owner_all)
-                                                 .create()
-                                                 .expect("Oh no I couldn't create the lock file");
+    auto fileLock = iox::FileLockBuilder().name("lockFileName")
+                                          .path("/Now/I/Can/Add/A/Path")
+                                          .permission(iox::perms::owner_all)
+                                          .create()
+                                          .expect("Oh no I couldn't create the lock file");
     ```
 
 10. `isValidFilePath` is removed use `isValidPathToFile` instead.
@@ -375,7 +386,7 @@
     auto signalGuard = iox::posix::registerSignalHandler(iox::posix::Signal::INT, sigHandler);
 
     // after
-    auto signalGuard = iox::posix::registerSignalHandler(iox::posix::Signal::INT, sigHandler);
+    auto signalGuard = iox::registerSignalHandler(iox::PosixSignal::INT, sigHandler);
     if (signalGuard.has_error()) {
         // perform error handling
     }
@@ -649,9 +660,9 @@
     myMutex.lock();
 
     // after
-    iox::optional<mutex> myMutex;
-    iox::posix::MutexBuilder()
-        .mutexType(iox::posix::MutexType::RECURSIVE)
+    iox::optional<iox::mutex> myMutex;
+    iox::MutexBuilder()
+        .mutexType(iox::MutexType::RECURSIVE)
         .create(myMutex);
     myMutex->lock();
     ```
@@ -954,7 +965,7 @@
 
     ```
 
-42. Move multiple classes from `iceoryx_hoofs` to `iceoryx_dust`
+42. ~~Move multiple classes from `iceoryx_hoofs` to `iceoryx_dust`~~ They are still in `iceoryx_hoofs` but the include path changed nevertheless
 
     ```cpp
     // before
@@ -993,7 +1004,7 @@
     #include "iceoryx_hoofs/internal/objectpool/objectpool.hpp"
 
     // after
-    #include "iceoryx_dust/cxx/objectpool.hpp"
+    // fully removed
     ```
 
     ```cpp
@@ -1044,7 +1055,7 @@
     #include "iox/detail/convert.hpp"
     ```
 
-43. Move the conversions functions for `std::string` to `iceoryx_dust`:
+43. ~~Move the conversions functions for `std::string` to `iceoryx_dust`:~~ They are still in `iceoryx_hoofs` but the include path changed nevertheless
 
     ```cpp
     // before
@@ -1131,7 +1142,7 @@
     std::byte m_size;
     ```
 
-48. Move conversion methods from `duration.hpp` to `iceoryx_dust`
+48. ~~Move conversion methods from `duration.hpp` to `iceoryx_dust`~~ They are still in `iceoryx_hoofs` but the include path changed nevertheless
 
     ```cpp
     // before
@@ -1197,11 +1208,11 @@
 
     // after
     // option 1
-    iox::optional<iox::posix::UnixDomainSocket> socket;
+    iox::optional<iox::UnixDomainSocket> socket;
     // option 2
-    iox::posix::UnixDomainSocket socket { UnixDomainSocketBuilder()
+    iox::UnixDomainSocket socket { UnixDomainSocketBuilder()
         .name("foo")
-        .channelSide(iox::posix::IpcChannelSide::CLIENT)
+        .channelSide(iox::PosixIpcChannelSide::CLIENT)
         .create()
         .expect("Valid UnixDomainSocket")
     };
@@ -1254,3 +1265,15 @@
 
     With the switch to C++17 `[[maybe_unused]]`, `[[fallthrough]]` and `[[no_discard]]`
     are available and should be used instead of the macros.
+
+56. `posixCall` macro is renamed to `IOX_POSIX_CALL`
+
+    ```cpp
+    // before
+    iox::posix::posixCall(open)("/hypnotoad");
+
+    // after
+    IOX_POSIX_CALL(open)("/hypnotoad");
+    ```
+
+57. `iox::posix::getSchedulerPriorityMinimum` and `iox::posix::getSchedulerPriorityMaximum` has become internal API

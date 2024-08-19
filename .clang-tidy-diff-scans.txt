@@ -3,6 +3,9 @@
 ./iceoryx_hoofs/test/moduletests/test_cxx*
 ./iceoryx_hoofs/source/cxx/*
 
+./iceoryx_hoofs/cli/**/*
+./iceoryx_hoofs/test/moduletests/test_cli_*
+
 ./iceoryx_hoofs/memory/**/*
 ./iceoryx_hoofs/test/moduletests/test_memory_*
 
@@ -12,17 +15,11 @@
 ./iceoryx_hoofs/test/moduletests/test_concurrent_*
 ./iceoryx_hoofs/test/stresstests/sofi/test_stress_sofi.cpp
 
-./iceoryx_hoofs/include/iceoryx_hoofs/posix_wrapper/*
-./iceoryx_hoofs/include/iceoryx_hoofs/internal/posix_wrapper/*
-
 ./iceoryx_hoofs/testing/include/iceoryx_hoofs/testing/mocks/logger_mock.hpp
 ./iceoryx_hoofs/testing/include/iceoryx_hoofs/testing/fatal_failure*
 ./iceoryx_hoofs/testing/include/iceoryx_hoofs/testing/testing_logger.hpp
 ./iceoryx_hoofs/testing/testing_logger.cpp
 
-./iceoryx_hoofs/include/iceoryx_hoofs/internal/posix_wrapper/shared_memory_object/*
-./iceoryx_hoofs/source/posix_wrapper/*
-./iceoryx_hoofs/source/posix_wrapper/shared_memory_object/*
 ./iceoryx_hoofs/test/moduletests/test_posix*
 
 ./iceoryx_hoofs/include/iceoryx_hoofs/error_reporting/**/*
@@ -32,7 +29,7 @@
 
 ./iceoryx_hoofs/posix/**/*
 
-./iceoryx_hoofs/container/include/iox/**/*
+./iceoryx_hoofs/container/**/*
 ./iceoryx_hoofs/test/moduletests/test_container_*
 
 ./iceoryx_hoofs/vocabulary/**/*
