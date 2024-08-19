@@ -31,26 +31,42 @@ bool hasError()
     return ErrorHandler::instance().hasError();
 }
 
-bool hasPreconditionViolation()
+bool hasAssertViolation()
 {
-    auto code = iox::er::ErrorCode{iox::er::ErrorCode::PRECONDITION_VIOLATION};
+    auto code = iox::er::Violation(iox::er::ViolationErrorCode::ASSERT_VIOLATION).code();
     return ErrorHandler::instance().hasViolation(code);
 }
 
-bool hasAssumptionViolation()
+bool hasEnforceViolation()
 {
-    auto code = iox::er::ErrorCode{iox::er::ErrorCode::ASSUMPTION_VIOLATION};
+    auto code = iox::er::Violation(iox::er::ViolationErrorCode::ENFORCE_VIOLATION).code();
     return ErrorHandler::instance().hasViolation(code);
 }
 
 bool hasViolation()
 {
-    return hasPreconditionViolation() || hasAssumptionViolation();
+    return hasEnforceViolation() || hasAssertViolation();
 }
 
 bool isInNormalState()
 {
     return !(hasPanicked() || hasError() || hasViolation());
+}
+
+void runInTestThread(const function_ref<void()> testFunction)
+{
+    auto t = std::thread([&]() {
+        auto successfullRun = ErrorHandler::instance().fatalFailureTestContext(testFunction);
+        if (!successfullRun)
+        {
+            GTEST_FAIL() << "This should not fail! Incorrect usage!";
+        }
+    });
+
+    if (t.joinable())
+    {
+        t.join();
+    }
 }
 
 } // namespace testing

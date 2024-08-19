@@ -56,6 +56,7 @@
 - Implement `unsafe_raw_access` in `iox::string` and add `BufferInfo` struct [#1431](https://github.com/eclipse-iceoryx/iceoryx/issues/1431)
 - Add the introspection to the ROS release [\#2099](https://github.com/eclipse-iceoryx/iceoryx/issues/2099)
 - Fast POD data in `iox::vector` [#2082](https://github.com/eclipse-iceoryx/iceoryx/issues/2082)
+- MinGW support for Windows [#2150](https://github.com/eclipse-iceoryx/iceoryx/issues/2150)
 
 **Bugfixes:**
 
@@ -112,6 +113,7 @@
 - Add public functions to create an 'access_rights' object from integer values [#2108](https://github.com/eclipse-iceoryx/iceoryx/issues/2108)
 - Fix `historyRequest` may be larger than `queueCapacity` during creating a subscriber [#2121](https://github.com/eclipse-iceoryx/iceoryx/issues/2121)
 - Unable to acquire file status due to an unknown failure [#2023](https://github.com/eclipse-iceoryx/iceoryx/issues/2023)
+- Bug in 'ListenerImpl' [#2137](https://github.com/eclipse-iceoryx/iceoryx/issues/2137)
 
 **Refactoring:**
 
@@ -1277,3 +1279,15 @@
     ```
 
 57. `iox::posix::getSchedulerPriorityMinimum` and `iox::posix::getSchedulerPriorityMaximum` has become internal API
+
+58. The concurrent queues have gained a `Spsc` or `Mpsc` prefix
+
+    ```cpp
+    // before
+    #include "iceoryx_hoofs/concurrent/lockfree_queue.hpp"
+    iox::concurrent::LockFreeQueue q;
+
+    // after
+    #include "iox/mpmc_lockfree_queue.hpp"
+    iox::concurrent::MpmcLockFreeQueue q;
+    ```

@@ -1,4 +1,5 @@
 // Copyright (c) 2023 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2024 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +16,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iceoryx_hoofs/testing/error_reporting/testing_error_handler.hpp"
-#include "iceoryx_hoofs/error_reporting/custom/default/error_handler_interface.hpp"
-#include "iceoryx_hoofs/error_reporting/types.hpp"
+#include "iox/error_reporting/custom/default/error_handler.hpp"
+#include "iox/error_reporting/custom/default/error_handler_interface.hpp"
+#include "iox/error_reporting/types.hpp"
 
 // NOLINTNEXTLINE(hicpp-deprecated-headers) required to work on some platforms
 #include <setjmp.h>
@@ -30,50 +32,55 @@ namespace testing
 
 using namespace iox::er;
 
-TestErrorHandler::TestErrorHandler()
-    : m_jump(&m_jumpBuffer)
+void TestingErrorHandler::init() noexcept
 {
+    iox::testing::ErrorHandler handler;
+    iox::er::ErrorHandler::set(handler);
+
+    auto& listeners = ::testing::UnitTest::GetInstance()->listeners();
+    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) required by the callee
+    listeners.Append(new (std::nothrow) ErrorHandlerSetup);
 }
 
-void TestErrorHandler::onPanic()
+void TestingErrorHandler::onPanic()
 {
     m_panicked = true;
     jump();
 }
 
-void TestErrorHandler::onReportError(er::ErrorDescriptor desc)
+void TestingErrorHandler::onReportError(er::ErrorDescriptor desc)
 {
     std::lock_guard<std::mutex> g(m_mutex);
     m_errors.push_back(desc);
 }
 
-void TestErrorHandler::onReportViolation(er::ErrorDescriptor desc)
+void TestingErrorHandler::onReportViolation(er::ErrorDescriptor desc)
 {
     std::lock_guard<std::mutex> g(m_mutex);
     m_violations.push_back(desc);
 }
 
-bool TestErrorHandler::hasPanicked() const
+bool TestingErrorHandler::hasPanicked() const noexcept
 {
     return m_panicked;
 }
 
-void TestErrorHandler::reset()
+void TestingErrorHandler::reset() noexcept
 {
     std::lock_guard<std::mutex> g(m_mutex);
     m_panicked = false;
     m_errors.clear();
     m_violations.clear();
-    m_jump.store(&m_jumpBuffer);
+    m_jumpState.store(JumpState::Obtainable);
 }
 
-bool TestErrorHandler::hasError() const
+bool TestingErrorHandler::hasError() const noexcept
 {
     std::lock_guard<std::mutex> g(m_mutex);
     return !m_errors.empty();
 }
 
-bool TestErrorHandler::hasError(ErrorCode code, iox::er::ModuleId module) const
+bool TestingErrorHandler::hasError(ErrorCode code, iox::er::ModuleId module) const noexcept
 {
     constexpr iox::er::ModuleId ANY_MODULE{iox::er::ModuleId::ANY};
     std::lock_guard<std::mutex> g(m_mutex);
@@ -91,7 +98,7 @@ bool TestErrorHandler::hasError(ErrorCode code, iox::er::ModuleId module) const
     return false;
 }
 
-bool TestErrorHandler::hasViolation(ErrorCode code) const
+bool TestingErrorHandler::hasViolation(ErrorCode code) const noexcept
 {
     std::lock_guard<std::mutex> g(m_mutex);
     for (auto desc : m_violations)
@@ -104,28 +111,38 @@ bool TestErrorHandler::hasViolation(ErrorCode code) const
     return false;
 }
 
-jmp_buf* TestErrorHandler::prepareJump()
+bool TestingErrorHandler::fatalFailureTestContext(const function_ref<void()> testFunction)
 {
-    // winner can prepare the jump
-    return m_jump.exchange(nullptr);
+    // if there are multiple threads trying to perform a test, only the winner can proceed with the jump
+    if (m_jumpState.exchange(JumpState::Pending) == JumpState::Pending)
+    {
+        return false;
+    };
+
+    // setjmp must be called in a stackframe that still exists when longjmp is called
+    // Therefore there cannot be a convenient abstraction that does not also
+    // know the test function that is being called.
+    // NOLINTNEXTLINE(cert-err52-cpp) exception cannot be used, required for testing to jump in case of failure
+    if (setjmp(&(m_jumpBuffer)[0]) != JUMPED_INDICATOR)
+    {
+        testFunction();
+    }
+
+    return true;
 }
 
-void TestErrorHandler::jump()
+void TestingErrorHandler::jump() noexcept
 {
-    jmp_buf* exp = nullptr;
-    // if it is a nullptr, somebody (and only one) has prepared jump
-    // it will be reset on first jump, so there cannot be concurrent jumps
-    // essentially the first panic call wins, resets and and jumps
-    if (m_jump.compare_exchange_strong(exp, &m_jumpBuffer))
+    if (m_jumpState == JumpState::Pending)
     {
         // NOLINTNEXTLINE(cert-err52-cpp) exception handling is not used by design
-        longjmp(&m_jumpBuffer[0], jumpIndicator());
+        longjmp(&m_jumpBuffer[0], JUMPED_INDICATOR);
     }
 }
 
-int TestErrorHandler::jumpIndicator()
+void ErrorHandlerSetup::OnTestStart(const ::testing::TestInfo&)
 {
-    return JUMPED;
+    ErrorHandler::instance().reset();
 }
 
 } // namespace testing

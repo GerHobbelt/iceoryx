@@ -19,9 +19,8 @@
 
 #include <gtest/gtest.h>
 
-#include "iceoryx_hoofs/error_reporting/custom/default/error_handler.hpp"
 #include "iceoryx_hoofs/testing/error_reporting/testing_error_handler.hpp"
-#include "iox/static_lifetime_guard.hpp"
+#include "iox/function_ref.hpp"
 
 #include <thread>
 #include <utility>
@@ -33,8 +32,6 @@ namespace iox
 {
 namespace testing
 {
-
-using ErrorHandler = iox::StaticLifetimeGuard<iox::testing::TestErrorHandler>;
 
 /// @brief indicates whether the test error handler registered a specific error
 template <typename Code>
@@ -50,11 +47,11 @@ bool hasPanicked();
 /// @brief indicates whether the test error handler registered any error
 bool hasError();
 
-/// @brief indicates whether the test error handler registered a precondition violation
-bool hasPreconditionViolation();
+/// @brief indicates whether the test error handler registered an enforce violation
+bool hasEnforceViolation();
 
-/// @brief indicates whether the test error handler registered an assumption violation
-bool hasAssumptionViolation();
+/// @brief indicates whether the test error handler registered an assert violation
+bool hasAssertViolation();
 
 /// @brief indicates whether the test error handler registered  violation (there are only two kinds).
 bool hasViolation();
@@ -63,43 +60,9 @@ bool hasViolation();
 bool isInNormalState();
 
 /// @brief runs testFunction in a testContext that can detect fatal failures;
-/// runs in the same thread
-/// @note uses setjmp/longjmp
-template <typename Function, typename... Args>
-inline void testContext(Function&& testFunction, Args&&... args)
-{
-    jmp_buf* buf = ErrorHandler::instance().prepareJump();
-
-    if (buf == nullptr)
-    {
-        GTEST_FAIL() << "This should not fail! Incorrect usage!";
-    };
-
-    // setjmp must be called in a stackframe that still exists when longjmp is called
-    // Therefore there cannot be a convenient abstraction that does not also
-    // know the test function that is being called.
-    // NOLINTNEXTLINE(cert-err52-cpp) exception cannot be used, required for testing to jump in case of failure
-    if (setjmp(&(*buf)[0]) != ErrorHandler::instance().jumpIndicator())
-    {
-        testFunction(std::forward<Args>(args)...);
-    }
-}
-
-/// @brief runs testFunction in a testContext that can detect fatal failures;
 /// runs in a separate thread
 /// @note uses a longjump inside the thread it runs the function in
-template <typename Function, typename... Args>
-inline void runInTestThread(Function&& testFunction, Args&&... args)
-{
-    // needed to infer the testContext arguments
-    auto f = [&]() { testContext(std::forward<Function>(testFunction), std::forward<Args>(args)...); };
-
-    std::thread t(f);
-    if (t.joinable())
-    {
-        t.join();
-    }
-}
+void runInTestThread(const function_ref<void()> testFunction);
 
 } // namespace testing
 } // namespace iox
@@ -120,15 +83,13 @@ inline void runInTestThread(Function&& testFunction, Args&&... args)
 
 #define IOX_TESTING_ASSERT_NO_ERROR() ASSERT_FALSE(iox::testing::hasError())
 
-#define IOX_TESTING_ASSERT_VIOLATION()                                                                                 \
-    ASSERT_TRUE(iox::testing::hasPreconditionViolation() || iox::testing::hasAssumptionViolation())
+#define IOX_TESTING_ASSERT_VIOLATION() ASSERT_TRUE(iox::testing::hasViolation())
 
-#define IOX_TESTING_ASSERT_NO_VIOLATION()                                                                              \
-    ASSERT_FALSE(iox::testing::hasPreconditionViolation() || iox::testing::hasAssumptionViolation())
+#define IOX_TESTING_ASSERT_NO_VIOLATION() ASSERT_FALSE(iox::testing::hasViolation())
 
-#define IOX_TESTING_ASSERT_PRECONDITION_VIOLATION() ASSERT_TRUE(iox::testing::hasPreconditionViolation())
+#define IOX_TESTING_ASSERT_ASSERT_VIOLATION() ASSERT_TRUE(iox::testing::hasAssertViolation())
 
-#define IOX_TESTING_ASSERT_ASSUMPTION_VIOLATION() ASSERT_TRUE(iox::testing::hasAssumptionViolation())
+#define IOX_TESTING_ASSERT_ENFORCE_VIOLATION() ASSERT_TRUE(iox::testing::hasEnforceViolation())
 
 // EXPECT_* continues with test if the check fails.
 
@@ -142,15 +103,13 @@ inline void runInTestThread(Function&& testFunction, Args&&... args)
 
 #define IOX_TESTING_EXPECT_NO_ERROR() EXPECT_FALSE(iox::testing::hasError())
 
-#define IOX_TESTING_EXPECT_VIOLATION()                                                                                 \
-    EXPECT_TRUE(iox::testing::hasPreconditionViolation() || iox::testing::hasAssumptionViolation())
+#define IOX_TESTING_EXPECT_VIOLATION() EXPECT_TRUE(iox::testing::hasViolation())
 
-#define IOX_TESTING_EXPECT_NO_VIOLATION()                                                                              \
-    EXPECT_FALSE(iox::testing::hasPreconditionViolation() || iox::testing::hasAssumptionViolation())
+#define IOX_TESTING_EXPECT_NO_VIOLATION() EXPECT_FALSE(iox::testing::hasViolation())
 
-#define IOX_TESTING_EXPECT_PRECONDITION_VIOLATION() EXPECT_TRUE(iox::testing::hasPreconditionViolation())
+#define IOX_TESTING_EXPECT_ASSERT_VIOLATION() EXPECT_TRUE(iox::testing::hasAssertViolation())
 
-#define IOX_TESTING_EXPECT_ASSUMPTION_VIOLATION() EXPECT_TRUE(iox::testing::hasAssumptionViolation())
+#define IOX_TESTING_EXPECT_ENFORCE_VIOLATION() EXPECT_TRUE(iox::testing::hasEnforceViolation())
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
 

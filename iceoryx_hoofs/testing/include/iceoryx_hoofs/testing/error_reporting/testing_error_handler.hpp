@@ -1,4 +1,5 @@
 // Copyright (c) 2023 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2024 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +18,15 @@
 #ifndef IOX_HOOFS_TESTING_ERROR_REPORTING_TESTING_ERROR_HANDLER_HPP
 #define IOX_HOOFS_TESTING_ERROR_REPORTING_TESTING_ERROR_HANDLER_HPP
 
-#include "iceoryx_hoofs/error_reporting/custom/default/error_handler_interface.hpp"
-#include "iceoryx_hoofs/error_reporting/error_logging.hpp"
-#include "iceoryx_hoofs/error_reporting/errors.hpp"
-#include "iceoryx_hoofs/error_reporting/source_location.hpp"
-#include "iceoryx_hoofs/error_reporting/types.hpp"
+#include "iox/error_reporting/custom/default/error_handler_interface.hpp"
+#include "iox/error_reporting/error_logging.hpp"
+#include "iox/error_reporting/source_location.hpp"
+#include "iox/error_reporting/types.hpp"
+#include "iox/error_reporting/violation.hpp"
+#include "iox/function_ref.hpp"
+#include "iox/static_lifetime_guard.hpp"
+
+#include "iceoryx_hoofs/testing/test.hpp"
 
 #include <atomic>
 #include <vector>
@@ -38,16 +43,32 @@ namespace testing
 {
 
 /// @brief Defines the test reaction of dynamic error handling.
-class TestErrorHandler : public iox::er::ErrorHandlerInterface
+class TestingErrorHandler : public iox::er::ErrorHandlerInterface
 {
   public:
-    TestErrorHandler();
+    TestingErrorHandler() noexcept = default;
+    ~TestingErrorHandler() noexcept override = default;
+    TestingErrorHandler(const TestingErrorHandler&) noexcept = delete;
+    TestingErrorHandler(TestingErrorHandler&&) noexcept = delete;
+    TestingErrorHandler& operator=(const TestingErrorHandler&) noexcept = delete;
+    TestingErrorHandler operator=(TestingErrorHandler&&) noexcept = delete;
 
-    ~TestErrorHandler() override = default;
-    TestErrorHandler(const TestErrorHandler&) = delete;
-    TestErrorHandler(TestErrorHandler&&) = delete;
-    TestErrorHandler& operator=(const TestErrorHandler&) = delete;
-    TestErrorHandler operator=(TestErrorHandler&&) = delete;
+    /// @brief Initialized the error handler. This should be called in the main function of the test binary
+    /// @code
+    /// #include "iceoryx_hoofs/testing/error_reporting/testing_error_handler.hpp"
+    ///
+    /// #include "test.hpp"
+    ///
+    /// int main(int argc, char* argv[])
+    /// {
+    ///     ::testing::InitGoogleTest(&argc, argv);
+    ///
+    ///     iox::testing::ErrorHandler::init();
+    ///
+    ///     return RUN_ALL_TESTS();
+    /// }
+    /// @endcode
+    static void init() noexcept;
 
     /// @brief Defines the reaction on panic.
     void onPanic() override;
@@ -62,31 +83,31 @@ class TestErrorHandler : public iox::er::ErrorHandlerInterface
 
     /// @brief Indicates whether there was a panic call previously.
     /// @return true if there was a panic call, false otherwise
-    bool hasPanicked() const;
+    bool hasPanicked() const noexcept;
 
     /// @brief Reset panic state and clears all errors that occurred previously.
-    void reset();
+    void reset() noexcept;
 
     /// @brief Indicates whether any error occurred previously.
-    bool hasError() const;
+    bool hasError() const noexcept;
 
     /// @brief Indicates whether a specific error occurred previously.
-    bool hasError(iox::er::ErrorCode code, iox::er::ModuleId module = iox::er::ModuleId()) const;
+    bool hasError(iox::er::ErrorCode code, iox::er::ModuleId module = iox::er::ModuleId()) const noexcept;
 
     /// @brief Indicates whether a assumption violation occurred previously.
     /// @note We do not track module id for violations.
-    bool hasViolation(iox::er::ErrorCode code) const;
+    bool hasViolation(iox::er::ErrorCode code) const noexcept;
 
-    /// @brief Prepare a jump and return jump buffer
-    /// @return pointer to jump buffer if successful, nullptr otherwise
-    jmp_buf* prepareJump();
-
-    /// @brief Returns the value that is set by longjmp in case of a jump.
-    /// @return the jump indicator value
-    static int jumpIndicator();
+    /// @brief runs testFunction in a test context that can detect fatal failures;
+    /// runs in the same thread
+    /// @note uses setjmp/longjmp
+    bool fatalFailureTestContext(const function_ref<void()> testFunction);
 
   private:
-    static constexpr int JUMPED{1};
+    void jump() noexcept;
+
+  private:
+    static constexpr int JUMPED_INDICATOR{1};
 
     mutable std::mutex m_mutex;
     std::atomic<bool> m_panicked{false};
@@ -99,14 +120,25 @@ class TestErrorHandler : public iox::er::ErrorHandlerInterface
     // and we would need multiple jump buffers
     jmp_buf m_jumpBuffer{};
 
+    enum class JumpState : uint8_t
+    {
+        Obtainable,
+        Pending,
+    };
     // Actually not needed to be atomic since it is not supposed to be used from multiple threads
     // (longjmp does not support this)
     // We need to ensure though that only one jump buffer is considered by panic and controlling
     // ownership of the buffer is one way to accomplish that.
-    std::atomic<jmp_buf*> m_jump{nullptr};
-
-    void jump();
+    std::atomic<JumpState> m_jumpState{JumpState::Obtainable};
 };
+
+/// @brief This class hooks into gTest to automatically resets the error handler on the start of a test
+class ErrorHandlerSetup : public ::testing::EmptyTestEventListener
+{
+    void OnTestStart(const ::testing::TestInfo&) override;
+};
+
+using ErrorHandler = iox::StaticLifetimeGuard<iox::testing::TestingErrorHandler>;
 
 } // namespace testing
 } // namespace iox
