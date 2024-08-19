@@ -16,8 +16,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iox/detail/mpmc_loffli.hpp"
-#include "iceoryx_hoofs/cxx/requires.hpp"
 #include "iceoryx_platform/platform_correction.hpp"
+#include "iox/assertions.hpp"
 
 namespace iox
 {
@@ -25,11 +25,11 @@ namespace concurrent
 {
 void MpmcLoFFLi::init(not_null<Index_t*> freeIndicesMemory, const uint32_t capacity) noexcept
 {
-    IOX_EXPECTS_WITH_MSG(capacity > 0, "A capacity of 0 is not supported!");
+    IOX_ENFORCE(capacity > 0, "A capacity of 0 is not supported!");
     constexpr uint32_t INTERNALLY_RESERVED_INDICES{1U};
-    IOX_EXPECTS_WITH_MSG(capacity < (std::numeric_limits<Index_t>::max() - INTERNALLY_RESERVED_INDICES),
-                         "Requested capacity exceeds limits!");
-    IOX_EXPECTS_WITH_MSG(m_head.is_lock_free(), "std::atomic<MpmcLoFFLi::Node> must be lock-free!");
+    IOX_ENFORCE(capacity < (std::numeric_limits<Index_t>::max() - INTERNALLY_RESERVED_INDICES),
+                "Requested capacity exceeds limits!");
+    IOX_ENFORCE(m_head.is_lock_free(), "std::atomic<MpmcLoFFLi::Node> must be lock-free!");
 
     m_nextFreeIndex = freeIndicesMemory;
     m_size = capacity;
@@ -74,7 +74,12 @@ bool MpmcLoFFLi::pop(Index_t& index) noexcept
     m_nextFreeIndex.get()[index] = m_invalidIndex;
 
     /// we need to synchronize m_nextFreeIndex with push so that we can perform a validation
-    /// check right before push to avoid double free's
+    /// check right before push to avoid double free's;
+    /// a simple fence without explicit atomic store should be sufficient since the index needs to be transferred to
+    /// another thread and the most simple method would be a relaxed store of the index in the 'pop' thread and a
+    /// relaxed load of the same atomic in the 'push' thread which would be the atomic in the fence to fence
+    /// synchronization; other mechanism would involve stronger synchronizations and implicitly also synchronize
+    /// m_nextFreeIndex
     std::atomic_thread_fence(std::memory_order_release);
 
     return true;
@@ -83,7 +88,7 @@ bool MpmcLoFFLi::pop(Index_t& index) noexcept
 bool MpmcLoFFLi::push(const Index_t index) noexcept
 {
     /// we synchronize with m_nextFreeIndex in pop to perform the validity check
-    std::atomic_thread_fence(std::memory_order_release);
+    std::atomic_thread_fence(std::memory_order_acquire);
 
     /// we want to avoid double free's therefore we check if the index was acquired
     /// in pop and the push argument "index" is valid

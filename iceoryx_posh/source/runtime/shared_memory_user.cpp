@@ -1,5 +1,6 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
 // Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2024 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +17,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iceoryx_posh/internal/runtime/shared_memory_user.hpp"
-#include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/internal/mepoo/segment_manager.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
+#include "iox/detail/convert.hpp"
 #include "iox/logging.hpp"
 #include "iox/posix_user.hpp"
 
@@ -32,7 +34,8 @@ SharedMemoryUser::SharedMemoryUser(const size_t topicSize,
                                    const UntypedRelativePointer::offset_t segmentManagerAddressOffset) noexcept
 {
     PosixSharedMemoryObjectBuilder()
-        .name(roudi::SHM_NAME)
+        .name(concatenate(iceoryxResourcePrefix(roudi::DEFAULT_UNIQUE_ROUDI_ID, ResourceType::ICEORYX_DEFINED),
+                          roudi::SHM_NAME))
         .memorySizeInBytes(topicSize)
         .accessMode(AccessMode::READ_WRITE)
         .openMode(OpenMode::OPEN_EXISTING)
@@ -46,7 +49,7 @@ SharedMemoryUser::SharedMemoryUser(const size_t topicSize,
 
             if (!registeredSuccessfully)
             {
-                errorHandler(PoshError::POSH__SHM_APP_COULD_NOT_REGISTER_PTR_WITH_GIVEN_SEGMENT_ID);
+                IOX_REPORT_FATAL(PoshError::POSH__SHM_APP_COULD_NOT_REGISTER_PTR_WITH_GIVEN_SEGMENT_ID);
             }
 
             IOX_LOG(DEBUG,
@@ -59,7 +62,22 @@ SharedMemoryUser::SharedMemoryUser(const size_t topicSize,
 
             m_shmObject.emplace(std::move(sharedMemoryObject));
         })
-        .or_else([](auto&) { errorHandler(PoshError::POSH__SHM_APP_MAPP_ERR); });
+        .or_else([](auto&) { IOX_REPORT_FATAL(PoshError::POSH__SHM_APP_MAPP_ERR); });
+}
+
+SharedMemoryUser::~SharedMemoryUser() noexcept
+{
+    for (auto& shm : m_dataShmObjects)
+    {
+        auto segmentId = segment_id_t{UntypedRelativePointer::searchId(shm.getBaseAddress())};
+        UntypedRelativePointer::unregisterPtr(segmentId);
+    }
+
+    if (m_shmObject.has_value())
+    {
+        auto segmentId = segment_id_t{UntypedRelativePointer::searchId(m_shmObject->getBaseAddress())};
+        UntypedRelativePointer::unregisterPtr(segmentId);
+    }
 }
 
 void SharedMemoryUser::openDataSegments(const uint64_t segmentId,
@@ -73,7 +91,21 @@ void SharedMemoryUser::openDataSegments(const uint64_t segmentId,
     {
         auto accessMode = segment.m_isWritable ? AccessMode::READ_WRITE : AccessMode::READ_ONLY;
         PosixSharedMemoryObjectBuilder()
-            .name(segment.m_sharedMemoryName)
+            .name([&segment] {
+                using ShmName_t = detail::PosixSharedMemory::Name_t;
+                ShmName_t shmName = iceoryxResourcePrefix(roudi::DEFAULT_UNIQUE_ROUDI_ID, ResourceType::USER_DEFINED);
+                if (shmName.size() + segment.m_sharedMemoryName.size() > ShmName_t::capacity())
+                {
+                    IOX_LOG(FATAL,
+                            "The payload segment with the name '"
+                                << segment.m_sharedMemoryName.size()
+                                << "' would exceed the maximum allowed size when used with the '" << shmName
+                                << "' prefix!");
+                    IOX_PANIC("");
+                }
+                shmName.append(TruncateToCapacity, segment.m_sharedMemoryName);
+                return shmName;
+            }())
             .memorySizeInBytes(segment.m_size)
             .accessMode(accessMode)
             .openMode(OpenMode::OPEN_EXISTING)
@@ -82,7 +114,7 @@ void SharedMemoryUser::openDataSegments(const uint64_t segmentId,
             .and_then([this, &segment](auto& sharedMemoryObject) {
                 if (static_cast<uint32_t>(m_dataShmObjects.size()) >= MAX_SHM_SEGMENTS)
                 {
-                    errorHandler(PoshError::POSH__SHM_APP_SEGMENT_COUNT_OVERFLOW);
+                    IOX_REPORT_FATAL(PoshError::POSH__SHM_APP_SEGMENT_COUNT_OVERFLOW);
                 }
 
                 auto registeredSuccessfully = UntypedRelativePointer::registerPtrWithId(
@@ -92,7 +124,7 @@ void SharedMemoryUser::openDataSegments(const uint64_t segmentId,
 
                 if (!registeredSuccessfully)
                 {
-                    errorHandler(PoshError::POSH__SHM_APP_COULD_NOT_REGISTER_PTR_WITH_GIVEN_SEGMENT_ID);
+                    IOX_REPORT_FATAL(PoshError::POSH__SHM_APP_COULD_NOT_REGISTER_PTR_WITH_GIVEN_SEGMENT_ID);
                 }
 
                 IOX_LOG(DEBUG,
@@ -103,7 +135,7 @@ void SharedMemoryUser::openDataSegments(const uint64_t segmentId,
 
                 m_dataShmObjects.emplace_back(std::move(sharedMemoryObject));
             })
-            .or_else([](auto&) { errorHandler(PoshError::POSH__SHM_APP_SEGMENT_MAPP_ERR); });
+            .or_else([](auto&) { IOX_REPORT_FATAL(PoshError::POSH__SHM_APP_SEGMENT_MAPP_ERR); });
     }
 }
 } // namespace runtime

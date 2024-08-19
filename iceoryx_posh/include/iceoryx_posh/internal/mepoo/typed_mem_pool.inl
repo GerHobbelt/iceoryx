@@ -17,10 +17,10 @@
 #ifndef IOX_POSH_MEPOO_TYPED_MEM_POOL_INL
 #define IOX_POSH_MEPOO_TYPED_MEM_POOL_INL
 
-#include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
 #include "iceoryx_posh/internal/mepoo/chunk_management.hpp"
 #include "iceoryx_posh/internal/mepoo/typed_mem_pool.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
 
 namespace iox
 {
@@ -30,7 +30,7 @@ template <typename T>
 inline TypedMemPool<T>::TypedMemPool(const greater_or_equal<uint32_t, 1> numberOfChunks,
                                      BumpAllocator& managementAllocator,
                                      BumpAllocator& chunkMemoryAllocator) noexcept
-    : m_memPool(static_cast<uint32_t>(requiredChunkSize()), numberOfChunks, managementAllocator, chunkMemoryAllocator)
+    : m_memPool(requiredChunkSize(), numberOfChunks, managementAllocator, chunkMemoryAllocator)
     , m_chunkManagementPool(sizeof(ChunkManagement), numberOfChunks, managementAllocator, managementAllocator)
 {
 }
@@ -47,7 +47,7 @@ inline expected<ChunkManagement*, TypedMemPoolError> TypedMemPool<T>::acquireChu
     ChunkManagement* chunkManagement = static_cast<ChunkManagement*>(m_chunkManagementPool.getChunk());
     if (chunkManagement == nullptr)
     {
-        errorHandler(PoshError::MEPOO__TYPED_MEMPOOL_HAS_INCONSISTENT_STATE);
+        IOX_REPORT_FATAL(PoshError::MEPOO__TYPED_MEMPOOL_HAS_INCONSISTENT_STATE);
         return err(TypedMemPoolError::FatalErrorReachedInconsistentState);
     }
 
@@ -75,7 +75,7 @@ inline expected<SharedPointer<T>, TypedMemPoolError> TypedMemPool<T>::createObje
 
     if (newObject.has_error())
     {
-        errorHandler(PoshError::MEPOO__TYPED_MEMPOOL_MANAGEMENT_SEGMENT_IS_BROKEN);
+        IOX_REPORT_FATAL(PoshError::MEPOO__TYPED_MEMPOOL_MANAGEMENT_SEGMENT_IS_BROKEN);
         return err(TypedMemPoolError::FatalErrorReachedInconsistentState);
     }
 
@@ -101,7 +101,7 @@ inline uint64_t TypedMemPool<T>::requiredChunkSize() noexcept
     // this is safe since we use correct values for size and alignment
     auto& chunkSettings = chunkSettingsResult.value();
 
-    return align(static_cast<uint64_t>(chunkSettings.requiredChunkSize()), MemPool::CHUNK_MEMORY_ALIGNMENT);
+    return align(chunkSettings.requiredChunkSize(), MemPool::CHUNK_MEMORY_ALIGNMENT);
 }
 
 template <typename T>

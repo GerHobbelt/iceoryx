@@ -17,7 +17,7 @@
 #ifndef IOX_HOOFS_VOCABULARY_SPAN_ITERATOR_HPP
 #define IOX_HOOFS_VOCABULARY_SPAN_ITERATOR_HPP
 
-// Use 'assert's as 'IOX_EXPECTS' is not useable inside 'constexpr' functions
+// Use 'assert's as 'IOX_ASSERT'/'IOX_ENFORCE' is not useable inside 'constexpr' functions
 #include <cassert>
 #include <iterator> // for reverse_iterator, distance, random_access_...
 
@@ -32,6 +32,7 @@ class span_iterator final
     using value_type = std::remove_cv_t<T>;
     using difference_type = std::ptrdiff_t;
     using pointer = T*;
+    using const_pointer = const T*;
     using reference = T&;
 
     constexpr span_iterator(const span_iterator& other) = default;
@@ -215,8 +216,8 @@ class span_iterator final
         return !(*this < rhs);
     }
 
-    const pointer m_begin{nullptr};
-    const pointer m_end{nullptr};
+    const_pointer m_begin{nullptr};
+    const_pointer m_end{nullptr};
     pointer m_current{nullptr};
 };
 } // namespace iox

@@ -20,6 +20,7 @@
 #include "iceoryx_posh/internal/mepoo/shared_chunk.hpp"
 #include "iceoryx_posh/mepoo/chunk_header.hpp"
 #include "iceoryx_posh/mepoo/mepoo_config.hpp"
+#include "iox/assertions.hpp"
 #include "iox/bump_allocator.hpp"
 
 #include "test.hpp"
@@ -42,13 +43,10 @@ class ShmSafeUnmanagedChunk_test : public Test
 
     SharedChunk getChunkFromMemoryManager()
     {
-        auto chunkSettingsResult = iox::mepoo::ChunkSettings::create(sizeof(bool), alignof(bool));
-        IOX_ENSURES(chunkSettingsResult.has_value());
-        auto& chunkSettings = chunkSettingsResult.value();
+        auto chunkSettings =
+            iox::mepoo::ChunkSettings::create(sizeof(bool), alignof(bool)).expect("Valid 'ChunkSettings'");
 
-        auto getChunkResult = memoryManager.getChunk(chunkSettings);
-        IOX_ENSURES(getChunkResult.has_value());
-        return getChunkResult.value();
+        return memoryManager.getChunk(chunkSettings).expect("Obtaining chunk");
     }
 
     iox::mepoo::MemoryManager memoryManager;
@@ -58,7 +56,7 @@ class ShmSafeUnmanagedChunk_test : public Test
     static constexpr size_t MEMORY_SIZE = 100 * KILOBYTE;
     std::unique_ptr<char[]> m_memory{new char[MEMORY_SIZE]};
     static constexpr uint32_t NUM_CHUNKS_IN_POOL = 100;
-    static constexpr uint32_t CHUNK_SIZE = 128;
+    static constexpr uint64_t CHUNK_SIZE = 128;
 
     iox::BumpAllocator m_memoryAllocator{m_memory.get(), MEMORY_SIZE};
 };

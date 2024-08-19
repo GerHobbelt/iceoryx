@@ -18,9 +18,10 @@ extern "C" {
 #include "iceoryx_binding_c/runtime.h"
 }
 
-#include "iceoryx_hoofs/error_handling/error_handling.hpp"
-#include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
+#include "iox/detail/hoofs_error_reporting.hpp"
+
+#include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "iceoryx_posh/roudi_env/minimal_roudi_config.hpp"
 #include "iceoryx_posh/testing/roudi_gtest.hpp"
 
@@ -65,14 +66,18 @@ TEST_F(BindingC_Runtime_test, SuccessfulRegistration)
 TEST_F(BindingC_Runtime_test, RuntimeNameLengthIsMax)
 {
     ::testing::Test::RecordProperty("TEST_ID", "854a471d-936e-4c98-b56e-ba8a7d83460e");
-    std::string maxName(iox::MAX_RUNTIME_NAME_LENGTH, 's');
+
+    RuntimeName_t dummy{"a"};
+    auto prefixLength =
+        runtime::ipcChannelNameToInterfaceName(dummy, ResourceType::USER_DEFINED).value().size() - dummy.size();
+    std::string maxName(iox::MAX_RUNTIME_NAME_LENGTH - prefixLength, 's');
 
     iox_runtime_init(maxName.c_str());
 
     char actualRuntimeName[iox::MAX_RUNTIME_NAME_LENGTH + 1];
     auto nameLength = iox_runtime_get_instance_name(actualRuntimeName, iox::MAX_RUNTIME_NAME_LENGTH + 1);
 
-    ASSERT_THAT(nameLength, Eq(iox::MAX_RUNTIME_NAME_LENGTH));
+    ASSERT_THAT(nameLength, Eq(iox::MAX_RUNTIME_NAME_LENGTH - prefixLength));
 }
 
 TEST_F(BindingC_Runtime_test, RuntimeNameLengthIsOutOfLimit)
@@ -80,19 +85,18 @@ TEST_F(BindingC_Runtime_test, RuntimeNameLengthIsOutOfLimit)
     ::testing::Test::RecordProperty("TEST_ID", "8fd6735d-f331-4c9c-9a91-3f06d3856d15");
     std::string tooLongName(iox::MAX_RUNTIME_NAME_LENGTH + 1, 's');
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>(
+    IOX_EXPECT_FATAL_FAILURE(
         [&] {
             iox_runtime_init(tooLongName.c_str());
             ;
         },
-        iox::HoofsError::EXPECTS_ENSURES_FAILED);
+        iox::er::ENFORCE_VIOLATION);
 }
 
 TEST_F(BindingC_Runtime_test, RuntimeNameIsNullptr)
 {
     ::testing::Test::RecordProperty("TEST_ID", "eb1b76c9-5420-42a9-88b3-db2e36e332de");
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { iox_runtime_init(nullptr); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox_runtime_init(nullptr); }, iox::er::ENFORCE_VIOLATION);
 }
 
 TEST_F(BindingC_Runtime_test, GetInstanceNameIsNullptr)

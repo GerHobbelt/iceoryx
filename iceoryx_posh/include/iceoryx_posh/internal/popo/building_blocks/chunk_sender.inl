@@ -19,6 +19,7 @@
 #define IOX_POSH_POPO_BUILDING_BLOCKS_CHUNK_SENDER_INL
 
 #include "iceoryx_posh/internal/popo/building_blocks/chunk_sender.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
 
 namespace iox
 {
@@ -96,7 +97,7 @@ inline typename ChunkSender<ChunkSenderDataType>::MemberType_t* ChunkSender<Chun
 template <typename ChunkSenderDataType>
 inline expected<mepoo::ChunkHeader*, AllocationError>
 ChunkSender<ChunkSenderDataType>::tryAllocate(const UniquePortId originId,
-                                              const uint32_t userPayloadSize,
+                                              const uint64_t userPayloadSize,
                                               const uint32_t userPayloadAlignment,
                                               const uint32_t userHeaderSize,
                                               const uint32_t userHeaderAlignment) noexcept
@@ -113,7 +114,7 @@ ChunkSender<ChunkSenderDataType>::tryAllocate(const UniquePortId originId,
     }
 
     const auto& chunkSettings = chunkSettingsResult.value();
-    const uint32_t requiredChunkSize = chunkSettings.requiredChunkSize();
+    const uint64_t requiredChunkSize = chunkSettings.requiredChunkSize();
 
     auto& lastChunkUnmanaged = getMembers()->m_lastChunkUnmanaged;
     mepoo::ChunkHeader* lastChunkChunkHeader =
@@ -172,7 +173,7 @@ inline void ChunkSender<ChunkSenderDataType>::release(const mepoo::ChunkHeader* 
     // d'tor of SharedChunk will release the memory, we do not have to touch the returned chunk
     if (!getMembers()->m_chunksInUse.remove(chunkHeader, chunk))
     {
-        errorHandler(PoshError::POPO__CHUNK_SENDER_INVALID_CHUNK_TO_FREE_FROM_USER, ErrorLevel::SEVERE);
+        IOX_REPORT(PoshError::POPO__CHUNK_SENDER_INVALID_CHUNK_TO_FREE_FROM_USER, iox::er::RUNTIME_ERROR);
     }
 }
 
@@ -262,7 +263,7 @@ inline bool ChunkSender<ChunkSenderDataType>::getChunkReadyForSend(const mepoo::
     }
     else
     {
-        errorHandler(PoshError::POPO__CHUNK_SENDER_INVALID_CHUNK_TO_SEND_FROM_USER, ErrorLevel::SEVERE);
+        IOX_REPORT(PoshError::POPO__CHUNK_SENDER_INVALID_CHUNK_TO_SEND_FROM_USER, iox::er::RUNTIME_ERROR);
         return false;
     }
 }

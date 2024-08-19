@@ -16,16 +16,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iceoryx_hoofs/testing/mocks/logger_mock.hpp"
-#include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
 #include "iceoryx_posh/internal/mepoo/memory_manager.hpp"
 #include "iceoryx_posh/internal/popo/building_blocks/chunk_queue_pusher.hpp"
 #include "iceoryx_posh/internal/popo/building_blocks/chunk_receiver.hpp"
 #include "iceoryx_posh/internal/popo/building_blocks/chunk_receiver_data.hpp"
 #include "iceoryx_posh/internal/popo/building_blocks/locking_policy.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
 #include "iceoryx_posh/mepoo/mepoo_config.hpp"
 #include "iceoryx_posh/testing/mocks/chunk_mock.hpp"
+#include "iox/assertions.hpp"
 #include "iox/bump_allocator.hpp"
+
+#include "iceoryx_hoofs/testing/error_reporting/testing_support.hpp"
 #include "test.hpp"
 
 #include <memory>
@@ -63,13 +66,10 @@ class ChunkReceiver_test : public Test
 
     iox::mepoo::SharedChunk getChunkFromMemoryManager()
     {
-        auto chunkSettingsResult = iox::mepoo::ChunkSettings::create(sizeof(DummySample), alignof(DummySample));
-        IOX_ENSURES(chunkSettingsResult.has_value());
-        auto& chunkSettings = chunkSettingsResult.value();
+        auto chunkSettings = iox::mepoo::ChunkSettings::create(sizeof(DummySample), alignof(DummySample))
+                                 .expect("Valid 'ChunkSettings'");
 
-        auto getChunkResult = m_memoryManager.getChunk(chunkSettings);
-        IOX_ENSURES(getChunkResult.has_value());
-        return getChunkResult.value();
+        return m_memoryManager.getChunk(chunkSettings).expect("Obtaining chunk");
     }
 
     static constexpr size_t MEGABYTE = 1 << 20;
@@ -77,7 +77,7 @@ class ChunkReceiver_test : public Test
     std::unique_ptr<char[]> m_memory{new char[MEMORY_SIZE]};
     static constexpr uint32_t NUM_CHUNKS_IN_POOL =
         iox::MAX_CHUNKS_HELD_PER_SUBSCRIBER_SIMULTANEOUSLY + iox::MAX_SUBSCRIBER_QUEUE_CAPACITY;
-    static constexpr uint32_t CHUNK_SIZE = 128;
+    static constexpr uint64_t CHUNK_SIZE = 128;
 
     iox::BumpAllocator m_memoryAllocator{m_memory.get(), MEMORY_SIZE};
     iox::mepoo::MePooConfig m_mempoolconf;
@@ -199,14 +199,11 @@ TEST_F(ChunkReceiver_test, releaseInvalidChunk)
         EXPECT_TRUE(sharedChunk.getUserPayload() == (*maybeChunkHeader)->userPayload());
     }
 
-    auto errorHandlerCalled{false};
-    auto errorHandlerGuard = iox::ErrorHandlerMock::setTemporaryErrorHandler<iox::PoshError>(
-        [&errorHandlerCalled](const iox::PoshError, const iox::ErrorLevel) { errorHandlerCalled = true; });
-
     ChunkMock<bool> myCrazyChunk;
     m_chunkReceiver.release(myCrazyChunk.chunkHeader());
 
-    EXPECT_TRUE(errorHandlerCalled);
+    IOX_TESTING_EXPECT_ERROR(iox::PoshError::POPO__CHUNK_RECEIVER_INVALID_CHUNK_TO_RELEASE_FROM_USER);
+
     EXPECT_THAT(m_memoryManager.getMemPoolInfo(0).m_usedChunks, Eq(1U));
 }
 

@@ -16,11 +16,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "iceoryx_hoofs/error_handling/error_handling.hpp"
-#include "iceoryx_hoofs/testing/fatal_failure.hpp"
-#include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/internal/mepoo/mem_pool.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
 #include "iox/bump_allocator.hpp"
+#include "iox/detail/hoofs_error_reporting.hpp"
+
+#include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "test.hpp"
 
 namespace
@@ -33,7 +34,7 @@ class MemPool_test : public Test
 {
   public:
     static constexpr uint32_t NUMBER_OF_CHUNKS{100U};
-    static constexpr uint32_t CHUNK_SIZE{64U};
+    static constexpr uint64_t CHUNK_SIZE{64U};
 
     using FreeListIndex_t = iox::mepoo::MemPool::freeList_t::Index_t;
     static constexpr FreeListIndex_t LOFFLI_MEMORY_REQUIREMENT{
@@ -60,7 +61,7 @@ TEST_F(MemPool_test, MempoolIndexToPointerConversionForIndexZeroWorks)
     ::testing::Test::RecordProperty("TEST_ID", "107222a6-7a48-44f1-93c5-9a1f56f3d319");
 
     constexpr uint32_t INDEX{0};
-    constexpr uint32_t CHUNK_SIZE{128};
+    constexpr uint64_t CHUNK_SIZE{128};
     uint8_t* const RAW_MEMORY_BASE{reinterpret_cast<uint8_t*>(0x7f60d90c5000ULL)};
     uint8_t* const EXPECTED_CHUNK_PTR{RAW_MEMORY_BASE};
 
@@ -74,7 +75,7 @@ TEST_F(MemPool_test, MempoolIndexToPointerConversionForIndexOneWorks)
     ::testing::Test::RecordProperty("TEST_ID", "fda231af-87a9-4292-be1e-e443aa7cff63");
 
     constexpr uint32_t INDEX{1};
-    constexpr uint32_t CHUNK_SIZE{128};
+    constexpr uint64_t CHUNK_SIZE{128};
     uint8_t* const RAW_MEMORY_BASE{reinterpret_cast<uint8_t*>(0x7f60d90c5000ULL)};
     uint8_t* const EXPECTED_CHUNK_PTR{RAW_MEMORY_BASE + CHUNK_SIZE};
 
@@ -88,9 +89,9 @@ TEST_F(MemPool_test, MempoolIndexToPointerConversionForMemoryOffsetsLargerThan4G
     ::testing::Test::RecordProperty("TEST_ID", "2112326a-5ec3-4bc8-9aa3-500ffef202fd");
 
     constexpr uint32_t INDEX{42};
-    constexpr uint32_t MB{1UL << 20};
+    constexpr uint64_t MB{1UL << 20};
     constexpr uint64_t GB{1ULL << 30};
-    constexpr uint32_t CHUNK_SIZE{128 * MB};
+    constexpr uint64_t CHUNK_SIZE{128 * MB};
     uint8_t* const RAW_MEMORY_BASE{reinterpret_cast<uint8_t*>(0x7f60d90c5000ULL)};
     uint8_t* const EXPECTED_CHUNK_PTR{RAW_MEMORY_BASE + static_cast<uint64_t>(INDEX) * CHUNK_SIZE};
 
@@ -104,7 +105,7 @@ TEST_F(MemPool_test, MempoolPointerToIndexConversionForIndexZeroWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "37b23350-b562-4e89-a452-2f3d328bc016");
 
-    constexpr uint32_t CHUNK_SIZE{128};
+    constexpr uint64_t CHUNK_SIZE{128};
     uint8_t* const RAW_MEMORY_BASE{reinterpret_cast<uint8_t*>(0x7f60d90c5000ULL)};
     uint8_t* const CHUNK_PTR{RAW_MEMORY_BASE};
     constexpr uint32_t EXPECTED_INDEX{0};
@@ -118,7 +119,7 @@ TEST_F(MemPool_test, MempoolPointerToIndexConversionForIndexOneWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "64349d9a-1a97-4ba0-a04f-07c929befe38");
 
-    constexpr uint32_t CHUNK_SIZE{128};
+    constexpr uint64_t CHUNK_SIZE{128};
     uint8_t* const RAW_MEMORY_BASE{reinterpret_cast<uint8_t*>(0x7f60d90c5000ULL)};
     uint8_t* const CHUNK_PTR{RAW_MEMORY_BASE + CHUNK_SIZE};
     constexpr uint32_t EXPECTED_INDEX{1};
@@ -132,9 +133,9 @@ TEST_F(MemPool_test, MempoolPointeToIndexConversionForMemoryOffsetsLargerThan4GB
 {
     ::testing::Test::RecordProperty("TEST_ID", "45e09ada-97b9-435d-a59a-d377d4e4fb69");
 
-    constexpr uint32_t MB{1UL << 20};
+    constexpr uint64_t MB{1UL << 20};
     constexpr uint64_t GB{1ULL << 30};
-    constexpr uint32_t CHUNK_SIZE{128 * MB};
+    constexpr uint64_t CHUNK_SIZE{128 * MB};
     uint8_t* const RAW_MEMORY_BASE{reinterpret_cast<uint8_t*>(0x7f60d90c5000ULL)};
     constexpr uint32_t EXPECTED_INDEX{42};
     uint8_t* const CHUNK_PTR{RAW_MEMORY_BASE + static_cast<uint64_t>(EXPECTED_INDEX) * CHUNK_SIZE};
@@ -164,20 +165,11 @@ TEST_F(MemPool_test, MempoolCtorWhenChunkSizeIsNotAMultipleOfAlignmentReturnErro
     ::testing::Test::RecordProperty("TEST_ID", "ee06090a-8e3c-4df2-b74e-ed50e29b84e6");
     char memory[8192U];
     iox::BumpAllocator allocator{memory, 100U};
-    constexpr uint32_t NOT_ALLIGNED_CHUNKED_SIZE{33U};
+    constexpr uint64_t NOT_ALLIGNED_CHUNKED_SIZE{33U};
 
-    iox::optional<iox::PoshError> detectedError;
-    auto errorHandlerGuard = iox::ErrorHandlerMock::setTemporaryErrorHandler<iox::PoshError>(
-        [&detectedError](const iox::PoshError error, const iox::ErrorLevel errorLevel) {
-            detectedError.emplace(error);
-            EXPECT_THAT(errorLevel, Eq(iox::ErrorLevel::FATAL));
-        });
-
-    iox::mepoo::MemPool sut(NOT_ALLIGNED_CHUNKED_SIZE, NUMBER_OF_CHUNKS, allocator, allocator);
-
-    ASSERT_TRUE(detectedError.has_value());
-    EXPECT_THAT(detectedError.value(),
-                Eq(iox::PoshError::MEPOO__MEMPOOL_CHUNKSIZE_MUST_BE_MULTIPLE_OF_CHUNK_MEMORY_ALIGNMENT));
+    IOX_EXPECT_FATAL_FAILURE(
+        [&] { iox::mepoo::MemPool sut(NOT_ALLIGNED_CHUNKED_SIZE, NUMBER_OF_CHUNKS, allocator, allocator); },
+        iox::PoshError::MEPOO__MEMPOOL_CHUNKSIZE_MUST_BE_MULTIPLE_OF_CHUNK_MEMORY_ALIGNMENT);
 }
 
 TEST_F(MemPool_test, MempoolCtorWhenChunkSizeIsSmallerThanChunkMemoryAlignmentGetsTerminated)
@@ -185,11 +177,11 @@ TEST_F(MemPool_test, MempoolCtorWhenChunkSizeIsSmallerThanChunkMemoryAlignmentGe
     ::testing::Test::RecordProperty("TEST_ID", "52df897a-0847-476c-9d2f-99cb16432199");
     constexpr uint32_t CHUNK_SIZE_SMALLER_THAN_MEMORY_ALIGNMENT = iox::mepoo::MemPool::CHUNK_MEMORY_ALIGNMENT - 1U;
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>(
+    IOX_EXPECT_FATAL_FAILURE(
         [&] {
             iox::mepoo::MemPool sut(CHUNK_SIZE_SMALLER_THAN_MEMORY_ALIGNMENT, NUMBER_OF_CHUNKS, allocator, allocator);
         },
-        iox::HoofsError::EXPECTS_ENSURES_FAILED);
+        iox::er::FATAL);
 }
 
 TEST_F(MemPool_test, MempoolCtorWhenNumberOfChunksIsZeroGetsTerminated)
@@ -197,9 +189,8 @@ TEST_F(MemPool_test, MempoolCtorWhenNumberOfChunksIsZeroGetsTerminated)
     ::testing::Test::RecordProperty("TEST_ID", "a5c43e1b-e5b5-4a69-8c4c-8b95752ade8e");
     constexpr uint32_t INVALID_NUMBER_OF_CHUNKS = 0U;
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>(
-        [&] { iox::mepoo::MemPool sut(CHUNK_SIZE, INVALID_NUMBER_OF_CHUNKS, allocator, allocator); },
-        iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE(
+        [&] { iox::mepoo::MemPool sut(CHUNK_SIZE, INVALID_NUMBER_OF_CHUNKS, allocator, allocator); }, iox::er::FATAL);
 }
 TEST_F(MemPool_test, GetChunkMethodWhenAllTheChunksAreUsedReturnsNullPointer)
 {
@@ -275,17 +266,8 @@ TEST_F(MemPool_test, FreeChunkMethodWhenSameChunkIsTriedToFreeTwiceReturnsError)
     constexpr uint32_t INDEX{0U};
     chunks.push_back(reinterpret_cast<uint8_t*>(sut.getChunk()));
     sut.freeChunk(chunks[INDEX]);
-    iox::optional<iox::PoshError> detectedError;
-    auto errorHandlerGuard = iox::ErrorHandlerMock::setTemporaryErrorHandler<iox::PoshError>(
-        [&detectedError](const iox::PoshError error, const iox::ErrorLevel errorLevel) {
-            detectedError.emplace(error);
-            EXPECT_THAT(errorLevel, Eq(iox::ErrorLevel::FATAL));
-        });
 
-    sut.freeChunk(chunks[INDEX]);
-
-    ASSERT_TRUE(detectedError.has_value());
-    EXPECT_THAT(detectedError.value(), Eq(iox::PoshError::POSH__MEMPOOL_POSSIBLE_DOUBLE_FREE));
+    IOX_EXPECT_FATAL_FAILURE([&] { sut.freeChunk(chunks[INDEX]); }, iox::PoshError::POSH__MEMPOOL_POSSIBLE_DOUBLE_FREE);
 }
 
 TEST_F(MemPool_test, FreeChunkMethodWhenTheChunkIndexIsInvalidReturnsError)
@@ -295,8 +277,7 @@ TEST_F(MemPool_test, FreeChunkMethodWhenTheChunkIndexIsInvalidReturnsError)
     constexpr uint32_t INVALID_INDEX{1U};
     chunks.push_back(reinterpret_cast<uint8_t*>(sut.getChunk()));
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { sut.freeChunk(chunks[INVALID_INDEX]); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { sut.freeChunk(chunks[INVALID_INDEX]); }, iox::er::ENFORCE_VIOLATION);
 }
 
 TEST_F(MemPool_test, GetMinFreeMethodReturnsTheNumberOfFreeChunks)
@@ -314,18 +295,16 @@ TEST_F(MemPool_test, dieWhenMempoolChunkSizeIsSmallerThan32Bytes)
 {
     ::testing::Test::RecordProperty("TEST_ID", "7704246e-42b5-46fd-8827-ebac200390e1");
 
-    IOX_EXPECT_FATAL_FAILURE<iox::PoshError>(
-        [&] { iox::mepoo::MemPool sut(12, 10, allocator, allocator); },
-        iox::PoshError::MEPOO__MEMPOOL_CHUNKSIZE_MUST_BE_MULTIPLE_OF_CHUNK_MEMORY_ALIGNMENT);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox::mepoo::MemPool sut(12, 10, allocator, allocator); },
+                             iox::PoshError::MEPOO__MEMPOOL_CHUNKSIZE_MUST_BE_MULTIPLE_OF_CHUNK_MEMORY_ALIGNMENT);
 }
 
 TEST_F(MemPool_test, dieWhenMempoolChunkSizeIsNotPowerOf32)
 {
     ::testing::Test::RecordProperty("TEST_ID", "6a354976-235a-4a94-8af2-2bc872f705f4");
 
-    IOX_EXPECT_FATAL_FAILURE<iox::PoshError>(
-        [&] { iox::mepoo::MemPool sut(333, 10, allocator, allocator); },
-        iox::PoshError::MEPOO__MEMPOOL_CHUNKSIZE_MUST_BE_MULTIPLE_OF_CHUNK_MEMORY_ALIGNMENT);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox::mepoo::MemPool sut(333, 10, allocator, allocator); },
+                             iox::PoshError::MEPOO__MEMPOOL_CHUNKSIZE_MUST_BE_MULTIPLE_OF_CHUNK_MEMORY_ALIGNMENT);
 }
 
 } // namespace

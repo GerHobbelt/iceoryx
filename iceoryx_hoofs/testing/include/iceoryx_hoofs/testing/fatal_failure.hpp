@@ -17,9 +17,12 @@
 #ifndef IOX_HOOFS_TESTING_FATAL_FAILURE_HPP
 #define IOX_HOOFS_TESTING_FATAL_FAILURE_HPP
 
-#include "iceoryx_hoofs/testing/mocks/error_handler_mock.hpp"
+#include "iox/error_reporting/error_kind.hpp"
+#include "iox/error_reporting/types.hpp"
 #include "iox/function_ref.hpp"
-#include "iox/optional.hpp"
+#include "iox/logging.hpp"
+
+#include "iceoryx_hoofs/testing/error_reporting/testing_support.hpp"
 #include "test.hpp"
 
 #include <atomic>
@@ -32,28 +35,12 @@ namespace iox
 {
 namespace testing
 {
-namespace detail
-{
-/// @brief This function is the base for 'IOX_EXPECT_FATAL_FAILURE' and 'IOX_EXPECT_NO_FATAL_FAILURE' and should not be
-/// used by its own. The function only works in combination with the iceoryx error handler.
-/// @tparam[in] ErrorType The error type which is expected, e.g. 'iox::HoofsError'
-/// @param[in] testFunction This function will be executed as SUT and might call the error handler with a 'FATAL' error
-/// level
-/// @param[in] onFatalFailurePath This function will be executed on the failure path after the failure was detected
-/// @param[in] onNonFatalFailurePath This function will be executed on the non-failure path if no failure was detected
-/// @return true if a fatal failure occurs, false otherwise
-template <typename ErrorType>
-bool IOX_FATAL_FAILURE_TEST(const function_ref<void()> testFunction,
-                            const function_ref<void(const ErrorType, const iox::ErrorLevel)> onFatalFailurePath,
-                            const function_ref<void()> onNonFatalFailurePath);
-} // namespace detail
-
 /// @brief This function is used in cases a fatal failure is expected. The function only works in combination with the
 /// iceoryx error handler.
 /// @code
 /// TEST(MyTest, valueOnNulloptIsFatal) {
 ///     iox::optional<bool> sut;
-///     IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { sut.value(); }, iox::HoofsError::EXPECTS_ENSURES_FAILED));
+///     IOX_EXPECT_FATAL_FAILURE([&] { sut.value(); }, iox::er::ENFORCE_VIOLATION));
 /// }
 /// @endcode
 /// @tparam[in] ErrorType The error type which is expected, e.g. 'iox::HoofsError'
@@ -68,18 +55,15 @@ bool IOX_EXPECT_FATAL_FAILURE(const function_ref<void()> testFunction, const Err
 /// @code
 /// TEST(MyTest, valueIsNotFatal) {
 ///     iox::optional<bool> sut{false};
-///     IOX_EXPECT_NO_FATAL_FAILURE<iox::HoofsError>([&] { sut.value(); });
+///     IOX_EXPECT_NO_FATAL_FAILURE([&] { sut.value(); });
 /// }
 /// @endcode
-/// @tparam[in] ErrorType The error type which is expected if the test fails, e.g. 'iox::HoofsError'
 /// @param[in] testFunction This function will be executed as SUT and is not expected to call the error handler
 /// @return true if no fatal failure occurs, false otherwise
-template <typename ErrorType>
 bool IOX_EXPECT_NO_FATAL_FAILURE(const function_ref<void()> testFunction);
 
 } // namespace testing
 } // namespace iox
-
 
 #include "iceoryx_hoofs/testing/fatal_failure.inl"
 

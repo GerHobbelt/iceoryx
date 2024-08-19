@@ -1,6 +1,6 @@
 // Copyright (c) 2019 by Robert Bosch GmbH. All rights reserved.
 // Copyright (c) 2021 - 2022 by Apex.AI Inc. All rights reserved.
-// Copyright (c) 2023 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
+// Copyright (c) 2023 - 2024 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@
 #ifndef IOX_POSH_MEPOO_MEPOO_SEGMENT_INL
 #define IOX_POSH_MEPOO_MEPOO_SEGMENT_INL
 
-#include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/internal/mepoo/mepoo_segment.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
 #include "iceoryx_posh/mepoo/memory_info.hpp"
 #include "iceoryx_posh/mepoo/mepoo_config.hpp"
 #include "iox/bump_allocator.hpp"
+#include "iox/detail/convert.hpp"
 #include "iox/logging.hpp"
 #include "iox/relative_pointer.hpp"
 
@@ -58,7 +59,7 @@ inline MePooSegment<SharedMemoryObjectType, MemoryManagerType>::MePooSegment(
 
     if (!acl.writePermissionsToFile(m_sharedMemoryObject.getFileHandle()))
     {
-        errorHandler(PoshError::MEPOO__SEGMENT_COULD_NOT_APPLY_POSIX_RIGHTS_TO_SHARED_MEMORY);
+        IOX_REPORT_FATAL(PoshError::MEPOO__SEGMENT_COULD_NOT_APPLY_POSIX_RIGHTS_TO_SHARED_MEMORY);
     }
 
     BumpAllocator allocator(m_sharedMemoryObject.getBaseAddress(),
@@ -72,7 +73,21 @@ inline SharedMemoryObjectType MePooSegment<SharedMemoryObjectType, MemoryManager
 {
     return std::move(
         typename SharedMemoryObjectType::Builder()
-            .name(writerGroup.getName())
+            .name([&writerGroup] {
+                using ShmName_t = detail::PosixSharedMemory::Name_t;
+                ShmName_t shmName = iceoryxResourcePrefix(roudi::DEFAULT_UNIQUE_ROUDI_ID, ResourceType::USER_DEFINED);
+                if (shmName.size() + writerGroup.getName().size() > ShmName_t::capacity())
+                {
+                    IOX_LOG(FATAL,
+                            "The payload segment with the name '"
+                                << writerGroup.getName().size()
+                                << "' would exceed the maximum allowed size when used with the '" << shmName
+                                << "' prefix!");
+                    IOX_PANIC("");
+                }
+                shmName.append(TruncateToCapacity, writerGroup.getName());
+                return shmName;
+            }())
             .memorySizeInBytes(MemoryManager::requiredChunkMemorySize(mempoolConfig))
             .accessMode(AccessMode::READ_WRITE)
             .openMode(OpenMode::PURGE_AND_CREATE)
@@ -84,7 +99,7 @@ inline SharedMemoryObjectType MePooSegment<SharedMemoryObjectType, MemoryManager
                     sharedMemoryObject.get_size().expect("Failed to get SHM size"));
                 if (!maybeSegmentId.has_value())
                 {
-                    errorHandler(PoshError::MEPOO__SEGMENT_INSUFFICIENT_SEGMENT_IDS);
+                    IOX_REPORT_FATAL(PoshError::MEPOO__SEGMENT_INSUFFICIENT_SEGMENT_IDS);
                 }
                 this->m_segmentId = static_cast<uint64_t>(maybeSegmentId.value());
                 this->m_segmentSize = sharedMemoryObject.get_size().expect("Failed to get SHM size.");
@@ -94,7 +109,7 @@ inline SharedMemoryObjectType MePooSegment<SharedMemoryObjectType, MemoryManager
                                                                  << " with size " << m_segmentSize << " to id "
                                                                  << m_segmentId);
             })
-            .or_else([](auto&) { errorHandler(PoshError::MEPOO__SEGMENT_UNABLE_TO_CREATE_SHARED_MEMORY_OBJECT); })
+            .or_else([](auto&) { IOX_REPORT_FATAL(PoshError::MEPOO__SEGMENT_UNABLE_TO_CREATE_SHARED_MEMORY_OBJECT); })
             .value());
 }
 

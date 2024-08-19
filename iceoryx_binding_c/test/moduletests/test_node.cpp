@@ -15,10 +15,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "iceoryx_hoofs/error_handling/error_handling.hpp"
-#include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "iceoryx_posh/roudi_env/minimal_roudi_config.hpp"
 #include "iceoryx_posh/runtime/posh_runtime.hpp"
+#include "iox/detail/hoofs_error_reporting.hpp"
+
+#include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "iceoryx_posh/testing/roudi_gtest.hpp"
 #include <gtest/gtest.h>
 
@@ -129,8 +130,7 @@ TEST_F(iox_node_test, getNodeRuntimeNameBufferIsLessThanNodeProcessNameLength)
 TEST_F(iox_node_test, destroyNodeWithNullptrFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "c5665aef-0710-4300-a99f-f968739e5222");
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { iox_node_destroy(nullptr); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox_node_destroy(nullptr); }, iox::er::ENFORCE_VIOLATION);
 }
 
 } // namespace

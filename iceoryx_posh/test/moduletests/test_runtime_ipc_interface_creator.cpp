@@ -15,10 +15,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #if !defined(_WIN32)
-#include "iceoryx_hoofs/testing/fatal_failure.hpp"
-#include "iceoryx_posh/error_handling/error_handling.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
 #include "iceoryx_posh/internal/runtime/ipc_interface_creator.hpp"
 
+#include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "test.hpp"
 
 #include <chrono>
@@ -59,19 +59,21 @@ class IpcInterfaceCreator_test : public Test
 TEST_F(IpcInterfaceCreator_test, CreateWithDifferentNameWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "4fc22f1f-1333-41a1-8709-4b1ca791a2e1");
-    IpcInterfaceCreator m_sut{goodName};
-    IpcInterfaceCreator m_sut2{anotherGoodName};
-    EXPECT_TRUE(m_sut.isInitialized());
-    EXPECT_TRUE(m_sut2.isInitialized());
+    auto sut = IpcInterfaceCreator::create(goodName, ResourceType::USER_DEFINED).expect("This should never fail");
+    auto sut2 =
+        IpcInterfaceCreator::create(anotherGoodName, ResourceType::USER_DEFINED).expect("This should never fail");
+    EXPECT_TRUE(sut.isInitialized());
+    EXPECT_TRUE(sut2.isInitialized());
 }
 
 TEST_F(IpcInterfaceCreator_test, CreateWithSameNameLeadsToError)
 {
     ::testing::Test::RecordProperty("TEST_ID", "2e8c15c8-1b7b-465b-aae5-6db24fc3c34a");
-    IpcInterfaceCreator m_sut{goodName};
+    auto sut = IpcInterfaceCreator::create(goodName, ResourceType::USER_DEFINED).expect("This should never fail");
+    auto sut2 = IpcInterfaceCreator::create(goodName, ResourceType::USER_DEFINED);
 
-    IOX_EXPECT_FATAL_FAILURE<iox::PoshError>([&] { IpcInterfaceCreator m_sut2{goodName}; },
-                                             iox::PoshError::IPC_INTERFACE__APP_WITH_SAME_NAME_STILL_RUNNING);
+    ASSERT_TRUE(sut2.has_error());
+    ASSERT_THAT(sut2.error(), Eq(IpcInterfaceCreator::Error::INTERFACE_IN_USE));
 }
 
 } // namespace

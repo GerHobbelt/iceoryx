@@ -18,6 +18,7 @@
 #include "iceoryx_posh/internal/roudi/process.hpp"
 #include "iceoryx_platform/types.hpp"
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
 #include "iox/logging.hpp"
 
 using namespace iox::units::duration_literals;
@@ -31,7 +32,7 @@ Process::Process(const RuntimeName_t& name,
                  const HeartbeatPoolIndexType heartbeatPoolIndex,
                  const uint64_t sessionId) noexcept
     : m_pid(pid)
-    , m_ipcChannel(name)
+    , m_ipcChannel(name, ResourceType::USER_DEFINED)
     , m_heartbeatPoolIndex(heartbeatPoolIndex)
     , m_user(user)
     , m_sessionId(sessionId)
@@ -54,7 +55,7 @@ void Process::sendViaIpcChannel(const runtime::IpcMessage& data) noexcept
     if (!sendSuccess)
     {
         IOX_LOG(WARN, "Process cannot send message over communication channel");
-        errorHandler(PoshError::POSH__ROUDI_PROCESS_SEND_VIA_IPC_CHANNEL_FAILED, ErrorLevel::MODERATE);
+        IOX_REPORT(PoshError::POSH__ROUDI_PROCESS_SEND_VIA_IPC_CHANNEL_FAILED, iox::er::RUNTIME_ERROR);
     }
 }
 

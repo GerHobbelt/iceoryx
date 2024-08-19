@@ -22,11 +22,15 @@
 #include "iceoryx_posh/runtime/posh_runtime.hpp"
 #include "iox/detail/periodic_task.hpp"
 #include "iox/function.hpp"
-#include "iox/mutex.hpp"
 #include "iox/optional.hpp"
+#include "iox/smart_lock.hpp"
 
 namespace iox
 {
+namespace posh::experimental
+{
+class Runtime;
+}
 namespace runtime
 {
 enum class RuntimeLocation
@@ -85,10 +89,15 @@ class PoshRuntimeImpl : public PoshRuntime
   protected:
     friend class PoshRuntime;
     friend class roudi_env::RuntimeTestInterface;
+    friend class posh::experimental::Runtime;
 
     // Protected constructor for IPC setup
     PoshRuntimeImpl(optional<const RuntimeName_t*> name,
                     const RuntimeLocation location = RuntimeLocation::SEPARATE_PROCESS_FROM_ROUDI) noexcept;
+
+    PoshRuntimeImpl(optional<const RuntimeName_t*> name,
+                    const RuntimeLocation location,
+                    IpcRuntimeInterface&& ipcRuntimeInterface) noexcept;
 
   private:
     expected<PublisherPortUserType::MemberType_t*, IpcMessageErrorType>
@@ -109,9 +118,8 @@ class PoshRuntimeImpl : public PoshRuntime
     expected<std::tuple<segment_id_underlying_t, UntypedRelativePointer::offset_t>, IpcMessageErrorType>
     convert_id_and_offset(IpcMessage& msg);
 
-    mutable optional<mutex> m_appIpcRequestMutex;
-
-    IpcRuntimeInterface m_ipcChannelInterface;
+  private:
+    concurrent::smart_lock<IpcRuntimeInterface> m_ipcChannelInterface;
     optional<SharedMemoryUser> m_ShmInterface;
 
     optional<Heartbeat*> m_heartbeat;

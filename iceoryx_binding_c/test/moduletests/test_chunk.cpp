@@ -20,9 +20,10 @@ extern "C" {
 #include "iceoryx_binding_c/runtime.h"
 }
 
-#include "iceoryx_hoofs/error_handling/error_handling.hpp"
-#include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "iceoryx_posh/roudi_env/minimal_roudi_config.hpp"
+#include "iox/detail/hoofs_error_reporting.hpp"
+
+#include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "iceoryx_posh/testing/roudi_gtest.hpp"
 
 namespace
@@ -60,7 +61,7 @@ class Chunk_test : public RouDi_GTest
 TEST_F(Chunk_test, GettingChunkHeaderFromNonConstUserPayloadWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "a044b28d-ad7e-45ed-a0e2-e431ef1eacf0");
-    constexpr uint32_t USER_PAYLOAD_SIZE(42U);
+    constexpr uint64_t USER_PAYLOAD_SIZE(42U);
     void* userPayload{nullptr};
     ASSERT_EQ(iox_pub_loan_chunk(publisher, &userPayload, USER_PAYLOAD_SIZE), AllocationResult_SUCCESS);
 
@@ -76,7 +77,7 @@ TEST_F(Chunk_test, GettingChunkHeaderFromNonConstUserPayloadWorks)
 TEST_F(Chunk_test, GettingChunkHeaderFromConstUserPayloadWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "9f7bb07a-f0dd-4b58-af84-5daec365d9e2");
-    constexpr uint32_t USER_PAYLOAD_SIZE(42U);
+    constexpr uint64_t USER_PAYLOAD_SIZE(42U);
     void* userPayload{nullptr};
     ASSERT_EQ(iox_pub_loan_chunk(publisher, &userPayload, USER_PAYLOAD_SIZE), AllocationResult_SUCCESS);
     const void* constUserPayload = userPayload;
@@ -93,7 +94,7 @@ TEST_F(Chunk_test, GettingChunkHeaderFromConstUserPayloadWorks)
 TEST_F(Chunk_test, UserPayloadChunkHeaderUserPayloadRoundtripWorksForNonConst)
 {
     ::testing::Test::RecordProperty("TEST_ID", "ea220aac-4d7d-41c2-92ea-7f929b824555");
-    constexpr uint32_t USER_PAYLOAD_SIZE(42U);
+    constexpr uint64_t USER_PAYLOAD_SIZE(42U);
     void* userPayload{nullptr};
     ASSERT_EQ(iox_pub_loan_chunk(publisher, &userPayload, USER_PAYLOAD_SIZE), AllocationResult_SUCCESS);
     const void* constUserPayload = userPayload;
@@ -107,7 +108,7 @@ TEST_F(Chunk_test, UserPayloadChunkHeaderUserPayloadRoundtripWorksForNonConst)
 TEST_F(Chunk_test, UserPayloadChunkHeaderUserPayloadRoundtripWorksForConst)
 {
     ::testing::Test::RecordProperty("TEST_ID", "e094616d-6d99-4b7f-a619-dd98ec7d1e44");
-    constexpr uint32_t USER_PAYLOAD_SIZE(42U);
+    constexpr uint64_t USER_PAYLOAD_SIZE(42U);
     void* userPayload{nullptr};
     ASSERT_EQ(iox_pub_loan_chunk(publisher, &userPayload, USER_PAYLOAD_SIZE), AllocationResult_SUCCESS);
 
@@ -120,7 +121,7 @@ TEST_F(Chunk_test, UserPayloadChunkHeaderUserPayloadRoundtripWorksForConst)
 TEST_F(Chunk_test, GettingUserHeaderFromNonConstChunkHeaderWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "a0df7284-a377-4c6a-b22b-454d3f7c7b88");
-    constexpr uint32_t USER_PAYLOAD_SIZE(42U);
+    constexpr uint64_t USER_PAYLOAD_SIZE(42U);
     constexpr uint32_t USER_PAYLOAD_ALIGNMENT(64U);
     constexpr uint32_t USER_HEADER_SIZE = 16U;
     constexpr uint32_t USER_HEADER_ALIGNMENT = 8U;
@@ -146,7 +147,7 @@ TEST_F(Chunk_test, GettingUserHeaderFromNonConstChunkHeaderWorks)
 TEST_F(Chunk_test, GettingUserHeaderFromConstChunkHeaderWorks)
 {
     ::testing::Test::RecordProperty("TEST_ID", "77f4a193-7f44-43ce-8bd8-f9916b8d83dd");
-    constexpr uint32_t USER_PAYLOAD_SIZE(42U);
+    constexpr uint64_t USER_PAYLOAD_SIZE(42U);
     constexpr uint32_t USER_PAYLOAD_ALIGNMENT(64U);
     constexpr uint32_t USER_HEADER_SIZE = 16U;
     constexpr uint32_t USER_HEADER_ALIGNMENT = 8U;
@@ -172,43 +173,37 @@ TEST_F(Chunk_test, GettingUserHeaderFromConstChunkHeaderWorks)
 TEST_F(Chunk_test, GettingChunkHeaderToUserPayloadFromNullptrFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "2ebe5462-c8f4-4572-b396-ae66f223de2b");
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { iox_chunk_header_from_user_payload(nullptr); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox_chunk_header_from_user_payload(nullptr); }, iox::er::ENFORCE_VIOLATION);
 }
 
 TEST_F(Chunk_test, GettingChunkHeaderToUserPayloadConstFromNullptrFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "c0b27790-66eb-4f43-8f30-ec242508d7fd");
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { iox_chunk_header_to_user_payload_const(nullptr); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox_chunk_header_to_user_payload_const(nullptr); }, iox::er::ENFORCE_VIOLATION);
 }
 
 TEST_F(Chunk_test, GettingChunkHeaderToUserHeaderFromNullptrFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "375dae26-76ba-40b2-9c33-768aa33d135f");
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { iox_chunk_header_to_user_header(nullptr); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox_chunk_header_to_user_header(nullptr); }, iox::er::ENFORCE_VIOLATION);
 }
 
 TEST_F(Chunk_test, GettingChunkHeaderToUserHeaderConstFromNullptrFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "96b7691e-d0bf-4cb4-bf4b-39784dc70e92");
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { iox_chunk_header_to_user_header_const(nullptr); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox_chunk_header_to_user_header_const(nullptr); }, iox::er::ENFORCE_VIOLATION);
 }
 
 TEST_F(Chunk_test, GettingChunkHeaderFromUserPayloadFromNullptrFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "5ced7508-2ee6-4e2b-bf66-e60d8b4d968c");
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { iox_chunk_header_from_user_payload(nullptr); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox_chunk_header_from_user_payload(nullptr); }, iox::er::ENFORCE_VIOLATION);
 }
 
 TEST_F(Chunk_test, GettingChunkHeaderFromUserPayloadConstFromNullptrFails)
 {
     ::testing::Test::RecordProperty("TEST_ID", "8814d1c4-a5a9-4fa7-9520-507ca8745242");
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { iox_chunk_header_from_user_payload_const(nullptr); },
-                                              iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox_chunk_header_from_user_payload_const(nullptr); }, iox::er::ENFORCE_VIOLATION);
 }
 
 } // namespace

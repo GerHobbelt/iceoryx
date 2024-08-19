@@ -16,7 +16,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "uds.hpp"
-#include "iceoryx_hoofs/cxx/requires.hpp"
+#include "iox/assertions.hpp"
 #include "iox/posix_call.hpp"
 #include "iox/size.hpp"
 #include "iox/std_string_support.hpp"
@@ -38,7 +38,7 @@ void UDS::initSocketAddress(sockaddr_un& socketAddr, const std::string& socketNa
     socketAddr.sun_family = AF_LOCAL;
     constexpr uint64_t NULL_TERMINATION_SIZE{1};
     const uint64_t maxDestinationLength = iox::size(socketAddr.sun_path) - NULL_TERMINATION_SIZE;
-    IOX_ENSURES(maxDestinationLength >= socketName.size() && "Socketname too large!");
+    IOX_ENFORCE(maxDestinationLength >= socketName.size(), "Socketname too large!");
     strncpy(socketAddr.sun_path, socketName.c_str(), socketName.size());
 }
 

@@ -1,4 +1,5 @@
 // Copyright (c) 2023 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2024 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,11 +39,7 @@
 /// @brief calls panic handler and does not return
 /// @param message message to be forwarded
 /// @note could actually throw if desired without breaking control flow asssumptions
-#define IOX_PANIC(message)                                                                                             \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        iox::er::forwardPanic(CURRENT_SOURCE_LOCATION, message);                                                       \
-    } while (false)
+#define IOX_PANIC(message) iox::er::forwardPanic(IOX_CURRENT_SOURCE_LOCATION, message)
 
 //************************************************************************************************
 //* For documentation of intent, defensive programming and debugging
@@ -51,44 +48,39 @@
 //* Instead a special internal error type is used.
 //************************************************************************************************
 
-/// @brief only for debug builds: report fatal assert violation if expr evaluates to false
+/// @brief only for debug builds: report fatal assert violation if expression evaluates to false
 /// @note for conditions that should not happen with correct use
-/// @param expr boolean expression that must hold
+/// @param condition boolean expression that must hold
 /// @param message message to be forwarded in case of violation
-#define IOX_ASSERT(expr, message)                                                                                      \
-    do                                                                                                                 \
+#define IOX_ASSERT(condition, message)                                                                                 \
+    if (iox::er::Configuration::CHECK_ASSERT && !(condition))                                                          \
     {                                                                                                                  \
-        if (iox::er::Configuration::CHECK_ASSERT && !(expr))                                                           \
-        {                                                                                                              \
-            iox::er::forwardFatalError(iox::er::Violation::createAssertViolation(),                                    \
-                                       iox::er::ASSERT_VIOLATION,                                                      \
-                                       CURRENT_SOURCE_LOCATION,                                                        \
-                                       message);                                                                       \
-        }                                                                                                              \
-    } while (false)
+        iox::er::forwardFatalError(iox::er::Violation::createAssertViolation(),                                        \
+                                   iox::er::ASSERT_VIOLATION,                                                          \
+                                   IOX_CURRENT_SOURCE_LOCATION,                                                        \
+                                   #condition,                                                                         \
+                                   message);                                                                           \
+    }                                                                                                                  \
+    [] {}() // the empty lambda forces a semicolon on the caller side
 
-/// @brief report fatal enforce violation if expr evaluates to false
+/// @brief report fatal enforce violation if expression evaluates to false
 /// @note for conditions that may actually happen during correct use
-/// @param expr boolean expression that must hold
+/// @param condition boolean expression that must hold
 /// @param message message to be forwarded in case of violation
-#define IOX_ENFORCE(expr, message)                                                                                     \
-    do                                                                                                                 \
+#define IOX_ENFORCE(condition, message)                                                                                \
+    if (!(condition))                                                                                                  \
     {                                                                                                                  \
-        if (!(expr))                                                                                                   \
-        {                                                                                                              \
-            iox::er::forwardFatalError(iox::er::Violation::createEnforceViolation(),                                   \
-                                       iox::er::ENFORCE_VIOLATION,                                                     \
-                                       CURRENT_SOURCE_LOCATION,                                                        \
-                                       message); /* @todo iox-#1032 add strigified 'expr' as '#expr' */                \
-        }                                                                                                              \
-    } while (false)
+        iox::er::forwardFatalError(iox::er::Violation::createEnforceViolation(),                                       \
+                                   iox::er::ENFORCE_VIOLATION,                                                         \
+                                   IOX_CURRENT_SOURCE_LOCATION,                                                        \
+                                   #condition,                                                                         \
+                                   message);                                                                           \
+    }                                                                                                                  \
+    [] {}() // the empty lambda forces a semicolon on the caller side
 
 /// @brief panic if control flow reaches this code at runtime
 #define IOX_UNREACHABLE()                                                                                              \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        iox::er::forwardPanic(CURRENT_SOURCE_LOCATION, "Reached code that was supposed to be unreachable.");           \
-    } while (false)
+    iox::er::forwardPanic(IOX_CURRENT_SOURCE_LOCATION, "Reached code that was supposed to be unreachable.")
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
 

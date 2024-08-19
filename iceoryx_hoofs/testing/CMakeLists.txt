@@ -31,9 +31,7 @@ iox_add_library(
     INSTALL_INTERFACE       include/${PREFIX}
     EXPORT_INCLUDE_DIRS     include/
     FILES
-        compile_test.cpp
         mocks/time_mock.cpp
-        mocks/error_handler_mock.cpp
         testing_logger.cpp
         timing_test.cpp
         error_reporting/testing_error_handler.cpp

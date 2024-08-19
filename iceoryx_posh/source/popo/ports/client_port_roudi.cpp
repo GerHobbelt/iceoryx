@@ -16,6 +16,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "iceoryx_posh/internal/popo/ports/client_port_roudi.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
+#include "iox/assertions.hpp"
 
 namespace iox
 {
@@ -114,7 +116,7 @@ void ClientPortRouDi::handleCaProProtocolViolation(const iox::capro::CaproMessag
     IOX_LOG(FATAL,
             "CaPro Protocol Violation! Got '"
                 << messageType << "' in '" << getMembers()->m_connectionState.load(std::memory_order_relaxed) << "'");
-    errorHandler(PoshError::POPO__CAPRO_PROTOCOL_ERROR, ErrorLevel::SEVERE);
+    IOX_REPORT_FATAL(PoshError::POPO__CAPRO_PROTOCOL_ERROR);
 }
 
 optional<capro::CaproMessage>
@@ -150,11 +152,11 @@ ClientPortRouDi::handleCaProMessageForStateConnectRequested(const capro::CaproMe
     switch (caProMessage.m_type)
     {
     case capro::CaproMessageType::ACK:
-        IOX_EXPECTS_WITH_MSG(caProMessage.m_chunkQueueData != nullptr, "Invalid request queue passed to client");
-        IOX_EXPECTS(!m_chunkSender
-                         .tryAddQueue(static_cast<ServerChunkQueueData_t*>(caProMessage.m_chunkQueueData),
-                                      caProMessage.m_historyCapacity)
-                         .has_error());
+        IOX_ENFORCE(caProMessage.m_chunkQueueData != nullptr, "Invalid request queue passed to client");
+        m_chunkSender
+            .tryAddQueue(static_cast<ServerChunkQueueData_t*>(caProMessage.m_chunkQueueData),
+                         caProMessage.m_historyCapacity)
+            .expect("Adding server request queue to client");
 
         getMembers()->m_connectionState.store(ConnectionState::CONNECTED, std::memory_order_relaxed);
         return nullopt;

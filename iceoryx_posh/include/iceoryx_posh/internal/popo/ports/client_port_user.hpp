@@ -17,11 +17,11 @@
 #ifndef IOX_POSH_POPO_PORTS_CLIENT_PORT_USER_HPP
 #define IOX_POSH_POPO_PORTS_CLIENT_PORT_USER_HPP
 
-#include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/internal/popo/building_blocks/chunk_receiver.hpp"
 #include "iceoryx_posh/internal/popo/building_blocks/chunk_sender.hpp"
 #include "iceoryx_posh/internal/popo/ports/base_port.hpp"
 #include "iceoryx_posh/internal/popo/ports/client_port_data.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
 #include "iceoryx_posh/popo/rpc_header.hpp"
 #include "iox/expected.hpp"
 #include "iox/optional.hpp"
@@ -81,7 +81,7 @@ class ClientPortUser : public BasePort
     /// @param[in] userPayloadAlignment, alignment of the user-paylaod without additional headers
     /// @return on success pointer to a RequestHeader which can be used to access the chunk-header, user-header and
     /// user-payload fields, error if not
-    expected<RequestHeader*, AllocationError> allocateRequest(const uint32_t userPayloadSize,
+    expected<RequestHeader*, AllocationError> allocateRequest(const uint64_t userPayloadSize,
                                                               const uint32_t userPayloadAlignment) noexcept;
 
     /// @brief Releases an allocated request without sending it

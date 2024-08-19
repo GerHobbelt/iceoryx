@@ -17,15 +17,16 @@
 
 #include "test.hpp"
 
-#include "iceoryx_hoofs/error_handling/error_handling.hpp"
-#include "iceoryx_hoofs/testing/fatal_failure.hpp"
-#include "iceoryx_hoofs/testing/mocks/logger_mock.hpp"
 #include "iceoryx_posh/capro/service_description.hpp"
 #include "iox/detail/convert.hpp"
+#include "iox/detail/hoofs_error_reporting.hpp"
 #include "iox/detail/serialization.hpp"
 #include "iox/string.hpp"
 /// @todo iox-#415 replace the service registry include with the new discovery API header
 #include "iceoryx_posh/internal/roudi/service_registry.hpp"
+
+#include "iceoryx_hoofs/testing/fatal_failure.hpp"
+#include "iceoryx_hoofs/testing/mocks/logger_mock.hpp"
 
 #include <cstdint>
 
@@ -133,7 +134,7 @@ TEST_F(ServiceDescription_test, ClassHashSubsriptOperatorOutOfBoundsFails)
     testHash[3] = 4U;
 
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>([&] { testHash[4] = 5U; }, iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { testHash[4] = 5U; }, iox::er::FATAL);
 }
 
 /// END CLASSHASH TESTS

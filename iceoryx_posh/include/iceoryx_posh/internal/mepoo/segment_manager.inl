@@ -18,9 +18,10 @@
 #ifndef IOX_POSH_MEPOO_SEGMENT_MANAGER_INL
 #define IOX_POSH_MEPOO_SEGMENT_MANAGER_INL
 
-#include "iceoryx_posh/error_handling/error_handling.hpp"
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
 #include "iceoryx_posh/internal/mepoo/segment_manager.hpp"
+#include "iceoryx_posh/internal/posh_error_reporting.hpp"
+#include "iox/assertions.hpp"
 
 namespace iox
 {
@@ -31,7 +32,14 @@ inline SegmentManager<SegmentType>::SegmentManager(const SegmentConfig& segmentC
                                                    BumpAllocator* managementAllocator) noexcept
     : m_managementAllocator(managementAllocator)
 {
-    IOX_EXPECTS(segmentConfig.m_sharedMemorySegments.capacity() <= m_segmentContainer.capacity());
+    if (segmentConfig.m_sharedMemorySegments.capacity() > m_segmentContainer.capacity())
+    {
+        IOX_LOG(FATAL,
+                "Trying to add " << segmentConfig.m_sharedMemorySegments.capacity()
+                                 << " segments while the 'SegmentManager' can manage only "
+                                 << m_segmentContainer.capacity());
+        IOX_PANIC("Too many segments");
+    }
     for (const auto& segmentEntry : segmentConfig.m_sharedMemorySegments)
     {
         createSegment(segmentEntry);
@@ -74,7 +82,7 @@ SegmentManager<SegmentType>::getSegmentMappings(const PosixUser& user) noexcept
                 }
                 else
                 {
-                    errorHandler(PoshError::MEPOO__USER_WITH_MORE_THAN_ONE_WRITE_SEGMENT);
+                    IOX_REPORT_FATAL(PoshError::MEPOO__USER_WITH_MORE_THAN_ONE_WRITE_SEGMENT);
                     return SegmentManager::SegmentMappingContainer();
                 }
             }

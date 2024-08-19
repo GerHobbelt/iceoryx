@@ -24,6 +24,7 @@
 #include "iceoryx_hoofs/testing/watch_dog.hpp"
 #include "iceoryx_posh/internal/mepoo/memory_manager.hpp"
 #include "iceoryx_posh/mepoo/mepoo_config.hpp"
+#include "iox/assertions.hpp"
 
 #include "test.hpp"
 
@@ -101,25 +102,22 @@ class ServerPort_test : public Test
         return m_memoryManager.getMemPoolInfo(0U).m_usedChunks;
     }
 
-    SharedChunk getChunkFromMemoryManager(uint32_t userPayloadSize, uint32_t userHeaderSize)
+    SharedChunk getChunkFromMemoryManager(uint64_t userPayloadSize, uint32_t userHeaderSize)
     {
-        auto chunkSettingsResult = ChunkSettings::create(userPayloadSize,
-                                                         iox::CHUNK_DEFAULT_USER_PAYLOAD_ALIGNMENT,
-                                                         userHeaderSize,
-                                                         iox::CHUNK_DEFAULT_USER_PAYLOAD_ALIGNMENT);
-        IOX_ENSURES(chunkSettingsResult.has_value());
-        auto& chunkSettings = chunkSettingsResult.value();
+        auto chunkSettings = ChunkSettings::create(userPayloadSize,
+                                                   iox::CHUNK_DEFAULT_USER_PAYLOAD_ALIGNMENT,
+                                                   userHeaderSize,
+                                                   iox::CHUNK_DEFAULT_USER_PAYLOAD_ALIGNMENT)
+                                 .expect("Valid 'ChunkSettings'");
 
-        auto getChunkResult = m_memoryManager.getChunk(chunkSettings);
-        IOX_ENSURES(getChunkResult.has_value());
-        return getChunkResult.value();
+        return m_memoryManager.getChunk(chunkSettings).expect("Obtaining chunk");
     }
 
     static constexpr uint64_t DUMMY_DATA{0U};
 
     SharedChunk getChunkWithInitializedRequestHeaderAndData(const uint64_t data = DUMMY_DATA)
     {
-        constexpr uint32_t USER_PAYLOAD_SIZE{sizeof(uint64_t)};
+        constexpr uint64_t USER_PAYLOAD_SIZE{sizeof(uint64_t)};
         auto sharedChunk = getChunkFromMemoryManager(USER_PAYLOAD_SIZE, sizeof(RequestHeader));
         new (sharedChunk.getChunkHeader()->userHeader())
             RequestHeader(clientChunkQueueData.m_uniqueId, RpcBaseHeader::UNKNOWN_CLIENT_QUEUE_INDEX);
@@ -129,9 +127,9 @@ class ServerPort_test : public Test
 
     uint64_t getRequestData(const RequestHeader* requestHeader)
     {
-        IOX_ENSURES(requestHeader != nullptr && "requestHeader must not be a nullptr");
+        IOX_ENFORCE(requestHeader != nullptr, "requestHeader must not be a nullptr");
         auto userPayload = ChunkHeader::fromUserHeader(requestHeader)->userPayload();
-        IOX_ENSURES(userPayload != nullptr && "userPayload must not be a nullptr");
+        IOX_ENFORCE(userPayload != nullptr, "userPayload must not be a nullptr");
 
         return *static_cast<const uint64_t*>(userPayload);
     }
@@ -163,7 +161,7 @@ class ServerPort_test : public Test
         SutServerPort& sut, std::function<void(const RequestHeader* const, ResponseHeader* const)> testFunction)
     {
         constexpr uint64_t USER_PAYLOAD_SIZE{8};
-        constexpr uint64_t USER_PAYLOAD_ALIGNMENT{8};
+        constexpr uint32_t USER_PAYLOAD_ALIGNMENT{8};
 
         constexpr uint64_t NUMBER_OF_REQUESTS{1U};
         pushRequests(sut.requestQueuePusher, NUMBER_OF_REQUESTS);
@@ -182,7 +180,7 @@ class ServerPort_test : public Test
     static constexpr uint32_t NUM_CHUNKS =
         iox::MAX_REQUESTS_ALLOCATED_SIMULTANEOUSLY + iox::MAX_RESPONSES_ALLOCATED_SIMULTANEOUSLY
         + iox::MAX_REQUESTS_PROCESSED_SIMULTANEOUSLY + iox::MAX_RESPONSES_PROCESSED_SIMULTANEOUSLY + 16U;
-    static constexpr uint32_t CHUNK_SIZE = 128U;
+    static constexpr uint64_t CHUNK_SIZE = 128U;
     static constexpr size_t MEMORY_SIZE = 1024U * 1024U;
     uint8_t m_memory[MEMORY_SIZE];
     iox::BumpAllocator m_memoryAllocator{m_memory, MEMORY_SIZE};
@@ -222,7 +220,7 @@ class ServerPort_test : public Test
     iox::optional<SutServerPort> clientPortForStateTransitionTests;
 
   public:
-    static constexpr uint32_t USER_PAYLOAD_SIZE{32U};
+    static constexpr uint64_t USER_PAYLOAD_SIZE{32U};
     static constexpr uint32_t USER_PAYLOAD_ALIGNMENT{8U};
 
     ClientChunkQueueData_t clientChunkQueueData{iox::popo::QueueFullPolicy::DISCARD_OLDEST_DATA,

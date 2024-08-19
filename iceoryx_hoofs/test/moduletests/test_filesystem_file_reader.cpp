@@ -15,10 +15,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "iceoryx_hoofs/error_handling/error_handling.hpp"
+#include "iox/detail/hoofs_error_reporting.hpp"
+#include "iox/file_reader.hpp"
+
 #include "iceoryx_hoofs/testing/fatal_failure.hpp"
 #include "iceoryx_hoofs/testing/testing_logger.hpp"
-#include "iox/file_reader.hpp"
 #include "test.hpp"
 
 
@@ -165,11 +166,10 @@ TEST_F(FileReader_test, errorTerminateMode)
     const std::string fileName{"ISaidNo!"};
     const std::string filePath{"InTheMiddleOfNowhere"};
 
-    IOX_EXPECT_FATAL_FAILURE<iox::HoofsError>(
-        [&] { iox::FileReader reader(fileName, filePath, iox::FileReader::ErrorMode::Terminate); },
-        iox::HoofsError::EXPECTS_ENSURES_FAILED);
+    IOX_EXPECT_FATAL_FAILURE([&] { iox::FileReader reader(fileName, filePath, iox::FileReader::ErrorMode::Terminate); },
+                             iox::er::FATAL);
 
-    const std::string expectedOutput = "Could not open file 'ISaidNo!' from path 'InTheMiddleOfNowhere'. Exiting!";
+    const std::string expectedOutput = "Could not open file 'ISaidNo!' from path 'InTheMiddleOfNowhere'!";
     iox::testing::TestingLogger::checkLogMessageIfLogLevelIsSupported(
         iox::log::LogLevel::FATAL, [&](const auto& logMessages) {
             ASSERT_THAT(logMessages.size(), Gt(1U));
