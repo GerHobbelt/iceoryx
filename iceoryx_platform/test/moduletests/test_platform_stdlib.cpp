@@ -1,4 +1,4 @@
-// Copyright (c) 2023 by Apex.AI Inc. All rights reserved.
+// Copyright (c) 2024 by Mathias Kraus <elboberido@m-hias.de>. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-#ifndef IOX_HOOFS_QNX_PLATFORM_STDIO_HPP
-#define IOX_HOOFS_QNX_PLATFORM_STDIO_HPP
 
-#include <cstdio>
+#include "iceoryx_platform/stdlib.hpp"
 
-inline int iox_remove(const char* pathname)
+#include "test.hpp"
+
+TEST(STDLIB_test, ItWorks)
 {
-    return remove(pathname);
-}
+    ::testing::Test::RecordProperty("TEST_ID", "1067d206-67c4-4521-84b7-c64300ba7759");
 
-#endif
+    EXPECT_TRUE(true);
+}
