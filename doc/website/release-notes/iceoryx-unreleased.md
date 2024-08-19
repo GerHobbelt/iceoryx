@@ -63,6 +63,7 @@
 - Add support for `iox::string` in `MessageQueue` and created `message_queue.inl` [#1963](https://github.com/eclipse-iceoryx/iceoryx/issues/1963)
 - Add support for `iox::string` in `NamedPipe` and created `named_pipe.inl` [#1693](https://github.com/eclipse-iceoryx/iceoryx/issues/1693)
 - Add an `iox1` prefix to all resources created by `iceoryx_posh` and `RouDi` [#2185](https://github.com/eclipse-iceoryx/iceoryx/issues/2185)
+- Make iceoryx resource prefix a compile time option [#2272](https://github.com/eclipse-iceoryx/iceoryx/issues/2272)
 
 **Bugfixes:**
 
@@ -128,6 +129,7 @@
 - Fix `const` value assignment in `iox::optional` [\#2224](https://github.com/eclipse-iceoryx/iceoryx/issues/2224)
 - Generated files cause recompilation even without any changes [#2210](https://github.com/eclipse-iceoryx/iceoryx/issues/2210)
 - Fix span_iterator constructor to prevent assertion when iterating over spans [#2216](https://github.com/eclipse-iceoryx/iceoryx/issues/2216)
+- Fix span span constructor assert when using begin/end constructor [#2253](https://github.com/eclipse-iceoryx/iceoryx/issues/2253)
 - Listener examples need to take all samples in the callback [#2251](https://github.com/eclipse-iceoryx/iceoryx/issues/2251)
 
 **Refactoring:**
@@ -222,6 +224,7 @@
 - Automate check for test cases to have UUIDs [\#1540](https://github.com/eclipse-iceoryx/iceoryx/issues/1540)
 - Add Thread Sanitizer to build and test workflow [\#692](https://github.com/eclipse-iceoryx/iceoryx/issues/692)
 - Document workaround for documentation in internal headers [#1293](https://github.com/eclipse-iceoryx/iceoryx/issues/1293)
+- The default branch is now `main` [#2270](https://github.com/eclipse-iceoryx/iceoryx/issues/2270)
 
 **New API features:**
 
