@@ -31,32 +31,21 @@ namespace iox
 {
 namespace concurrent
 {
-/// @brief Thread safe (without locks) single producer and single consumer queue with a safe
+/// @brief Thread safe lock-free single producer and single consumer queue with a safe
 /// overflowing behavior
 /// @note When SpscSoFi is full and a sender tries to push, the data at the current read pos will be
 /// returned. This behavior mimics a FiFo queue but prevents resource leaks when pushing into
 /// a full SpscSoFi.
 /// SpscSoFi is especially designed to provide fixed capacity storage.
-/// SpscSoFi only allocates memory when created, capacity can be adjusted explicitly.
-/// @example
 /// It's an expected behavior that when push/pop are called concurrently and SpscSoFi is full, as
 /// many elements as specified with 'CapacityValue' can be removed
-/// 0: Initial situation:
-///    |--A--|--B--|
-/// 1. Thread 1 pushes a new element. Since it is an overflowing situation, the overwritten value is
-/// removed and returned to the caller
-///    |--A--|--B--|
-/// 2. Right before push() returns, pop() detects that an element is about to be removed, and remove
-/// the next element
-///    |--C--|----|
 /// @param[in] ValueType        DataType to be stored, must be trivially copyable
 /// @param[in] CapacityValue    Capacity of the SpscSofi
 template <class ValueType, uint64_t CapacityValue>
 class SpscSofi
 {
-    // We need to make sure that the copy operation doesn't have any logic
     static_assert(std::is_trivially_copyable<ValueType>::value,
-                  "SpscSofi can handle only trivially copyable data types");
+                  "SpscSofi can only handle trivially copyable data types since 'memcpy' is used internally");
     /// @brief Check if Atomic integer is lockfree on platform
     /// ATOMIC_INT_LOCK_FREE = 2 - is always lockfree
     /// ATOMIC_INT_LOCK_FREE = 1 - is sometimes lockfree
@@ -71,42 +60,44 @@ class SpscSofi
     //    |--A--|--B--|
     //    ^
     //    w=2, r=0
-    // 2. We want to push a new element
-    // 3. Advance the read position (this effectively reduces the capacity and is the reason the internal capacity
-    // needs to be larger; the consumer cannot pop out CAPACITY amount of samples even though the queue is full if
-    // the push thread is suspended right after this operation)
+    // 2. The producer thread pushes a new element
+    // 3. Increment the read position (this effectively reduces the capacity and is the reason the internal capacity
+    // needs to be larger;
     //    |--A--|--B--|
     //    ^     ^
     //    w=2  r=1
-    // 4. Take overflow data
-    //    |-----|--B--|
-    //    ^     ^
-    //    w=2  r=1
-    // 5. Write new data
-    //    |--C--|--B--|
-    //    ^     ^
-    //    w=2  r=1
-    // 6. Advance next write position
-    //    |--C--|--B--|
-    //          ^
-    //       w=3, r=1
+    // 4. The producer thread is suspended, the consumer thread pops a value
+    //    |--A--|-----|
+    //    ^
+    //    w=2, r=2
+    // 5. The consumer tries to pop another value but the queue looks empty as
+    //    write position == read position: the consumer cannot pop
+    //    out CAPACITY amount of samples even though the queue was full
     // ========================================================================
     // With "capacity add-on"
     // 1. CapacityValue = 2, InternalCapacity = 3
     //    |--A--|--B--|----|
     //    ^           ^
     //    r=0        w=2
-    // 2. We want to push a new element
-    // 3. We first write at index 2 % capacity
+    // 2. The producer threads pushes a new element
+    // 3. First write the element at index 2 % capacity and increment the write index
     //    |--A--|--B--|--C--|
     //    ^
     //   w=3, r=0,
-    // 2. We want to push a new element:
-    // 4. We detect that the queue if full so we retrieve the value pointed by the read pointer: the value A is
-    // returned
-    //   |-(A)-|--B--|--C--|
+    // 4. Then increment the read position and return the overflowing 'A'
+    //   |-----|--B--|--C--|
     //   ^     ^
     //   w=3  r=1
+    // 5. The producer thread is suspended, the consumer thread pops a value
+    //   |--A--|-----|--C--|
+    //   ^           ^
+    //   w=3        r=2
+    // 6. The consumer thread pops another value
+    //   |--A--|-----|-----|
+    //   ^
+    //   w=3, r=3
+    // 7. Now, write position == read position so we cannot pop another element: the queue looks empty. We managed to
+    // pop CapacityValue elements
     // ========================================================================
     static constexpr uint32_t INTERNAL_CAPACITY_ADDON = 1;
 
@@ -114,22 +105,22 @@ class SpscSofi
     static constexpr uint32_t INTERNAL_SPSC_SOFI_CAPACITY = CapacityValue + INTERNAL_CAPACITY_ADDON;
 
   public:
-    /// @brief default constructor which constructs an empty sofi
+    /// @brief default constructor which constructs an empty SpscSofi
     SpscSofi() noexcept = default;
 
-    /// @brief push an element into sofi. if sofi is full the oldest data will be
+    /// @brief push an element into SpscSofi. if SpscSofi is full the oldest data will be
     ///         returned and the pushed element is stored in its place instead.
     /// @param[in] value_in value which should be stored
-    /// @param[out] value_out if sofi is overflowing  the value of the overridden value
+    /// @param[out] value_out if SpscSofi is overflowing  the value of the overridden value
     ///                      is stored here
     /// @note restricted thread safe: can only be called from one thread. The authorization to push into the
     /// SpscSofi can be transferred to another thread if appropriate synchronization mechanisms are used.
     /// @return return true if push was successful else false.
-    /// @code
-    /// 1. sofi is empty    |-----|-----|
+    /// @remarks
+    /// 1. SpscSofi is empty    |-----|-----|
     /// 2. push an element  |--A--|-----|
     /// 3. push an element  |--A--|--B--|
-    /// 5. sofi is full
+    /// 5. SpscSofi is full
     /// 6. push an element  |--C--|--B--| -> value_out is set to 'A'
     bool push(const ValueType& valueIn, ValueType& valueOut) noexcept;
 
