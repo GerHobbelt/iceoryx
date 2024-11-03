@@ -67,6 +67,7 @@
 - Make iceoryx resource prefix a compile time option [#2272](https://github.com/eclipse-iceoryx/iceoryx/issues/2272)
 - Improve introspection-client interface by adding the number of ports in parentheses [#2299](https://github.com/eclipse-iceoryx/iceoryx/issues/2299)
 - Add std::atomic abstraction [#2329](https://github.com/eclipse-iceoryx/iceoryx/issues/2329)
+- Port iceoryx to bzlmod [#2325](https://github.com/eclipse-iceoryx/iceoryx/issues/2325)
 
 **Bugfixes:**
 
@@ -139,6 +140,7 @@
 -  Building iceoryx with bazel on Windows is broken [#2320](https://github.com/eclipse-iceoryx/iceoryx/issues/2320)
 - Fix wrong memory orders in SpscSoFi [#2177](https://github.com/eclipse-iceoryx/iceoryx/issues/2177)
 - ssize_t: redefinition; different basic types [#2209](https://github.com/eclipse-iceoryx/iceoryx/issues/2209)
+- Fix bazel build on macos [#2345](https://github.com/eclipse-iceoryx/iceoryx/issues/2345)
 
 **Refactoring:**
 
@@ -724,7 +726,7 @@
     // after
     iox::optional<iox::mutex> myMutex;
     iox::MutexBuilder()
-        .mutexType(iox::MutexType::RECURSIVE)
+        .lock_behavior(iox::LockBehavior::RECURSIVE)
         .create(myMutex);
     myMutex->lock();
     ```
