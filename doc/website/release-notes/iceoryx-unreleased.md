@@ -8,6 +8,7 @@
 
 - The minimal supported GCC compiler is now 8.3
 - The required C++ standard is now C++17
+- Experimental 32-bit support for all platforms supporting 64-bit atomic operations
 
 **Features:**
 
@@ -65,6 +66,7 @@
 - Add an `iox1` prefix to all resources created by `iceoryx_posh` and `RouDi` [#2185](https://github.com/eclipse-iceoryx/iceoryx/issues/2185)
 - Make iceoryx resource prefix a compile time option [#2272](https://github.com/eclipse-iceoryx/iceoryx/issues/2272)
 - Improve introspection-client interface by adding the number of ports in parentheses [#2299](https://github.com/eclipse-iceoryx/iceoryx/issues/2299)
+- Add std::atomic abstraction [#2329](https://github.com/eclipse-iceoryx/iceoryx/issues/2329)
 
 **Bugfixes:**
 
@@ -1466,5 +1468,3 @@
     ```
 
 64. The non-functional `iox::popo::Node` was removed
-
-65. 32-bit support is disabled by default. For development purposes iceoryx can be build with the `-DIOX_IGNORE_32_BIT_CHECK=ON`
