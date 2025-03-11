@@ -80,7 +80,7 @@ inline SharedMemoryObjectType MePooSegment<SharedMemoryObjectType, MemoryManager
                 ShmName_t shmName = iceoryxResourcePrefix(domainId, ResourceType::USER_DEFINED);
                 if (shmName.size() + writerGroup.getName().size() > ShmName_t::capacity())
                 {
-                    IOX_LOG(FATAL,
+                    IOX_LOG(Fatal,
                             "The payload segment with the name '"
                                 << writerGroup.getName().size()
                                 << "' would exceed the maximum allowed size when used with the '" << shmName
@@ -91,8 +91,8 @@ inline SharedMemoryObjectType MePooSegment<SharedMemoryObjectType, MemoryManager
                 return shmName;
             }())
             .memorySizeInBytes(MemoryManager::requiredChunkMemorySize(mempoolConfig))
-            .accessMode(AccessMode::READ_WRITE)
-            .openMode(OpenMode::PURGE_AND_CREATE)
+            .accessMode(AccessMode::ReadWrite)
+            .openMode(OpenMode::PurgeAndCreate)
             .permissions(SEGMENT_PERMISSIONS)
             .create()
             .and_then([this](auto& sharedMemoryObject) {
@@ -106,7 +106,7 @@ inline SharedMemoryObjectType MePooSegment<SharedMemoryObjectType, MemoryManager
                 this->m_segmentId = static_cast<uint64_t>(maybeSegmentId.value());
                 this->m_segmentSize = sharedMemoryObject.get_size().expect("Failed to get SHM size.");
 
-                IOX_LOG(DEBUG,
+                IOX_LOG(Debug,
                         "Roudi registered payload data segment " << iox::log::hex(sharedMemoryObject.getBaseAddress())
                                                                  << " with size " << m_segmentSize << " to id "
                                                                  << m_segmentId);
