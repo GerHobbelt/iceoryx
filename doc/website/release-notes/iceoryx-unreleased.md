@@ -145,6 +145,8 @@
 - Fix bazel build on macos [#2345](https://github.com/eclipse-iceoryx/iceoryx/issues/2345)
 - Fix Bzlmod module name typo [#2364](https://github.com/eclipse-iceoryx/iceoryx/issues/2364)
 - Add //:iceoryx Bazel alias [#2368](https://github.com/eclipse-iceoryx/iceoryx/issues/2368)
+- Depend on @ncurses when building with Bazel [#2372](https://github.com/eclipse-iceoryx/iceoryx/issues/2372)
+- Fix windows performance issue [#2377](https://github.com/eclipse-iceoryx/iceoryx/issues/2377)
 
 **Refactoring:**
 
@@ -232,6 +234,7 @@
 - Create a flat include structure for `iceoryx_hoofs` [#1593](https://github.com/eclipse-iceoryx/iceoryx/issues/1593)
 - Handle 'strerror_r' idiosyncrasies in the platform layer [#1616](https://github.com/eclipse-iceoryx/iceoryx/issues/1616)
 - Fix new clang-tidy-18 warnings [#2274](https://github.com/eclipse-iceoryx/iceoryx/issues/2274)
+- Mistype in readme file [#2384](https://github.com/eclipse-iceoryx/iceoryx/issues/2384)
 
 **Workflow:**
 
