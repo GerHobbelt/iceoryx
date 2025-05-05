@@ -1,4 +1,5 @@
 // Copyright (c) 2024 by ekxide IO GmbH. All rights reserved.
+// Copyright (c) 2025 by Valour inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -136,20 +137,14 @@ class Node
     /// @brief Initiates a 'Listener'
     ListenerBuilder listener() noexcept;
 
-    /// @brief Set Node Runtime as default Runtime
-    void setDefaultRuntime();
-
   private:
     friend class NodeBuilder;
     Node(const NodeName_t& name,
          runtime::IpcRuntimeInterface&& runtime_interface,
          optional<runtime::SharedMemoryUser>&&) noexcept;
 
-    static iox::runtime::PoshRuntime& getNodeRuntime([[maybe_unused]] optional<const RuntimeName_t*> name);
-
   private:
     unique_ptr<runtime::PoshRuntime> m_runtime;
-    inline static runtime::PoshRuntime* s_defaultRuntime = nullptr;
 };
 
 } // namespace iox::posh::experimental

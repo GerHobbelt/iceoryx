@@ -1,4 +1,5 @@
 // Copyright (c) 2024 by ekxide IO GmbH. All rights reserved.
+// Copyright (c) 2025 by Valour inc. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,10 +21,10 @@
 #include "iceoryx_posh/iceoryx_posh_types.hpp"
 #include "iceoryx_posh/internal/runtime/posh_runtime_impl.hpp"
 #include "iceoryx_posh/popo/server.hpp"
+#include "iceoryx_posh/popo/untyped_server.hpp"
 #include "iox/builder.hpp"
 #include "iox/expected.hpp"
 #include "iox/unique_ptr.hpp"
-#include <iceoryx_posh/popo/untyped_server.hpp>
 
 namespace iox::posh::experimental
 {
