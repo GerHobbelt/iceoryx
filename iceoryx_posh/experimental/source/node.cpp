@@ -139,8 +139,12 @@ Node::Node(const NodeName_t& name,
                                        {std::move(runtime_interface), std::move(ipc_interface)}},
           [&](auto* const rt) { delete rt; }})
 {
-    // Node::s_nodeRuntime = m_runtime.get();
-    // iox::runtime::PoshRuntime::setRuntimeFactory(Node::GetNodeRuntime);
+}
+
+void Node::setDefaultRuntime()
+{
+    Node::s_defaultRuntime = m_runtime.get();
+    iox::runtime::PoshRuntime::setRuntimeFactory(Node::getNodeRuntime);
 }
 
 PublisherBuilder Node::publisher(const ServiceDescription& service_description) noexcept
@@ -166,6 +170,17 @@ ClientBuilder Node::client(const ServiceDescription& service_description) noexce
 WaitSetBuilder Node::wait_set() noexcept
 {
     return WaitSetBuilder{*m_runtime.get()};
+}
+
+ListenerBuilder Node::listener() noexcept
+{
+    return ListenerBuilder{*m_runtime.get()};
+}
+
+iox::runtime::PoshRuntime& Node::getNodeRuntime([[maybe_unused]] optional<const RuntimeName_t*> name)
+{
+    IOX_ASSERT(s_defaultRuntime, "Node Default Runtime has not been created");
+    return *Node::s_defaultRuntime;
 }
 
 } // namespace iox::posh::experimental
