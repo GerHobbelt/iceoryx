@@ -20,6 +20,7 @@
 
 **Features:**
 
+- Improve code quality and safety across core components [#2469](https://github.com/eclipse-iceoryx/iceoryx/issues/2469)
 - Add bazel asan, usan, tsan build config [#1547](https://github.com/eclipse-iceoryx/iceoryx/issues/1547)
 - Add bazel clang build config [#1998](https://github.com/eclipse-iceoryx/iceoryx/issues/1998)
 - Add `command_line.hpp` which contains a macro builder to parse command line arguments quickly and safely [#1067](https://github.com/eclipse-iceoryx/iceoryx/issues/1067)
@@ -158,6 +159,7 @@
 - Max Client and Server cannot be configured independently of Max Publisher and Subscriber [#2394](https://github.com/eclipse-iceoryx/iceoryx/issues/2394)
 - Fix call to non-existing `getService` in channel.inl [#2426](https://github.com/eclipse-iceoryx/iceoryx/issues/2426)
 - Fix chunk management race condition causing failed management allocation [#2440](https://github.com/eclipse-iceoryx/iceoryx/issues/2440)
+- Fix compile error with GCC 8 [#2480](https://github.com/eclipse-iceoryx/iceoryx/issues/2480)
 
 **Refactoring:**
 
@@ -249,6 +251,7 @@
 - Mistype in readme file [#2384](https://github.com/eclipse-iceoryx/iceoryx/issues/2384)
 - Typo in architecture.md [#2390](https://github.com/eclipse-iceoryx/iceoryx/issues/2390)
 - Add option to build an iceoryx_hoofs subset for iceoryx2 [#2457](https://github.com/eclipse-iceoryx/iceoryx/issues/2457)
+- Console Logs should be output to stderr [#2478](https://github.com/eclipse-iceoryx/iceoryx/issues/2478)
 
 **Workflow:**
 
