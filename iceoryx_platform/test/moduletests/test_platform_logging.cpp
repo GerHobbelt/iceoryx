@@ -1,10 +1,9 @@
 // Copyright (c) 2024 by ekxide IO GmbH. All rights reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
+// This program and the accompanying materials are made available under the
+// terms of the Apache Software License 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0, or the MIT license
+// which is available at https://opensource.org/licenses/MIT.
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0 OR MIT
 
 #include "iceoryx_platform/atomic.hpp"
 #include "iceoryx_platform/logging.hpp"
@@ -131,7 +130,9 @@ TEST(Logging_test, SettingCustomBackendWorks)
     constexpr const char* MESSAGE{"Who will rock you?"};
     IOX_PLATFORM_LOG(IOX_PLATFORM_LOG_LEVEL_INFO, MESSAGE);
 
-    auto [log_level, log_msg] = last_log_output.get();
+    auto log_level{IceoryxPlatformLogLevel::IOX_PLATFORM_LOG_LEVEL_OFF};
+    std::string log_msg;
+    std::tie(log_level, log_msg) = last_log_output.get();
     EXPECT_THAT(log_level, Eq(IOX_PLATFORM_LOG_LEVEL_INFO));
     EXPECT_THAT(log_msg, StrEq(MESSAGE));
 }
