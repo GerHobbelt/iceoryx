@@ -164,6 +164,7 @@
 - Increase `PosixUser::MAX_NUMBER_OF_GROUPS` from 888 to 1024 to support systems with many supplementary groups [#2513](https://github.com/eclipse-iceoryx/iceoryx/issues/2513)
 - Fix documentation of `expected` [#2492](https://github.com/eclipse-iceoryx/iceoryx/issues/2492)
 - Fix alignment of the `variant` alternatives [#2516](https://github.com/eclipse-iceoryx/iceoryx/issues/2516)
+- Fix global-buffer-overflow in `VersionInfo::getCurrentVersion` under ASan when built from release tarball [#2526](https://github.com/eclipse-iceoryx/iceoryx/issues/2526)
 
 **Refactoring:**
 
@@ -256,6 +257,7 @@
 - Typo in architecture.md [#2390](https://github.com/eclipse-iceoryx/iceoryx/issues/2390)
 - Add option to build an iceoryx_hoofs subset for iceoryx2 [#2457](https://github.com/eclipse-iceoryx/iceoryx/issues/2457)
 - Console Logs should be output to stderr [#2478](https://github.com/eclipse-iceoryx/iceoryx/issues/2478)
+- Update maintainer in package.xml [#2521](https://github.com/eclipse-iceoryx/iceoryx/issues/2521)
 
 **Workflow:**
 
