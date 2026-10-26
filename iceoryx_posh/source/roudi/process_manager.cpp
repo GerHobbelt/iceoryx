@@ -63,7 +63,7 @@ ProcessManager::ProcessManager(RouDiMemoryInterface& roudiMemoryInterface,
     auto maybeIntrospectionMemoryManager = m_roudiMemoryInterface.introspectionMemoryManager();
     if (!maybeIntrospectionMemoryManager.has_value())
     {
-        IOX_LOG(Fatal, "Invalid state! Could not obtain MemoryManager for instrospection!");
+        IOX_LOG(Fatal, "Invalid state! Could not obtain MemoryManager for introspection!");
         fatalError = true;
     }
     else

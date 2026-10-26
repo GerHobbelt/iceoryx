@@ -362,7 +362,7 @@ int resultOrAbort(int x)
 {
     auto result = algorithm(x);
 
-    // if a result was returned, we know that no error has occured
+    // if a result was returned, we know that no error has occurred
     return result;
 };
 ```

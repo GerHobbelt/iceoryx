@@ -59,9 +59,9 @@ class adaptive_wait
     /// @note All numbers are not accurate and are just rough estimates
     ///       acquired by the experiments described below.
 
-    /// @brief The value was choosen by educated guess.
+    /// @brief The value was chosen by educated guess.
     /// std::thread::sleep_for causes a lot of overhead. 100us was
-    /// choosen with the experiment below. The overhead of sleep_for is roughly around
+    /// chosen with the experiment below. The overhead of sleep_for is roughly around
     /// 50% of the actual waitingTime (100us). When the waitingTime is lower the
     /// overhead of sleep_for makes up the majority of the time yield is waiting.
     /// @code
@@ -77,7 +77,7 @@ class adaptive_wait
     /// @endcode
     static constexpr std::chrono::microseconds INITIAL_WAITING_TIME{100};
 
-    /// @brief The value was choosen by educated guess.
+    /// @brief The value was chosen by educated guess.
     ///        With 10ms a busy loop is around 0.1% in top. when decreasing it
     ///        to 5ms we get around 0.7% and then it starts to raise fast.
     static constexpr std::chrono::milliseconds FINAL_WAITING_TIME{10};
@@ -94,7 +94,7 @@ class adaptive_wait
     /// @endcode
     static constexpr uint64_t YIELD_REPETITIONS = 10000U;
 
-    /// @brief The initial repetition is choosen in a way that
+    /// @brief The initial repetition is chosen in a way that
     ///        INITIAL_WAITING_TIME * 100U equals roughly FINAL_WAITING_TIME
     static constexpr uint64_t INITIAL_REPETITIONS = 100U + YIELD_REPETITIONS;
 

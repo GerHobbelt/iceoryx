@@ -21,7 +21,7 @@
 #include <signal.h>
 
 #define SIGEV_THREAD 0
-#define SIGBUS SIGSEGV // SIGBUS/SIGSEGV signal serious program erros, SIGSEGV is best alternative
+#define SIGBUS SIGSEGV // SIGBUS/SIGSEGV signal serious program errors, SIGSEGV is best alternative
 #define SIGHUP SIGTERM // SIGHUP signaled when controlling terminal is closed, SIGTERM is best alternative
 #define SIGKILL 9
 

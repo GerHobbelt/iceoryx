@@ -56,7 +56,7 @@ class ErrorType_test : public Test
 };
 
 // We can extend this easily for other error types as they have to conform to the same interface
-// Any error type must satsify these tests.
+// Any error type must satisfy these tests.
 using TestTypes = Types<Violation>;
 TYPED_TEST_SUITE(ErrorType_test, TestTypes, );
 

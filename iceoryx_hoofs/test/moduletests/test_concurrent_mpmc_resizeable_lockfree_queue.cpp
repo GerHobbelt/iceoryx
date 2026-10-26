@@ -401,7 +401,7 @@ TYPED_TEST(MpmcResizeableLockFreeQueueTest, setCapacityOfFullQueueToHalfOfMaxCap
     EXPECT_EQ(q.size(), NEW_CAP);
 
     // the least recent values are removed due to the capacity being decreased
-    // how man elements remain depends on whether MAX_CAP is divisable by 2
+    // how man elements remain depends on whether MAX_CAP is divisible by 2
     for (element = NEW_CAP + MAX_CAP % 2U; element < MAX_CAP; ++element)
     {
         auto result = q.pop();
@@ -433,7 +433,7 @@ TYPED_TEST(MpmcResizeableLockFreeQueueTest, setCapacityOfFullQueueToHalfOfMaxCap
     EXPECT_EQ(removedElements.size(), MAX_CAP / 2 + MAX_CAP % 2U);
 
     // the least recent values are removed due to the capacity being decreased
-    // how many elements remain depends on whether MAX_CAP is divisable by 2
+    // how many elements remain depends on whether MAX_CAP is divisible by 2
     for (element = NEW_CAP + MAX_CAP % 2U; element < MAX_CAP; ++element)
     {
         auto result = q.pop();

@@ -85,7 +85,7 @@ uint32_t iox_cfg_no_user_header_alignment(void);
 /// runtime
 uint32_t iox_cfg_max_process_number(void);
 
-/// @brief returns the maximum number of services that are supported byt the service registry
+/// @brief returns the maximum number of services that are supported by the service registry
 uint32_t iox_cfg_service_registry_capacity(void);
 
 /// @brief returns the maximum number of services a findservice call can return

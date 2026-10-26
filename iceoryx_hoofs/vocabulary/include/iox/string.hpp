@@ -472,8 +472,8 @@ class string final
     /// string
     optional<string<Capacity>> substr(const uint64_t pos = 0U) const noexcept;
 
-    /// @brief finds the first occurence of the given character sequence; returns the position of the first character of
-    /// the found substring, returns iox::nullopt if no substring is found or if pos is greater than this' size
+    /// @brief finds the first occurrence of the given character sequence; returns the position of the first character
+    /// of the found substring, returns iox::nullopt if no substring is found or if pos is greater than this' size
     ///
     /// @param [in] str is the character sequence to search for; must be a iox::string, string literal or custom string
     /// @param [in] pos is the position at which to start the search
@@ -483,7 +483,7 @@ class string final
     template <typename T>
     IsStringOrCharArray<T, optional<uint64_t>> find(const T& str, const uint64_t pos = 0U) const noexcept;
 
-    /// @brief finds the first occurence of a character equal to one of the characters of the given character sequence
+    /// @brief finds the first occurrence of a character equal to one of the characters of the given character sequence
     /// and returns its position; returns iox::nullopt if no character is found or if pos is greater than this'
     /// size
     ///
@@ -495,7 +495,7 @@ class string final
     template <typename T>
     IsStringOrCharArray<T, optional<uint64_t>> find_first_of(const T& str, const uint64_t pos = 0U) const noexcept;
 
-    /// @brief finds the last occurence of a character equal to one of the characters of the given character sequence
+    /// @brief finds the last occurrence of a character equal to one of the characters of the given character sequence
     /// and returns its position; returns iox::nullopt if no character is found
     ///
     /// @param [in] str is the character sequence to search for; must be a iox::string, string literal or custom string

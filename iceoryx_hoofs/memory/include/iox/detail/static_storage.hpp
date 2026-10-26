@@ -32,9 +32,9 @@ namespace iox
 
 /// @note We can define optimized_storage (or dynamic_storage) with a similar interface
 ///       but other allocation policies and use them where we need to store objects
-///       with some interchangable storage policy (e.g. in storable_function)
+///       with some interchangeable storage policy (e.g. in storable_function)
 ///       optimized_storage would have a dynamic memory fallback when static memory is
-///       insufficent.
+///       insufficient.
 template <uint64_t Capacity, uint64_t Align = 1>
 // NOLINTJUSTIFICATION static_storage provides uninitialized memory, correct initialization is the users
 //                     responsibility whenever memory with "allocate" is acquired

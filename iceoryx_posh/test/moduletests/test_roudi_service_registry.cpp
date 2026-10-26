@@ -627,7 +627,7 @@ TYPED_TEST(ServiceRegistry_test, SearchInFullRegistryWorks)
     // This is close to a worst case search but not quite due to randomness in the last string.
     // Different strings are required as we need different strings to create a full registry,
     // and randomness is the easiest way to achieve this.
-    // It could also be achieved with determinstic string enumeration instead of randomness,
+    // It could also be achieved with deterministic string enumeration instead of randomness,
     // but it is more cumbersome and not required here.
 
     this->find(service, instance, event);

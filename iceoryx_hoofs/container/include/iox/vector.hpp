@@ -163,7 +163,7 @@ class vector final
     ///         vector
     uint64_t size() const noexcept;
 
-    /// @brief returns true if the vector is emtpy, otherwise false
+    /// @brief returns true if the vector is empty, otherwise false
     bool empty() const noexcept;
 
     /// @brief calls the destructor of all contained elements and removes them

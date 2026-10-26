@@ -58,7 +58,7 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-# Execute `bazel run //:buildifier` to fix formating of all starlark files in the workspace
+# Execute `bazel run //:buildifier` to fix formatting of all starlark files in the workspace
 buildifier(
     name = "buildifier",
     verbose = True,

@@ -85,7 +85,7 @@ std::unique_ptr<PwUidResult> iox_getpwuid(const iox_uid_t uid)
 TEST_F(PosixAcl_test, writeStandardPermissions)
 {
     ::testing::Test::RecordProperty("TEST_ID", "4313fc8d-b819-4c77-b811-80e2a41cf3bd");
-    // should fail beacuse no access rights have been specified yet
+    // should fail because no access rights have been specified yet
     bool result = m_accessController.writePermissionsToFile(m_fileDescriptor);
     EXPECT_FALSE(result);
 

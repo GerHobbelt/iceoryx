@@ -34,7 +34,7 @@ class MpmcLockFreeQueue
   public:
     using element_t = ElementType;
 
-    /// @brief creates and initalizes an empty MpmcLockFreeQueue
+    /// @brief creates and initializes an empty MpmcLockFreeQueue
     MpmcLockFreeQueue() noexcept;
 
     ~MpmcLockFreeQueue() noexcept = default;
@@ -66,14 +66,14 @@ class MpmcLockFreeQueue
     /// @brief inserts value in FIFO order, always succeeds by removing the oldest value
     /// when the queue is detected to be full (overflow)
     /// @param value to be inserted is copied into the queue
-    /// @return removed value if an overflow occured, empty optional otherwise
+    /// @return removed value if an overflow occurred, empty optional otherwise
     /// @note threadsafe, lockfree
     iox::optional<ElementType> push(const ElementType& value) noexcept;
 
     /// @brief inserts value in FIFO order, always succeeds by removing the oldest value
     /// when the queue is detected to be full (overflow)
     /// @param value to be inserted is moved into the queue if possible
-    /// @return removed value if an overflow occured, empty optional otherwise
+    /// @return removed value if an overflow occurred, empty optional otherwise
     /// @note threadsafe, lockfree
     iox::optional<ElementType> push(ElementType&& value) noexcept;
 

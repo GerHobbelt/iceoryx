@@ -141,7 +141,7 @@ TEST_F(ProcessIntrospection_test, addRemoveProcess)
         ASSERT_THAT(chunk3, Ne(nullptr));
         EXPECT_THAT(chunk3->sample()->m_processList.size(), Eq(0U));
 
-        // if there isn't any change, no data are deliverd
+        // if there isn't any change, no data are delivered
         EXPECT_CALL(introspectionAccess->getPublisherPort().value(), sendChunk(_)).Times(0);
         EXPECT_CALL(introspectionAccess->getPublisherPort().value(), stopOffer()).Times(1);
         introspectionAccess->send();

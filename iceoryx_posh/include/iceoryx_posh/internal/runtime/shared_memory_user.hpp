@@ -49,7 +49,7 @@ class SharedMemoryUser
     /// @param[in] domainId to tie the shared memory to
     /// @param[in] segmentId of the segment for the relocatable shared memory segment address space
     /// @param[in] managementShmSize size of the shared memory management segment
-    /// @param[in] segmentManagerAddressOffset adress of the segment manager that does the final mapping of memory in
+    /// @param[in] segmentManagerAddressOffset address of the segment manager that does the final mapping of memory in
     /// the process
     /// @return a 'SharedMemoryUser' instance or an 'SharedMemoryUserError' on failure
     static expected<SharedMemoryUser, SharedMemoryUserError>

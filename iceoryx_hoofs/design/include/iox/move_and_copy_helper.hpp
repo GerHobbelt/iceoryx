@@ -45,7 +45,7 @@ class MoveAndCopyHelper
         Opt == MoveAndCopyOperations::MoveAssignment || Opt == MoveAndCopyOperations::MoveConstructor;
 
   public:
-    /// @brief Creates or assigns an object to 'dest' based on the specail operation type.
+    /// @brief Creates or assigns an object to 'dest' based on the special operation type.
     /// @tparam T The type of the object to be created or assigned.
     /// @tparam V The type of the source object, kept as a universal reference to preserve its lvalue or rvalue nature.
     /// @param[out] dest The destination object where the new object is created or to which the source object is

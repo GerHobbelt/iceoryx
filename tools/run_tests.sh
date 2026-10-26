@@ -88,7 +88,7 @@ for arg in "$@"; do
         echo "      [all, unit, integration]    Testlevel where the test shall run"
         echo "      only-timing-tests           Runs only timing tests"
         echo "      continue-on-error           Continue execution upon error"
-        echo "      asan-only                   Execute Adress-Sanitizer only"
+        echo "      asan-only                   Execute Address-Sanitizer only"
         echo "      tsan-only                   Execute Thread-Sanitizer only"
         echo ""
         exit 1

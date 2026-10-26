@@ -37,7 +37,7 @@
 
 /// @brief calls panic handler and does not return
 /// @param message message to be forwarded
-/// @note could actually throw if desired without breaking control flow asssumptions
+/// @note could actually throw if desired without breaking control flow assumptions
 #define IOX_PANIC(message) iox::er::forwardPanic(IOX_CURRENT_SOURCE_LOCATION, message)
 
 //************************************************************************************************

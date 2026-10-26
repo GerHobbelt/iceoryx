@@ -80,7 +80,7 @@ change in the service registry and to transmit the service discovery registry. T
 
 Pro:
 
-* Simple and consistent user API for both event-based and sychronous requests
+* Simple and consistent user API for both event-based and synchronous requests
   * Filtering for `findService` could be done inside the new class
 * No need for a change counter as ABA problem solved by POSH mechanisms
 * Not just delta of service registry is transmitted, but complete service registry info
@@ -96,7 +96,7 @@ Con:
 Note:
 
 * To avoid any out of memory issues with custom user-configured mempools or access rights problems, the publisher shall
-write into the `iceoryx_managment` segment (same applies for the introspection publishers)
+write into the `iceoryx_management` segment (same applies for the introspection publishers)
 
 ##### Alternative E: Introduce new StatusPort/ConfigPort/BroadcastPort
 
@@ -117,7 +117,7 @@ only need read access and not write access
 * Fast data transport by using shared memory
 * Could replace `InterfacePort`s
 * Not just delta of service registry is transmitted, but complete service registry info
-* Simple and consistent user API for both event-based and sychronous requests
+* Simple and consistent user API for both event-based and synchronous requests
   * Filtering for `findService` could be done inside the new class
 
 Con:

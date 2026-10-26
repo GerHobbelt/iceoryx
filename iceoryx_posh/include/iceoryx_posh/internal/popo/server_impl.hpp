@@ -40,7 +40,7 @@ class ServerImpl : public BaseServerT, private RpcInterface<Response<Res>, Serve
     using ResponseTypeAssert = typename TypedPortApiTrait<Res>::Assert;
 
   public:
-    /// @brief Constructor for a sserver
+    /// @brief Constructor for a server
     /// @param[in] service is the ServiceDescription for the new server
     /// @param[in] serverOptions like the queue capacity and queue full policy by a server
     explicit ServerImpl(const capro::ServiceDescription& service, const ServerOptions& serverOptions = {}) noexcept;

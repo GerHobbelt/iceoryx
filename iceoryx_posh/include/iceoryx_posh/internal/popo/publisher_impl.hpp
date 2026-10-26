@@ -48,7 +48,7 @@ class PublisherImpl : public BasePublisherType, private PublisherInterface<T, H>
     PublisherImpl& operator=(PublisherImpl&& rhs) noexcept = delete;
 
     ///
-    /// @brief loan Get a sample from loaned shared memory and consctruct the data with the given arguments.
+    /// @brief loan Get a sample from loaned shared memory and construct the data with the given arguments.
     /// @param args Arguments used to construct the data.
     /// @return An instance of the sample that resides in shared memory or an error if unable ot allocate memory to
     /// loan.

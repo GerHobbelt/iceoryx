@@ -130,7 +130,7 @@ class MyTriggerClass
   private:
     /// @brief Only usable by the WaitSet, not for public use
     // This method attaches a state of the class to a waitset.
-    // The state is choosen by the state parameter. Additionally, you can
+    // The state is chosen by the state parameter. Additionally, you can
     // set an eventId to group multiple instances and a custom callback.
     //! [enableState]
     void enableState(iox::popo::TriggerHandle&& triggerHandle, const MyTriggerClassStates state) noexcept
@@ -149,7 +149,7 @@ class MyTriggerClass
 
     /// @brief Only usable by the WaitSet, not for public use
     // This method attaches an event of the class to a waitset.
-    // The event is choosen by the event parameter. Additionally, you can
+    // The event is chosen by the event parameter. Additionally, you can
     // set an eventId to group multiple instances and a custom callback.
     //! [enableEvent]
     void enableEvent(iox::popo::TriggerHandle&& triggerHandle, const MyTriggerClassEvents event) noexcept

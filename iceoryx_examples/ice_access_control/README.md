@@ -110,7 +110,7 @@ to the _privileged_ segment and is sending data into the _privileged_ shared mem
 
 The display app is started with the user _infotainment_, which is in the group _infotainment_ and _unprivileged_.
 Therefore it has read access to the _privileged_ segment. It reads the topic `{"Radar", "FrontLeft", "Object"}` from
-the _privileged_ segment and forwards it as a slighty modified topic `{"Radar", "HMI-Display", "Object"}`. Because
+the _privileged_ segment and forwards it as a slightly modified topic `{"Radar", "HMI-Display", "Object"}`. Because
 the user _infotainment_ is only in the _infotainment_ and _unprivileged_ group, it only has write access to the
 infotainment segment. Hence, the data is written to this segment.
 
@@ -150,7 +150,7 @@ other::--
 ```
 
 !!! note
-    Note the shared memory managment segment (`iceoryx_mgmt`) is always available for everyone in the group `iceoryx`
+    Note the shared memory management segment (`iceoryx_mgmt`) is always available for everyone in the group `iceoryx`
     to **read** and **write**.
 
 #### Not-working setup

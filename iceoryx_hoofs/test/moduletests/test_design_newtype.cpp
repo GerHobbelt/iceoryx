@@ -26,7 +26,7 @@ struct ComplexType
 {
     uint64_t value{0};
 
-    // the test requires the type to be implicit convertable
+    // the test requires the type to be implicit convertible
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
     ComplexType(uint64_t v)
         : value(v)

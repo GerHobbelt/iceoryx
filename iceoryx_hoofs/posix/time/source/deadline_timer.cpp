@@ -62,7 +62,7 @@ iox::units::Duration deadline_timer::getCurrentMonotonicTime() noexcept
                      .failureReturnValue(-1)
                      .evaluate()
                      .has_error(),
-                "An error which should never happen occured during 'iox_clock_gettime'!");
+                "An error which should never happen occurred during 'iox_clock_gettime'!");
     return iox::units::Duration{time_since_epoch};
 }
 } // namespace iox

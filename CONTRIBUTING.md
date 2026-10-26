@@ -205,7 +205,7 @@ A good example for code formatting and doxygen structure can be found in [swe_do
 ### External dependencies
 
 External dependencies such as the [STL](https://en.wikipedia.org/wiki/Standard_Template_Library) or
-other libaries shall be kept to a minium for `iceoryx_posh` and `iceoryx_hoofs`. If you think a new dependency is
+other libraries shall be kept to a minimum for `iceoryx_posh` and `iceoryx_hoofs`. If you think a new dependency is
 necessary, do the following:
 
 1. Contact the maintainers beforehand by opening an issue to discuss the necessity

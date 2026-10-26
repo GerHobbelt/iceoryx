@@ -130,8 +130,8 @@ class ServerPortUser : public BasePort
     /// @brief Allocate a response, the ownerhip of the SharedChunk remains in the ServerPortUser for being able to
     /// cleanup if the user process disappears
     /// @param[in] requestHeader, the request header for the corresponding response
-    /// @param[in] userPayloadSize, size of the user user-paylaod without additional headers
-    /// @param[in] userPayloadAlignment, alignment of the user user-paylaod without additional headers
+    /// @param[in] userPayloadSize, size of the user user-payload without additional headers
+    /// @param[in] userPayloadAlignment, alignment of the user user-payload without additional headers
     /// @return on success pointer to a ChunkHeader which can be used to access the chunk-header, user-header and
     /// user-payload fields, error if not
     expected<ResponseHeader*, AllocationError> allocateResponse(const RequestHeader* const requestHeader,

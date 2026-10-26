@@ -71,7 +71,7 @@ struct NonZeroedBuffer
 /// @tparam Buffer is the policy parameter to choose between an uninitialized, not zeroed array (=NonZeroedBuffer,
 /// default) and an uninitialized array with all elements zeroed (=ZeroedBuffer)
 /// @note Out of bounds access leads to undefined behavior
-// AXIVION Next Construct AutosarC++19_03-A9.6.1 : type contains a single member that is a byte array whos size is defined by ElementType and Capacity
+// AXIVION Next Construct AutosarC++19_03-A9.6.1 : type contains a single member that is a byte array whose size is defined by ElementType and Capacity
 template <typename ElementType, uint64_t Capacity, template <typename, uint64_t> class Buffer = NonZeroedBuffer>
 class UninitializedArray final
 {

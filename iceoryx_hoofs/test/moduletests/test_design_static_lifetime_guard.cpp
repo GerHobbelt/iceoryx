@@ -345,7 +345,7 @@ TEST_F(StaticLifetimeGuard_test, instanceCtorIsConcurrentlyCalledExactlyOnce)
     auto createInstance = [&barrier]() {
         barrier.notify();
         barrier.wait();
-        // all threads have notfied (but may pass wait in any order ...)
+        // all threads have notified (but may pass wait in any order ...)
 
         // cannot wait too long otherwise we slow down the tests too much,
         // cannot be optimized away, as it has side effects (counting)

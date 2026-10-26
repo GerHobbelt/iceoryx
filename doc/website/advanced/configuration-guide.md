@@ -168,7 +168,7 @@ The TOML config file can be passed to RouDi with the `-c` command-line option.
 ./iox-roudi -c /absolute/path/to/config/file.toml
 ```
 
-This is an examplary config file with format version 1:
+This is an exemplary config file with format version 1:
 
 ```TOML
 [general]

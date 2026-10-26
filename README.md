@@ -3,14 +3,20 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Codecov](https://codecov.io/gh/eclipse-iceoryx/iceoryx/branch/main/graph/badge.svg?branch=main)](https://codecov.io/gh/eclipse-iceoryx/iceoryx?branch=main)
 
+> [!IMPORTANT]
+> iceoryx classic is in maintenance mode and will no longer receive new features, only security fixes.
+> There will be no further major releases.
+>
+> The maintainers' focus has shifted to [iceoryx2](https://github.com/eclipse-iceoryx/iceoryx2), which is more robust, feature-rich, and runs on more platforms.
+> We recommend using iceoryx2 for new projects and migrating existing projects to iceoryx2.
+>
+> Shortly **after** the **iceoryx2 v1.0** release, iceoryx classic will reach **end of life** (EOL).
+
 <p align="center">
 <img src="https://user-images.githubusercontent.com/8661268/114321508-64a6b000-9b1b-11eb-95ef-b84c91387cff.png" width="50%">
 </p>
 
 # iceoryx - true zero-copy inter-process-communication
-
-This is the original implementation written in C++. For the Rust-based next-gen implementation, please have a
-look at [iceoryx2](https://github.com/eclipse-iceoryx/iceoryx2).
 
 1. [Introduction](#introduction)
    1. [Supported Platforms](#supported-platforms)

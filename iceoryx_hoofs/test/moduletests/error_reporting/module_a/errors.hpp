@@ -93,7 +93,7 @@ namespace er
 {
 
 // This definition must exist in this namespace for overload resolution.
-// Each module must use a unqiue error enum, e.g. by namespace.
+// Each module must use a unique error enum, e.g. by namespace.
 inline module_a::errors::Error toError(module_a::errors::Code code)
 {
     return module_a::errors::Error(code);

@@ -26,7 +26,7 @@ IceOryxRouDiComponents::IceOryxRouDiComponents(const IceoryxConfig& config) noex
     : rouDiMemoryManager(config)
     , portManager([&]() -> IceOryxRouDiMemoryManager* {
         // this temporary object will create a roudi IPC channel
-        // and close it immediatelly
+        // and close it immediately
         // if there was an outdated roudi IPC channel, it will be cleaned up
         // if there is an outdated IPC channel, the start of the apps will be terminated
         runtime::IpcInterfaceBase::cleanupOutdatedIpcChannel(roudi::IPC_CHANNEL_ROUDI_NAME);

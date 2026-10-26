@@ -48,7 +48,7 @@ package iceoryx_hoofs  {
       component Primitives <<module>>
       component Buffers <<module>>
       component "Inter-process communication" <<module>>
-      component "Threads & sychronisation" <<module>>
+      component "Threads & synchronisation" <<module>>
       component "Generalized design patterns & abstractions" <<module>>
       component Reporting <<module>>
       component Time <<module>>

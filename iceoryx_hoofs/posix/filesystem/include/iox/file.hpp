@@ -104,7 +104,7 @@ enum class FileOffsetError : uint8_t
 };
 
 /// @brief Represents a file. It supports various read and write functionalities
-///        and can verify the existance of a file as well as remove existing files.
+///        and can verify the existence of a file as well as remove existing files.
 class File : public FileManagementInterface<File>
 {
   public:

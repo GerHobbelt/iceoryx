@@ -29,7 +29,7 @@ static_assert(sizeof(RelativePointerData) <= RelativePointerData::MAX_ALLOWED_SI
 static_assert((sizeof(RelativePointerData)) == (alignof(RelativePointerData)),
               "A RelativePointerData must be placed on an address which does not cross the native alignment!");
 // This is important for the use in the SOFI where under some conditions the copy operation could work on partially
-// obsolet data and therefore non-trivial copy ctor/assignment operator or dtor would work on corrupted data.
+// obsolete data and therefore non-trivial copy ctor/assignment operator or dtor would work on corrupted data.
 static_assert(std::is_trivially_copyable<RelativePointerData>::value,
               "The RelativePointerData must be trivially copyable!");
 

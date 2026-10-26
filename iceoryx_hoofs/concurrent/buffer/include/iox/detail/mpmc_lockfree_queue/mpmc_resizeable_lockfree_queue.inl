@@ -150,7 +150,7 @@ inline uint64_t MpmcResizeableLockFreeQueue<ElementType, MaxCapacity>::decreaseC
         // no free indices, try the used ones
         while (decreased < toDecrease)
         {
-            // remark: just calling pop to create free space is not sufficent in a concurrent scenario
+            // remark: just calling pop to create free space is not sufficient in a concurrent scenario
             // we want to make sure no one else gets the index once we have it
             if (!tryGetUsedIndex(index))
             {

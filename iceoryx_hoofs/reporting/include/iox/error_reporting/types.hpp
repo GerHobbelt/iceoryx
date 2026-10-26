@@ -85,7 +85,7 @@ struct ModuleId
 };
 
 // primary template is the identity
-// this can be overriden by modules to handle specific errors
+// this can be overridden by modules to handle specific errors
 template <typename ErrorLike>
 auto toError(ErrorLike&& value)
 {

@@ -52,7 +52,7 @@ samples present in the subscriber queue.
 ## Glossary
 
 - **Event** a state change of an object; a _Triggerable_ will signal an event via a _TriggerHandle_ to
-     a _Notifyable_. For instance one can attach the subscriber event `DATA_RECEIVED` to _WaitSet_.
+     a _Notifiable_. For instance one can attach the subscriber event `DATA_RECEIVED` to _WaitSet_.
      This will cause the subscriber to notify the WaitSet via the _TriggerHandle_ everytime a
      sample was received.
 - **NotificationCallback** a callback attached to a _NotificationInfo_. It must have the
@@ -68,25 +68,25 @@ samples present in the subscriber queue.
      the _NotificationId_, call the _NotificationCallback_ or acquire the _NotificationOrigin_.
 - **NotificationOrigin** the pointer to the class where the _Event_ originated from, short
      pointer to the _Triggerable_.
-- **Notifyable** is a class which listens to events. A _TriggerHandle_ which corresponds to a _Trigger_
-     is used to notify the _Notifyable_ that an event occurred. The WaitSet is a _Notifyable_.
+- **Notifiable** is a class which listens to events. A _TriggerHandle_ which corresponds to a _Trigger_
+     is used to notify the _Notifiable_ that an event occurred. The WaitSet is a _Notifiable_.
 - **State** a specified set of values to which the members of an object are set.
-- **Trigger** a class which is used by the _Notifyable_ to acquire the information which events were
-     signalled. It corresponds to a _TriggerHandle_. If the _Notifyable_ goes out of scope the corresponding
+- **Trigger** a class which is used by the _Notifiable_ to acquire the information which events were
+     signalled. It corresponds to a _TriggerHandle_. If the _Notifiable_ goes out of scope the corresponding
      _TriggerHandle_ will be invalidated and if the _Triggerable_ goes out of scope the corresponding
      _Trigger_ will be invalidated.
 - **Triggerable** a class which has attached a _TriggerHandle_ to itself to signal
-     certain _Events_ to a _Notifyable_.
-- **TriggerHandle** a thread-safe class which can be used to trigger a _Notifyable_.
-     If a _TriggerHandle_ goes out of scope it will detach itself from the _Notifyable_. A _TriggerHandle_ is
+     certain _Events_ to a _Notifiable_.
+- **TriggerHandle** a thread-safe class which can be used to trigger a _Notifiable_.
+     If a _TriggerHandle_ goes out of scope it will detach itself from the _Notifiable_. A _TriggerHandle_ is
      logical equal to another _Trigger_ if they:
-  - are attached to the same _Notifyable_ (or in other words they are using the
+  - are attached to the same _Notifiable_ (or in other words they are using the
        same `ConditionVariable`)
   - they have the same _NotificationOrigin_
   - they have the same callback to verify that they were triggered
        (`hasNotificationCallback`)
   - they have the same _NotificationId_
-- **WaitSet** a _Notifyable_ which manages a set of _Triggers_ which are corresponding to _Events_.
+- **WaitSet** a _Notifiable_ which manages a set of _Triggers_ which are corresponding to _Events_.
      A user may attach or detach events. The _Waitset_ is listening
      to the whole set of _Triggers_ and if one or more _Triggers_ are triggered by an event it will notify
      the user. If a _WaitSet_ goes out of scope all attached _Triggers_ will be
@@ -94,7 +94,7 @@ samples present in the subscriber queue.
 
 ## Quick Overview
 
-**Events** or **States** can be attached to a **Notifyable** like the **WaitSet**.
+**Events** or **States** can be attached to a **Notifiable** like the **WaitSet**.
 The **WaitSet** will listen on **Triggers** for a signal that an **Event** has occurred and it hands out
 **TriggerHandles** to **Triggerable** objects. The **TriggerHandle** is used to inform the **WaitSet**
 about the occurrence of an **Event**. When returning from `WaitSet::wait()` the user is provided with a vector of **NotificationInfos**
@@ -763,11 +763,11 @@ bool isActivated() const noexcept
 ```
 
 Since the following methods should not be accessible by the public but must be
-accessible by any _Notifyable_ like the _WaitSet_ and to avoid that
-we have to befriend every possible _Notifyable_ we created the `NotificationAttorney`.
+accessible by any _Notifiable_ like the _WaitSet_ and to avoid that
+we have to befriend every possible _Notifiable_ we created the `NotificationAttorney`.
 Every _Triggerable_ has to befriend the `NotificationAttorney` which provides access
 to the private methods `enableEvent`/`enableState`, `disableEvent`/`disableState`, `invalidateTrigger` and
-`getCallbackForIsStateConditionSatisfied` to all _Notifyables_.
+`getCallbackForIsStateConditionSatisfied` to all _Notifiables_.
 
 <!--[geoffrey][iceoryx_examples/waitset/ice_waitset_trigger.cpp][attorney]-->
 ```cpp

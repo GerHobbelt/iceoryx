@@ -108,7 +108,7 @@ FileLock& FileLock::operator=(FileLock&& rhs) noexcept
         {
             IOX_LOG(Error,
                     "Unable to cleanup file lock \"" << m_fileLockPath
-                                                     << "\" in the move constructor/move assingment operator");
+                                                     << "\" in the move constructor/move assignment operator");
         }
 
         m_fileLockPath = std::move(rhs.m_fileLockPath);
@@ -197,7 +197,7 @@ FileLockError FileLock::convertErrnoToFileLockError(const int32_t errnum, const 
     case EFBIG:
     case EOVERFLOW:
     {
-        IOX_LOG(Error, "file lock \"" << fileLockPath << '"' << " is too large to be openend");
+        IOX_LOG(Error, "file lock \"" << fileLockPath << '"' << " is too large to be opened");
         return FileLockError::FILE_TOO_LARGE;
     }
     case ELOOP:

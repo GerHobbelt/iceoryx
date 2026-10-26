@@ -29,10 +29,10 @@ namespace popo
 {
 /// @brief TriggerHandle is threadsafe without restrictions in a single process.
 ///        Not qualified for inter process usage. The TriggerHandle is generated
-///        by a Notifyable like the WaitSet and handed out to the user when they
+///        by a Notifiable like the WaitSet and handed out to the user when they
 ///        acquire a trigger. The TriggerHandle corresponds with an internal Trigger
 ///        and is used to signal an event via the trigger method. When it goes
-///        out of scope it cleans up the corresponding trigger in the Notifyable.
+///        out of scope it cleans up the corresponding trigger in the Notifiable.
 class TriggerHandle
 {
   public:
@@ -43,7 +43,7 @@ class TriggerHandle
     /// @param[in] conditionVariableDataRef reference to a condition variable data struct
     /// @param[in] resetCallback callback which will be called it goes out of scope or reset is called
     /// @param[in] uniqueTriggerId the unique trigger id of the Trigger which corresponds to the TriggerHandle. Usually
-    /// stored in a Notifyable. It is required for the resetCallback
+    /// stored in a Notifiable. It is required for the resetCallback
     TriggerHandle(ConditionVariableData& conditionVariableData,
                   const function<void(uint64_t)>& resetCallback,
                   const uint64_t uniqueTriggerId) noexcept;
@@ -67,7 +67,7 @@ class TriggerHandle
     /// all events.
     bool wasTriggered() const noexcept;
 
-    /// @brief triggers the Trigger and informs the Notifyable which verifies that the Trigger was triggered by calling
+    /// @brief triggers the Trigger and informs the Notifiable which verifies that the Trigger was triggered by calling
     /// the hasTriggeredCallback
     void trigger() noexcept;
 

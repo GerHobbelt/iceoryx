@@ -41,7 +41,7 @@ expected<NamedPipe, PosixIpcChannelError> NamedPipeBuilder::create() const noexc
     if (m_name.size() + strlen(&NamedPipe::NAMED_PIPE_PREFIX[0]) > NamedPipe::MAX_MESSAGE_SIZE)
     {
         IOX_LOG(Error,
-                "The named pipe name: '" << m_name << "' is too long. Maxium name length is: "
+                "The named pipe name: '" << m_name << "' is too long. Maximum name length is: "
                                          << NamedPipe::MAX_MESSAGE_SIZE - strlen(&NamedPipe::NAMED_PIPE_PREFIX[0]));
         return err(PosixIpcChannelError::INVALID_CHANNEL_NAME);
     }

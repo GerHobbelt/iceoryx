@@ -155,7 +155,7 @@ TEST_F(PosixSharedMemory_Test, UnlinkExistingShmWorks)
     ASSERT_FALSE(result.has_error());
     EXPECT_TRUE(*result);
 
-    // delete the underyling fd pointer but do not cleanup raw shared memory since
+    // delete the underlying fd pointer but do not cleanup raw shared memory since
     // is is already deleted with unlinkIfExist in the test
     delete rawSharedMemory.release();
 }

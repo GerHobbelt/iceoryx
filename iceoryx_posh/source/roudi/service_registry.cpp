@@ -32,7 +32,7 @@ expected<void, ServiceRegistry::Error> ServiceRegistry::add(const capro::Service
     auto index = findIndex(serviceDescription);
     if (index != NO_INDEX)
     {
-        // multiple entries with the same service descripion are possible
+        // multiple entries with the same service description are possible
         // and we just increase the count in this case (multi-set semantics)
         // entry exists, increment counter
         auto& entry = m_serviceDescriptions[index];

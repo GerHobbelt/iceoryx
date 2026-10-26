@@ -35,7 +35,7 @@ int main()
     iox::popo::Subscriber<RadarObject> subscriber({"Radar", "FrontLeft", "Object"});
     //! [subscriber]
 
-    // 2) The publisher object can't be initalised correctly because the user 'notallowed' isn't in any group which has
+    // 2) The publisher object can't be initialised correctly because the user 'notallowed' isn't in any group which has
     // write access to any shared memory segment.
     // The error POSH__RUNTIME_NO_WRITABLE_SHM_SEGMENT will be reported and programm execution will end
     //! [publisher]

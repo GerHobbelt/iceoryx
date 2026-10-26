@@ -32,7 +32,7 @@ static_assert(sizeof(ShmSafeUnmanagedChunk) <= 8U,
 static_assert(sizeof(ShmSafeUnmanagedChunk) == alignof(ShmSafeUnmanagedChunk),
               "A ShmSafeUnmanagedChunk must be placed on an address which does not cross the native alignment!");
 // This is important for the use in the SOFI where under some conditions the copy operation could work on partially
-// obsolet data and therefore non-trivial copy ctor/assignment operator or dtor would work on corrupted data.
+// obsolete data and therefore non-trivial copy ctor/assignment operator or dtor would work on corrupted data.
 static_assert(std::is_trivially_copyable<ShmSafeUnmanagedChunk>::value,
               "The ShmSafeUnmanagedChunk must be trivially copyable to prevent Frankenstein objects when the copy ctor "
               "works on half dead objects!");

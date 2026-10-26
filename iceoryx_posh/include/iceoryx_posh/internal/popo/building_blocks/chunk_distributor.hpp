@@ -38,10 +38,10 @@ enum class ChunkDistributorError
     QUEUE_NOT_IN_CONTAINER
 };
 
-/// @brief The ChunkDistributor is the low layer building block to send SharedChunks to a dynamic number of ChunkQueus.
+/// @brief The ChunkDistributor is the low layer building block to send SharedChunks to a dynamic number of ChunkQueues.
 /// Together with the ChunkQueuePusher, the ChunkDistributor builds the infrastructure to exchange memory chunks between
 /// different data producers and consumers that could be located in different processes. Besides a modifiable container
-/// of ChunkQueues to which a SharedChunk can be deliverd, it holds a configurable history of last sent chunks. This
+/// of ChunkQueues to which a SharedChunk can be delivered, it holds a configurable history of last sent chunks. This
 /// allows to provide a newly added queue a number of last chunks to start from. This is needed for functionality
 /// known as latched topic in ROS or field in ara::com. A ChunkDistributor is used to build elements of higher
 /// abstraction layers that also do memory managemet and provide an API towards the real user
@@ -82,13 +82,13 @@ class ChunkDistributor
     /// @param[in] queueToAdd chunk queue to add to the list
     /// @param[in] requestedHistory number of last chunks from history to send if available. If history size is smaller
     /// then the available history size chunks are provided
-    /// @return if the queue could be added it returns success, otherwiese a ChunkDistributor error
+    /// @return if the queue could be added it returns success, otherwise a ChunkDistributor error
     expected<void, ChunkDistributorError> tryAddQueue(not_null<ChunkQueueData_t* const> queueToAdd,
                                                       const uint64_t requestedHistory = 0U) noexcept;
 
     /// @brief Remove a queue from the internal list of chunk queues
     /// @param[in] queueToRemove is the queue to remove from the list
-    /// @return if the queue could be removed it returns success, otherwiese a ChunkDistributor error
+    /// @return if the queue could be removed it returns success, otherwise a ChunkDistributor error
     expected<void, ChunkDistributorError> tryRemoveQueue(not_null<ChunkQueueData_t* const> queueToRemove) noexcept;
 
     /// @brief Delete all the stored chunk queues

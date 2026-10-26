@@ -12,7 +12,7 @@ Check the `--shm-size` flag of the docker container. Does the container provide 
 
 ## How can I find out if RouDi is running?
 
-RouDi uses a file locking machanism to ensure that only one RouDi instance is running at a time. For that RouDi
+RouDi uses a file locking mechanism to ensure that only one RouDi instance is running at a time. For that RouDi
 creates and locks `/tmp/roudi.lock`. The file exists also also when RouDi is not running. Try locking this file,
 if this fails RouDi is running.
 
@@ -124,7 +124,7 @@ target_link_options(single_process BEFORE PRIVATE /STACK:3500000)
 
 For other platforms apply other flags or solutions.
 
-### CI fails but error is locally not reproducable
+### CI fails but error is locally not reproducible
 
 One can use `tools/scripts/ice_env.sh` to create an iceoryx development environment
 with a configuration very similar to the CI target.

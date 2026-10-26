@@ -278,7 +278,7 @@ void PortManager::handleClientPorts() noexcept
 
         doDiscoveryForClientPort(clientPort);
 
-        // check if we have to destroy this clinet port
+        // check if we have to destroy this client port
         if (clientPort.toBeDestroyed())
         {
             destroyClientPort(currentPort.to_ptr());
@@ -387,7 +387,7 @@ void PortManager::handleServerPorts() noexcept
 void PortManager::doDiscoveryForServerPort(popo::ServerPortRouDi& serverPort) noexcept
 {
     serverPort.tryGetCaProMessage().and_then([this, &serverPort](auto caproMessage) {
-        /// @todo iox-#1128 report to port instrospection
+        /// @todo iox-#1128 report to port introspection
 
         if (capro::CaproMessageType::OFFER == caproMessage.m_type)
         {

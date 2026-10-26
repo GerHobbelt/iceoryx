@@ -296,12 +296,12 @@ or clients. This way we can immediately wake up when data is available and avoid
 is available.
 
 One typical use case is to create a WaitSet, attach multiple subscribers and/or clients and user triggers and then
-wait until one or many of the attached objects signal an event. If this happens one receives a list of all occured
+wait until one or many of the attached objects signal an event. If this happens one receives a list of all occurred
 events called `notificationVector`. This makes it possible to collect data directly from the subscriber or client
 when it signals the WaitSet that new data or a new response is available.
 
 The WaitSet uses the [reactor pattern](https://en.wikipedia.org/wiki/Reactor_pattern) and is informed with a push
-strategy that one of the attached events occured at which it informs the user.
+strategy that one of the attached events occurred at which it informs the user.
 
 For more information on how to use the WaitSet see our
 [WaitSet examples](../../../iceoryx_examples/waitset).

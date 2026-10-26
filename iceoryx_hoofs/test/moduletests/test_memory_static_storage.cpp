@@ -133,7 +133,7 @@ TEST(static_storage_test, TypedAllocateSucceedsIfSizeIsSufficient)
     using Data = Bytes<16, 4>;
     static_storage<18, 2> sut;
     EXPECT_NE(sut.allocate<Data>(), nullptr);
-    // when size of storage is insufficent it will not compile and
+    // when size of storage is insufficient it will not compile and
     // therefore cannot be tested
 }
 

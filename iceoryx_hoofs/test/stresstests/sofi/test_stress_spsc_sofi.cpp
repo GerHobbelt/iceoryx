@@ -44,7 +44,7 @@ class SpscSofiStress : public Test
     ///
     /// @param cpu is the CPU the thread shall use
     /// @param nativeHandle is the native handle of the c++11 std::thread
-    /// @return bool: if true, setting the affinity was successfull
+    /// @return bool: if true, setting the affinity was successful
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) used only for test purposes
     static bool setCpuAffinity(unsigned int cpu, std::thread::native_handle_type nativeHandle)
     {
@@ -194,7 +194,7 @@ TEST_F(SpscSofiStress, SimultaneouslyPushAndPopOnEmptySoFi)
 
     EXPECT_THAT(pushCounter / 1000, Gt(STRESS_TIME.count())) << "There should be at least 1000 pushes per millisecond!";
     EXPECT_THAT(tryPopCounter / 4, Gt(popCounter))
-        << "There should be at least 4 times as many trys to pop as actual pops!";
+        << "There should be at least 4 times as many tries to pop as actual pops!";
     EXPECT_THAT(pushCounter, Eq(popCounter)) << "Push and Pop Counter should be Equal after the Test!";
 
     IOX_LOG(Info, "try pop counter: " << tryPopCounter);

@@ -55,7 +55,7 @@ int main()
     iox::popo::Publisher<RadarObject> publisher({"Radar", "FrontLeft", "Object"}, publisherOptions);
     //! [create publisher with options]
 
-    // we have to explicitely offer the publisher for making it visible to subscribers
+    // we have to explicitly offer the publisher for making it visible to subscribers
     //! [offer]
     publisher.offer();
     //! [offer]

@@ -77,7 +77,7 @@ class ServiceRegistry
     void removeServer(const capro::ServiceDescription& serviceDescription) noexcept;
 
     /// @brief Removes given service description from registry if service is found,
-    ///        all occurences are removed
+    ///        all occurrences are removed
     /// @param[in] serviceDescription, service to be removed
     void purge(const capro::ServiceDescription& serviceDescription) noexcept;
 

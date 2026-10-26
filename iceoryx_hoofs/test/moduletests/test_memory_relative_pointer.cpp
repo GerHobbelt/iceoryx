@@ -449,7 +449,7 @@ TYPED_TEST(RelativePointer_test, MemoryRemappingWorks)
         EXPECT_EQ(rp1.getId(), 1U);
         EXPECT_EQ(rp2.getId(), 2U);
 
-        // relative to their respective memory block base adress both have the same offset
+        // relative to their respective memory block base address both have the same offset
         EXPECT_EQ(rp1.getOffset(), offset);
         EXPECT_EQ(rp2.getOffset(), offset);
 

@@ -164,7 +164,7 @@ template <typename T>
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
 inline T* RelativePointer<T>::getBasePtr(const segment_id_t id) noexcept
 {
-    // AXIVION Next Construct AutosarC++19_03-M5.2.8 : Cast to the underyling pointer type is safe as this is
+    // AXIVION Next Construct AutosarC++19_03-M5.2.8 : Cast to the underlying pointer type is safe as this is
     // encapsulated in the RelativePointer class and type safety is ensured by using templates
     return static_cast<ptr_t>(getRepository().getBasePtr(static_cast<segment_id_underlying_t>(id)));
 }

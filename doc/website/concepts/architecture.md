@@ -36,7 +36,7 @@ This section describes the namespaces of the core library.
 protocol, which is used by `iceoryx_posh` to connect and discover `popo::Publisher` and `popo::Server`.
 * `mepoo`: The namespace memory pool contains all memory-related classes. For example the `MemoryManager` or `SharedPointer`.
 * `version`: The namespace version contains ABI compatibilities checks.
-* `build`: The namespace build contains certain maximium values which can be changed before compilation.
+* `build`: The namespace build contains certain maximum values which can be changed before compilation.
 
 #### Gateway library
 

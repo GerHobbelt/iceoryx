@@ -62,7 +62,7 @@ bool iox_notification_info_does_originate_from_server(iox_notification_info_t co
 /// @brief does the notification originate from a certain service discovery
 /// @param[in] self handle to notification info
 /// @param[in] serviceDiscovery handle to serviceDiscovery in question
-/// @return true if the notifiaction originates from the service discovery, otherwise false
+/// @return true if the notification originates from the service discovery, otherwise false
 bool iox_notification_info_does_originate_from_service_discovery(iox_notification_info_t const self,
                                                                  iox_service_discovery_t const serviceDiscovery);
 

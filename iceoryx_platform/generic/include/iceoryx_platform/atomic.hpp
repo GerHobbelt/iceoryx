@@ -274,7 +274,7 @@ class Atomic
         return m_value.fetch_add(value, order);
     }
 
-    /// @brief Atomically substracts the given value to the stored value with the given memory order and returns the
+    /// @brief Atomically subtracts the given value to the stored value with the given memory order and returns the
     /// previous value
     template <typename U = T>
     enable_if_integral_t<U> fetch_sub(T value, std::memory_order order = std::memory_order_seq_cst) noexcept
@@ -282,7 +282,7 @@ class Atomic
         return m_value.fetch_sub(value, order);
     }
 
-    /// @brief Atomically substracts the given value to the stored value with the given memory order and returns the
+    /// @brief Atomically subtracts the given value to the stored value with the given memory order and returns the
     /// previous value
     template <typename U = T>
     enable_if_integral_t<U> fetch_sub(T value, std::memory_order order = std::memory_order_seq_cst) volatile noexcept
@@ -290,7 +290,7 @@ class Atomic
         return m_value.fetch_sub(value, order);
     }
 
-    /// @brie Atomically substracts the given difference to the stored pointer value with the given memory order and
+    /// @brie Atomically subtracts the given difference to the stored pointer value with the given memory order and
     /// returns the previous pointer value
     template <typename U = T>
     enable_if_pointer_t<U> fetch_sub(std::ptrdiff_t value, std::memory_order order = std::memory_order_seq_cst) noexcept
@@ -298,7 +298,7 @@ class Atomic
         return m_value.fetch_sub(value, order);
     }
 
-    /// @brie Atomically substracts the given difference to the stored pointer value with the given memory order and
+    /// @brie Atomically subtracts the given difference to the stored pointer value with the given memory order and
     /// returns the previous pointer value
     template <typename U = T>
     enable_if_pointer_t<U> fetch_sub(std::ptrdiff_t value,
@@ -323,7 +323,7 @@ class Atomic
         return m_value.operator+=(value);
     }
 
-    /// @brief Atomically substracts the given value to the stored value and returns the resulting value. Equivalent to
+    /// @brief Atomically subtracts the given value to the stored value and returns the resulting value. Equivalent to
     /// 'fetch_sub(value) - value'
     template <typename U = T>
     enable_if_integral_t<U> operator-=(T value) noexcept
@@ -331,7 +331,7 @@ class Atomic
         return m_value.operator-=(value);
     }
 
-    /// @brief Atomically substracts the given value to the stored value and returns the resulting value. Equivalent to
+    /// @brief Atomically subtracts the given value to the stored value and returns the resulting value. Equivalent to
     /// 'fetch_sub(value) - value'
     template <typename U = T>
     enable_if_integral_t<U> operator-=(T value) volatile noexcept
@@ -355,7 +355,7 @@ class Atomic
         return m_value.operator+=(value);
     }
 
-    /// @brief Atomically substracts the given difference to the stored pointer value and returns the resulting new
+    /// @brief Atomically subtracts the given difference to the stored pointer value and returns the resulting new
     /// pointer value. Equivalent to 'fetch_sub(value) - value'
     template <typename U = T>
     enable_if_pointer_t<U> operator-=(std::ptrdiff_t value) noexcept
@@ -363,7 +363,7 @@ class Atomic
         return m_value.operator-=(value);
     }
 
-    /// @brief Atomically substracts the given difference to the stored pointer value and returns the resulting new
+    /// @brief Atomically subtracts the given difference to the stored pointer value and returns the resulting new
     /// pointer value. Equivalent to 'fetch_sub(value) - value'
     template <typename U = T>
     enable_if_pointer_t<U> operator-=(std::ptrdiff_t value) volatile noexcept

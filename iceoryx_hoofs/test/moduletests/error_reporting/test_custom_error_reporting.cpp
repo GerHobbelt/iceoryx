@@ -110,7 +110,7 @@ TEST_F(ErrorReporting_test, reportFatalErrorWorks)
     iox::testing::runInTestThread(f);
 
     // panic is not required at this level as we cannot trust the custom API to enforce it
-    // While we could also call panic in the custom API, there should only be one decison point
+    // While we could also call panic in the custom API, there should only be one decision point
     // for it at a higher level
     IOX_TESTING_EXPECT_ERROR(ERROR_CODE);
 }

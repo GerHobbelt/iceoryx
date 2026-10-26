@@ -133,7 +133,7 @@ we increase the cycle every n pushes (or pops), but the numbers representing the
 
 **Claim:** The queue push and pop operations are lock-free.
 
-1. Push operations cannot block pop operaions arbitrarily long and vice versa.
+1. Push operations cannot block pop operations arbitrarily long and vice versa.
 2. Furthermore, between concurrent pushes and pops one of each type always succeeds in a finite amount of time.
 
 **Proof sketch:**
@@ -146,7 +146,7 @@ we increase the cycle every n pushes (or pops), but the numbers representing the
 
 Therefore pushes and pops do not interfere to block each other.
 
-Push operatios can block other push operations and pop operations other pop operations due to potential starvation,
+Push operations can block other push operations and pop operations other pop operations due to potential starvation,
 but there will always be one operation that will complete (and therefore progress). This progress implies that the queue is lock-free.
 
 Note that there is no fairness guarantee. In principle the same push thread or pop thread might always succeed but in practice this is unlikely.

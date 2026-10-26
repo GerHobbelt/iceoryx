@@ -102,7 +102,8 @@ int main()
     });
     //! [create heartbeat]
 
-    // attach everything to the listener, from here on the callbacks are called when the corresponding event is occuring
+    // attach everything to the listener, from here on the callbacks are called when the corresponding event is
+    // occurring
     //! [attach everything]
     listener.attachEvent(heartbeat, iox::popo::createNotificationCallback(heartbeatCallback)).or_else([](auto) {
         std::cerr << "unable to attach heartbeat event" << std::endl;
@@ -112,7 +113,7 @@ int main()
     // It is possible to attach any c function here with a signature of void(iox::popo::Subscriber<CounterTopic> *).
     // But please be aware that the listener does not take ownership of the callback, therefore it has to exist as
     // long as the event is attached. Furthermore, it excludes lambdas which are capturing data since they are not
-    // convertable to a c function pointer.
+    // convertible to a c function pointer.
     // to simplify the example we attach the same callback onSampleReceivedCallback again
     listener
         .attachEvent(subscriberLeft,

@@ -52,7 +52,7 @@ RouDi::RouDi(RouDiMemoryInterface& roudiMemoryInterface,
 {
     if (detail::isCompiledOn32BitSystem())
     {
-        IOX_LOG(Warn, "Runnning RouDi on 32-bit architectures is experimental! Use at your own risk!");
+        IOX_LOG(Warn, "Running RouDi on 32-bit architectures is experimental! Use at your own risk!");
     }
     m_processIntrospection.registerPublisherPort(
         PublisherPortUserType(m_prcMgr->addIntrospectionPublisherPort(IntrospectionProcessService)));

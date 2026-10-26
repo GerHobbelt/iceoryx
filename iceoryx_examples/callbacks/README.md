@@ -98,7 +98,7 @@ listener.attachEvent(heartbeat, iox::popo::createNotificationCallback(heartbeatC
 // It is possible to attach any c function here with a signature of void(iox::popo::Subscriber<CounterTopic> *).
 // But please be aware that the listener does not take ownership of the callback, therefore it has to exist as
 // long as the event is attached. Furthermore, it excludes lambdas which are capturing data since they are not
-// convertable to a c function pointer.
+// convertible to a c function pointer.
 // to simplify the example we attach the same callback onSampleReceivedCallback again
 listener
     .attachEvent(subscriberLeft,
@@ -274,7 +274,7 @@ CounterService()
 {
     /// Attach the static method onSampleReceivedCallback and provide this as additional argument
     /// to the callback to gain access to the object whenever the callback is called.
-    /// It is not possible to use a lambda with capturing here since they are not convertable to
+    /// It is not possible to use a lambda with capturing here since they are not convertible to
     /// a C function pointer.
     /// important: the user has to ensure that the contextData (*this) lives as long as
     ///            the subscriber with its callback is attached to the listener

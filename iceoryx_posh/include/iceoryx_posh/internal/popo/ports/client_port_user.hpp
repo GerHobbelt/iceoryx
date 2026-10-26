@@ -77,8 +77,8 @@ class ClientPortUser : public BasePort
 
     /// @brief Allocate a chunk, the ownerhip of the SharedChunk remains in the ClientPortUser for being able to
     /// cleanup if the user process disappears
-    /// @param[in] userPayloadSize, size of the user-paylaod without additional headers
-    /// @param[in] userPayloadAlignment, alignment of the user-paylaod without additional headers
+    /// @param[in] userPayloadSize, size of the user-payload without additional headers
+    /// @param[in] userPayloadAlignment, alignment of the user-payload without additional headers
     /// @return on success pointer to a RequestHeader which can be used to access the chunk-header, user-header and
     /// user-payload fields, error if not
     expected<RequestHeader*, AllocationError> allocateRequest(const uint64_t userPayloadSize,

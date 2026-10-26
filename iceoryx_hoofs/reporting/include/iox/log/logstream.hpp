@@ -248,7 +248,7 @@ class LogStream
     /// @return a reference to the LogStream instance
     LogStream& operator<<(const bool val) noexcept;
 
-    // AXIVION DISABLE STYLE AutosarC++19_03-A3.9.1 : Basic numeric types are used in order to cover als basic numeric types, independent of the type alias
+    // AXIVION DISABLE STYLE AutosarC++19_03-A3.9.1 : Basic numeric types are used in order to cover also basic numeric types, independent of the type alias
 
     /// @brief Logging support for 'char'
     /// @param[in] val is the 'char' to log

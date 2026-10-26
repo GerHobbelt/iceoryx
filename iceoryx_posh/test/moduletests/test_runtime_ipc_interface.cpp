@@ -319,7 +319,7 @@ TYPED_TEST(IpcInterface_test, TimedReceiveWorks)
     using namespace std::chrono;
 
     runtime::IpcMessage msg;
-    msg << "very useful text for tranmission";
+    msg << "very useful text for transmission";
     Duration timeout = 100_ms;
 
     ASSERT_TRUE(this->client->send(msg));

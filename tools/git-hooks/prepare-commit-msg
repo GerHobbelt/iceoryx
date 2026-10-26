@@ -30,7 +30,7 @@ if [[ "$branch_name" =~ ^iox-[0-9]+ ]]; then
 elif [[ "$branch_name" =~ ^iox-#[0-9]+ ]]; then
     branch_issue_number="$(echo "$branch_name" | grep -Eo 'iox-#[0-9]+' | grep -Eo '[0-9]+')"
     echo -e "$COLOR_YELLOW"
-    echo -e "Warning: The branch name uses an obsolet convention with a hash in front of the issue number."
+    echo -e "Warning: The branch name uses an obsolete convention with a hash in front of the issue number."
     echo -e "Please don't use this pattern in the future!"
     echo -e "$COLOR_RESET"
 else

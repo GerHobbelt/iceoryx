@@ -54,7 +54,7 @@ struct timespec Duration::timespec(const TimeSpecReference reference) const noex
     const iox_clockid_t clockId{(reference == TimeSpecReference::Epoch) ? CLOCK_REALTIME : CLOCK_MONOTONIC};
     IOX_ENFORCE(
         !IOX_POSIX_CALL(iox_clock_gettime)(clockId, &referenceTime).failureReturnValue(-1).evaluate().has_error(),
-        "An error which should never happen occured during 'iox_clock_gettime'!");
+        "An error which should never happen occurred during 'iox_clock_gettime'!");
 
     const auto targetTime = Duration(referenceTime) + *this;
 

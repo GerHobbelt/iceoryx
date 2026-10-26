@@ -64,7 +64,7 @@ class IpcRuntimeInterface
                             IpcMessage& answer,
                             iox::optional<iox::units::Duration> timeout = iox::nullopt) noexcept;
 
-    /// @brief get the adress offset of the segment manager
+    /// @brief get the address offset of the segment manager
     /// @return address offset as iox::RelativePointer::offset_t
     UntypedRelativePointer::offset_t getSegmentManagerAddressOffset() const noexcept;
 

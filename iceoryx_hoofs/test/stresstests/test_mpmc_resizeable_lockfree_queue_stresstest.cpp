@@ -599,7 +599,7 @@ TYPED_TEST(MpmcResizeableLockFreeQueueStressTest, HybridMultiProducerMultiConsum
 /// which use potentially overflowing pushes.
 /// The tests initializes a local list of distinct elements for each thread.
 /// The queue is also filled with distinct elements to ensure we will have an overflow.
-/// Each thread chooses randomly between push and pop (preference is controllable, to make overlflow more or less
+/// Each thread chooses randomly between push and pop (preference is controllable, to make overflow more or less
 /// likely).
 /// The test runs for some specified time and upon completion it is checked that
 /// aggregated over the queue and the local lists of each thread

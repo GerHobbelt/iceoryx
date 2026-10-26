@@ -70,7 +70,7 @@ struct is_invocable
     }
 
     // AXIVION Next Construct AutosarC++19_03-A8.4.1 : we require a SFINEA failure case where all
-    // parameter types (non invokable ones) are allowed, this can be achieved with variadic arguments
+    // parameter types (non invocable ones) are allowed, this can be achieved with variadic arguments
     // This is chosen if Callable(ArgTypes) does not resolve to a valid type.
     template <typename C, typename... As>
     // NOLINTNEXTLINE(cert-dcl50-cpp)
@@ -87,7 +87,7 @@ struct is_invocable
 /// @brief Verifies whether the passed Callable type is in fact invocable with the given arguments
 ///        and the result of the invocation is convertible to ReturnType.
 ///
-/// @note This is an implementation of std::is_invokable_r (C++17).
+/// @note This is an implementation of std::is_invocable_r (C++17).
 ///
 template <typename ReturnType, typename Callable, typename... ArgTypes>
 struct is_invocable_r
@@ -100,7 +100,7 @@ struct is_invocable_r
         return {};
     }
     // AXIVION Next Construct AutosarC++19_03-A8.4.1 : we require a SFINEA failure case where all
-    // parameter types (non invokable ones) are allowed, this can be achieved with variadic arguments
+    // parameter types (non invocable ones) are allowed, this can be achieved with variadic arguments
     template <typename C, typename... As>
     // NOLINTNEXTLINE(cert-dcl50-cpp)
     static constexpr std::false_type test(...) noexcept

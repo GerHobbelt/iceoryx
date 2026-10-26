@@ -45,7 +45,7 @@ class Arguments
     /// @brief returns the value of a specified option
     /// @tparam T the type of the value
     /// @param[in] optionName either one letter for the shortOption or the whole longOption
-    /// @return the contained value if the value is present and convertable, otherwise an Error which describes the
+    /// @return the contained value if the value is present and convertible, otherwise an Error which describes the
     /// error
     template <typename T>
     expected<T, Error> get(const OptionName_t& optionName) const noexcept;

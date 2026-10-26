@@ -68,7 +68,7 @@ template <typename T, typename H, typename BasePublisherType>
 inline expected<void, AllocationError> PublisherImpl<T, H, BasePublisherType>::publishCopyOf(const T& val) noexcept
 {
     return loanSample().and_then([&](auto& sample) {
-        new (sample.get()) T(val); // Placement new copy-construction of sample, avoid copy-assigment because there
+        new (sample.get()) T(val); // Placement new copy-construction of sample, avoid copy-assignment because there
                                    // might not be an existing instance of T in the sample memory
         sample.publish();
     });

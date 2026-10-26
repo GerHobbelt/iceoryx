@@ -102,7 +102,7 @@ Alternatively, `C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC
 
 #### Setup for MinGW
 
-`MinGW` can also be used to build iceoryx on Windows. The easist way to do this is to use `chocolatey`.
+`MinGW` can also be used to build iceoryx on Windows. The easiest way to do this is to use `chocolatey`.
 
 ```powershell
 choco install -y mingw --version=10.3.0

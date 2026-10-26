@@ -42,7 +42,7 @@ namespace iox
 /// @note relocatable_ptr is not trivially copyable since in general the copy constructor
 ///       requires additional logic. Hence obects that contain it re not trivially
 ///       copyable in the C++ sense. However, if the pointees of a host object containing the
-///       relocatable ptr are all located inside the object and the obect is otherwise trivially
+///       relocatable ptr are all located inside the object and the object is otherwise trivially
 ///       copyable it can be safely copied by memcpy.
 template <typename T>
 class relocatable_ptr

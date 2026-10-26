@@ -116,8 +116,8 @@ class NewType : public Policies<Derived, NewType<Derived, T, Policies...>>...
     constexpr NewType& operator=(T&& rhs) noexcept;
 
     /// @brief conversion operator
-    // AXIVION Next Construct AutosarC++19_03-A13.5.3 : needed to provide convertable policy so that the derived type
-    // can be convertable
+    // AXIVION Next Construct AutosarC++19_03-A13.5.3 : needed to provide convertible policy so that the derived type
+    // can be convertible
     constexpr explicit operator T() const noexcept;
 
     template <typename Type>

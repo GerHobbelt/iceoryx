@@ -205,14 +205,14 @@ Listener       Event_t                  Triggerable
     attached to the Triggerable so that it can notify the Listener/WaitSet via
     the underlying `ConditionNotifier` with `TriggerHandle::notify()`.
     The cleanup task is performed by the `m_resetCallback` so that the
-    Triggerable has no dependencies to any Notifyable.
+    Triggerable has no dependencies to any Notifiable.
 
 #### Condition Variable
 
 The `ConditionListener` and `ConditionNotifier` are two different interfaces to
 the same class which state is stored in the `ConditionVariableData` class. The
 intention of the separation is to provide one side (e.g. Triggerable) only
-an API to notify the Notifyable (e.g. Listener) whereas the Notifyable can only
+an API to notify the Notifiable (e.g. Listener) whereas the Notifiable can only
 wait on events. So the contract is reflected in the design.
 
 - **Problem:** Since the Listener reacts on events and not states it requires

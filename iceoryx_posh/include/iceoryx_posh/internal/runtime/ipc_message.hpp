@@ -59,13 +59,13 @@ class IpcMessage
 
     ///  @brief Adds a new entry to the IpcMessage, if the entry is invalid
     ///          no entry is added and the IpcMessage becomes invalid.
-    ///  @param[in] entry Datatype which is convertable to string via std::to_string
+    ///  @param[in] entry Datatype which is convertible to string via std::to_string
     template <typename T>
     IpcMessage& operator<<(const T& entry) noexcept;
 
     /// @brief Returns the number of entries stored in IpcMessage.
     ///          If the message is invalid the return value is undefined.
-    /// @return number of entries in messaage
+    /// @return number of entries in message
     uint32_t getNumberOfElements() const noexcept;
 
     /// @brief Returns the entry at position f_index. If f_index is larger
@@ -108,7 +108,7 @@ class IpcMessage
 
     /// @brief Adds a new entry to the IpcMessage, if the entry is invalid
     ///         no entry is added and the IpcMessage becomes invalid.
-    /// @tparam Datatype which is convertable to string via
+    /// @tparam Datatype which is convertible to string via
     /// std::stringstream
     /// @param[in] entry to add to the message
     template <typename T>
